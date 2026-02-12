@@ -3,14 +3,14 @@
 </p>
 
 <p align="center">
-  <em>Prototype-first development server — YAML schema, SQLite CRUD, live HTML editing.</em>
+  <em>Prototype-first development server — YAML schema, SQLite CRUD, AI-powered live HTML editing.</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-14B8A6?style=flat&labelColor=0F172A" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.1.1-14B8A6?style=flat&labelColor=0F172A" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-14B8A6?style=flat&labelColor=0F172A" alt="License">
   <img src="https://img.shields.io/badge/runtime-Bun-14B8A6?style=flat&labelColor=0F172A" alt="Runtime">
-  <img src="https://img.shields.io/badge/tests-67%20passed-14B8A6?style=flat&labelColor=0F172A" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-106%20unit%20·%2017%20e2e-14B8A6?style=flat&labelColor=0F172A" alt="Tests">
   <a href="https://scaffold.to"><img src="https://img.shields.io/badge/scaffold.to-14B8A6?style=flat&labelColor=0F172A" alt="Website"></a>
 </p>
 
@@ -32,45 +32,53 @@ mkdir my-prototype && cd my-prototype
 # 2. Initialize scaffold
 scaffold init .
 
-# 3. Edit scaffold.yml to define your data entities
+# 3. Edit .scaffold/scaffold.yaml to define your data entities
 
 # 4. Start the dev server
-bun run index.ts
+scaffold dev
 ```
 
 ## CLI
 
 ```
-scaffold init [dir]    Initialize a scaffold project in the given directory (default: .)
-scaffold dev [dir]     Start the development server (runs bun run index.ts)
-scaffold --version     Show version
-scaffold --help        Show help
+scaffold init [dir]            Initialize a scaffold project (default: .)
+scaffold dev [dir]             Start the development server
+  -p, --port <number>          Port to run on
+scaffold extract-style [dir]   Extract style guide from HTML files into .scaffold/prompt.md
+scaffold --version             Show version
+scaffold --help                Show help
 ```
 
 ### `scaffold init`
 
-Creates the following files in the target directory:
+Creates the following structure in the target directory:
 
 | File | Purpose |
 |------|---------|
-| `scaffold.yml` | Data schema definition |
-| `index.ts` | Server entrypoint |
-| `functions/` | Custom route handlers |
-| `.scaffold/` | Internal editor assets |
+| `.scaffold/scaffold.yaml` | Data schema definition |
+| `.scaffold/index.ts` | Server entrypoint |
+| `.scaffold/functions/` | Custom route handlers |
+| `.scaffold/prompt.md` | AI style guide (if extracted) |
 
 Existing `.html` files are **never touched**.
+
+### `scaffold extract-style`
+
+Analyzes your HTML prototypes and generates a style guide at `.scaffold/prompt.md`. This guide is included in AI system prompts so generated content matches your existing design.
+
+Extracts: CSS custom properties, shared classes, layout structure, CDN dependencies, Alpine.js patterns, and design conventions.
 
 ### Starting the Server
 
 ```bash
-bun run index.ts
-# or
 scaffold dev
+# or directly
+bun run .scaffold/index.ts
 ```
 
-The server starts on port 1234 (override with `PORT` env var).
+The server starts on port 5555 by default (auto-detects an available port if taken). Override with `--port` or the `PORT` env var.
 
-## Schema Definition — scaffold.yml
+## Schema Definition — scaffold.yaml
 
 Define your data entities in YAML. Each entity becomes a SQLite table and a REST API.
 
@@ -228,7 +236,7 @@ All `/api/*` responses include `Access-Control-Allow-Origin: *`.
 
 Every `.html` file in the root directory is served at `/{filename}`:
 
-- `02-participants.html` -> `http://localhost:1234/02-participants`
+- `02-participants.html` -> `http://localhost:5555/02-participants`
 - `/` shows an index page listing all pages
 
 The editor overlay is injected at serve-time (files on disk are never modified by the server).
@@ -242,6 +250,9 @@ The editor toolbar appears at the bottom-right of every served page.
 - **Edit** — toggle edit mode
 - **Save** — save changes to disk (also Cmd+S)
 - **Undo** — reload from last saved version
+- **+ (New Page)** — create a new page with AI (requires AI)
+- **Components** — browse and insert reusable components (requires AI)
+- **Extract** — extract selected element as a reusable component (requires AI)
 - **Viewers** — count of connected browsers
 
 The toolbar is draggable (position saved in localStorage).
@@ -250,6 +261,7 @@ The toolbar is draggable (position saved in localStorage).
 
 - Text elements become `contenteditable`
 - Click any element to select it (blue dashed outline + tag tooltip)
+- Hover over elements shows a subtle outline indicator
 - Alpine.js is paused via `x-ignore` during editing
 - Exiting edit mode reloads the page to re-init Alpine
 
@@ -257,11 +269,14 @@ The toolbar is draggable (position saved in localStorage).
 
 | Shortcut | Action |
 |----------|--------|
+| Cmd+K | Focus AI input |
 | Cmd+S | Save |
-| Escape | Deselect / Exit edit mode |
-| Delete | Remove selected element |
+| Escape | Deselect / Close modal / Exit edit mode |
+| Delete / Backspace | Remove selected element |
 | Ctrl+D | Duplicate selected element |
 | Ctrl+Up/Down | Reorder among siblings |
+| Shift+Up | Select parent element |
+| Shift+Left/Right | Select previous/next sibling |
 
 ### Save Process
 
@@ -270,15 +285,60 @@ The toolbar is draggable (position saved in localStorage).
 3. POSTs clean HTML to `/_/save/{page}`
 4. Other connected browsers auto-reload
 
+## AI Features
+
+AI features require an `ANTHROPIC_API_KEY` environment variable. When set, the editor gains AI-powered editing, page creation, and component management.
+
+### AI Configuration
+
+Add an `ai` section to `scaffold.yaml`:
+
+```yaml
+ai:
+  model: claude-sonnet-4-20250514     # Claude model (default)
+  max_tokens: 16000                    # Token limit
+  instructions: "Use Tailwind CSS"     # Custom instructions for AI
+  style_reference: "main-page.html"    # Reference file for style extraction
+  prefer_claude_code: false            # Prefer Claude Code CLI over SDK
+```
+
+### AI Edit
+
+Select an element and type a prompt in the AI bar (or press Cmd+K). The AI modifies the selected element or the full page. Changes stream via SSE and are saved to disk.
+
+**Endpoint:** `POST /_/ai/edit`
+
+### AI Create Page
+
+Click the **+** button to create a new page from a description. Optionally use an existing page as a structural starting point. The AI generates a complete HTML page matching your style guide.
+
+**Endpoint:** `POST /_/ai/create`
+
+### Components
+
+**Browse & insert:** Click the Components button to browse saved components. Click a component to enter insertion mode — click anywhere on the page to place it.
+
+**Extract:** Select an element and click Extract to save it as a reusable component with AI-cleaned HTML.
+
+**Generate:** Use the component palette to generate new components from a description.
+
+Components are stored in `.scaffold/components/<category>/<name>.html` with YAML frontmatter containing metadata (name, description, category, props).
+
+**Endpoints:**
+- `GET /_/ai/components` — list all components
+- `GET /_/ai/components/:category/:name` — get one component
+- `POST /_/ai/components/generate` — generate a new component (SSE)
+- `POST /_/ai/components/extract` — extract from existing HTML (JSON)
+
 ## WebSocket
 
-Endpoint: `ws://localhost:1234/_/ws`
+Endpoint: `ws://localhost:5555/_/ws`
 
 Used for hot-reload on file changes and viewer count sync. The file watcher detects external `.html` changes and broadcasts reload to all viewers of that page.
 
 ## Custom Functions
 
-Add route handlers in `functions/*.ts`:
+Add route handlers in `.scaffold/functions/*.ts`:
 
 ```typescript
 import type { ScaffoldContext } from "scaffold";
@@ -300,7 +360,7 @@ interface ScaffoldContext {
   db: Database;           // bun:sqlite Database instance
   route: (method, path, handler) => void;  // Register a custom route
   broadcast: (page, message) => void;      // Send WS message to page viewers
-  config: ScaffoldConfig; // Parsed scaffold.yml
+  config: ScaffoldConfig; // Parsed scaffold.yaml
 }
 ```
 
@@ -327,6 +387,7 @@ On startup, the schema is compared to existing SQLite tables:
 scaffold/
 ├── package.json
 ├── tsconfig.json
+├── playwright.config.ts
 ├── src/
 │   ├── cli.ts            # CLI entry (Commander.js)
 │   ├── index.ts          # Public API
@@ -337,100 +398,90 @@ scaffold/
 │   ├── router.ts         # Pattern-matching router
 │   ├── crud.ts           # CRUD route generation
 │   ├── html.ts           # HTML scanning + serving + save
+│   ├── html-utils.ts     # XPath replacement, title extraction
 │   ├── websocket.ts      # WebSocket manager
-│   ├── watcher.ts        # File watcher
+│   ├── watcher.ts        # File watcher (100ms debounce)
 │   ├── functions.ts      # Custom function loader
+│   ├── components.ts     # Component discovery + frontmatter
 │   ├── server.ts         # Composition layer (Bun.serve)
+│   ├── ai.ts             # Anthropic SDK client + streaming
+│   ├── ai-routes.ts      # AI HTTP endpoints (SSE)
+│   ├── ai-prompts.ts     # Prompt templates
+│   ├── log.ts            # Logging utilities
+│   ├── paths.ts          # Path resolution helpers
 │   └── assets/
-│       ├── editor.js     # Live editor overlay
-│       └── editor.css    # Editor styles
+│       ├── editor.js     # Live editor overlay (vanilla JS IIFE)
+│       └── editor.css    # Editor styles (shadow DOM scoped)
 ├── tests/
 │   ├── schema.test.ts
 │   ├── migration.test.ts
 │   ├── crud.test.ts
 │   ├── router.test.ts
-│   └── html.test.ts
-└── example/prototypes/   # Test prototypes (not published)
+│   ├── html.test.ts
+│   ├── ai.test.ts
+│   └── e2e/
+│       ├── editor-keyboard.e2e.ts
+│       └── editor-ai.e2e.ts
+└── example/prototypes/   # Example prototypes (not published)
 ```
-
-### Running on Example Prototypes
-
-The `example/prototypes/` directory contains 19 Alpine.js + Tailwind HTML prototype files for testing.
-
-```bash
-# 1. Install and link the scaffold package
-cd /path/to/scaffold
-bun install
-bun link
-
-# 2. Initialize the example directory (only once)
-scaffold init example/prototypes
-
-# 3. Copy the full entitlement YAML from SPEC-v2.md into example/prototypes/scaffold.yml
-#    (or use the one already there if set up)
-
-# 4. Link scaffold in the example dir so imports resolve
-cd example/prototypes
-bun link scaffold
-
-# 5. Start the server
-bun run index.ts
-
-# 6. Open in browser
-open http://localhost:1234
-```
-
-This gives you 19 pages with a full CRUD API (16 entities including participants, entitlements, zones, checkpoints, credentials, etc.) and the live editor overlay on every page.
 
 ### Running Tests
 
 ```bash
-cd /path/to/scaffold
+# Unit tests (106 tests across 6 files)
 bun test
+
+# E2E tests (Playwright, requires chromium)
+bun run test:e2e
+
+# E2E tests including AI features (requires real API key)
+ANTHROPIC_API_KEY=sk-... bun run test:e2e
+
+# Install Playwright browsers (first time only)
+bunx playwright install chromium
 ```
 
-67 tests across 5 files covering schema parsing, migration, CRUD operations, routing, and HTML serving.
+Unit tests use in-memory SQLite (`:memory:`). E2E tests start a fixture server on port 5599. AI e2e tests are automatically skipped when `ANTHROPIC_API_KEY` is not set.
+
+### Running on Example Prototypes
+
+```bash
+bun install && bun link
+bun run example/prototypes/.scaffold/index.ts
+open http://localhost:5555
+```
 
 ### Testing the API
 
 ```bash
-# List participants
-curl http://localhost:1234/api/participants
+# List
+curl http://localhost:5555/api/tasks
 
 # Filter + sort + eager load
-curl "http://localhost:1234/api/entitlementitems?with=category&sort=-name"
+curl "http://localhost:5555/api/entitlementitems?with=category&sort=-name"
 
 # Create
-curl -X POST http://localhost:1234/api/zones \
+curl -X POST http://localhost:5555/api/zones \
   -H 'Content-Type: application/json' \
   -d '{"name":"Test Zone"}'
 
 # Update
-curl -X PATCH http://localhost:1234/api/zones/1 \
+curl -X PATCH http://localhost:5555/api/zones/1 \
   -H 'Content-Type: application/json' \
   -d '{"capacity": 500}'
 
 # Delete
-curl -X DELETE http://localhost:1234/api/zones/7
+curl -X DELETE http://localhost:5555/api/zones/7
 ```
-
-### Cleaning Up Before Publishing
-
-Before publishing, remove the development-only files:
-
-```bash
-rm -rf example/
-rm -f docs/SPEC*.md
-```
-
-The published package only needs `src/`, `package.json`, `tsconfig.json`, and `README.md`.
 
 ## Dependencies
 
 | Package | Purpose |
 |---------|---------|
 | `bun:sqlite` | Database (built into Bun) |
-| `yaml` | Parse scaffold.yml |
+| `yaml` | Parse scaffold.yaml |
 | `commander` | CLI argument parsing |
+| `@anthropic-ai/sdk` | AI features (Anthropic API) |
+| `get-port` | Auto-detect available port |
 
-That's it. No Express, no ORM, no build tools.
+**Dev dependencies:** `@playwright/test`, `@types/bun`
