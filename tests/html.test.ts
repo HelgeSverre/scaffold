@@ -50,7 +50,7 @@ describe("serveHtml", () => {
     const html = await response.text();
 
     expect(html).toContain("window.__SCAFFOLD__");
-    expect(html).toContain('page: "01-home"');
+    expect(html).toContain('"page":"01-home"');
     expect(html).toContain("/_/assets/editor.js");
     expect(html).toContain("/_/assets/editor.css");
     // Injection should be before </body>
