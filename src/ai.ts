@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { join } from "path";
 import { existsSync, readFileSync, readdirSync } from "fs";
 import type { AIConfig, AIContext, PageSummary } from "./types";
+import { scaffoldPath } from "./paths";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ export function buildAIContext(
   }
 ): AIContext {
   // Read .scaffold/prompt.md
-  const promptMdPath = join(dir, ".scaffold", "prompt.md");
+  const promptMdPath = scaffoldPath(dir, "prompt.md");
   const promptMd = existsSync(promptMdPath) ? readFileSync(promptMdPath, "utf-8") : "";
 
   // Scan pages for summaries
@@ -208,16 +209,16 @@ ${html}`,
   const text = response.content[0].type === "text" ? response.content[0].text : "";
 
   // Write to .scaffold/prompt.md
-  const scaffoldDir = join(dir, ".scaffold");
+  const scaffoldDir = scaffoldPath(dir);
   if (!existsSync(scaffoldDir)) {
     const { mkdirSync } = await import("fs");
     mkdirSync(scaffoldDir, { recursive: true });
   }
 
   // Back up existing prompt.md
-  const promptMdPath = join(scaffoldDir, "prompt.md");
+  const promptMdPath = scaffoldPath(dir, "prompt.md");
   if (existsSync(promptMdPath)) {
-    await Bun.write(join(scaffoldDir, "prompt.md.bak"), Bun.file(promptMdPath));
+    await Bun.write(scaffoldPath(dir, "prompt.md.bak"), Bun.file(promptMdPath));
   }
 
   await Bun.write(promptMdPath, text);
