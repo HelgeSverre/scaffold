@@ -7,7 +7,7 @@ Bun-powered tool: YAML schema -> SQLite CRUD API + HTML prototype server with li
 ```bash
 bun install                    # install deps
 bun link                       # register `scaffold` CLI globally
-bun test                       # run all tests (67 tests, 5 files)
+bun test                       # run all tests (106 tests, 6 files)
 bun run example/prototypes/index.ts  # start dev server on example prototypes
 ```
 
@@ -15,27 +15,32 @@ bun run example/prototypes/index.ts  # start dev server on example prototypes
 
 ```
 src/
-├── cli.ts          # Commander.js CLI (scaffold init, scaffold dev)
+├── cli.ts          # Commander.js CLI (scaffold init, scaffold dev, scaffold extract-style)
 ├── index.ts        # Public API: export { startServer }
-├── types.ts        # All shared types (ScaffoldConfig, EntityMeta, etc.)
+├── types.ts        # All shared types (ScaffoldConfig, AIConfig, EntityMeta, etc.)
 ├── schema.ts       # YAML parsing + entity metadata derivation
 ├── migration.ts    # SQLite CREATE/ALTER + seeding
 ├── router.ts       # Simple pattern-matching router (array-based)
 ├── crud.ts         # CRUD route generation (largest module ~500 lines)
 ├── html.ts         # HTML scanning, serving with injection, save endpoint
+├── html-utils.ts   # XPath-based element replacement, title extraction, code fence stripping
 ├── websocket.ts    # WebSocket manager (join/leave/broadcast per page)
 ├── watcher.ts      # fs.watch + 100ms debounce for hot-reload
 ├── functions.ts    # Custom function loader (functions/*.ts)
 ├── server.ts       # Composition: wires everything into Bun.serve()
+├── ai.ts           # Anthropic SDK client, context assembly, system prompt, streaming
+├── ai-routes.ts    # All /_/ai/* HTTP endpoints with SSE streaming
+├── ai-prompts.ts   # Prompt template functions (edit, create, component, extract-style)
+├── components.ts   # Component discovery, frontmatter parsing, file writing
 └── assets/
-    ├── editor.js   # Live editor overlay (vanilla JS, Shadow DOM, IIFE)
-    └── editor.css  # Editor styles (scoped to shadow root)
+    ├── editor.js   # Live editor overlay (vanilla JS, Shadow DOM, IIFE) — ~1250 lines
+    └── editor.css  # Editor styles (scoped to shadow root) — ~460 lines
 ```
 
 ## Key Conventions
 
 - **Runtime:** Bun only. Use `bun:sqlite`, `Bun.serve()`, `Bun.write()`, `Bun.file()`
-- **Dependencies:** Minimal — only `yaml`, `commander`. No Express, no ORM
+- **Dependencies:** Minimal — `yaml`, `commander`, `@anthropic-ai/sdk`. No Express, no ORM
 - **Types:** All shared types in `src/types.ts`. Import from there, not inline
 - **Entity naming:** PascalCase in YAML -> snake_case + `s` for table names, lowercase + `s` for route paths
 - **Testing:** `bun:test` with in-memory SQLite (`:memory:`). Tests live in `tests/`
@@ -82,7 +87,7 @@ When you learn something new about this codebase during a session:
 ## Verification Checklist
 
 Before claiming work is complete:
-- [ ] `bun test` passes (all 67+ tests green)
+- [ ] `bun test` passes (all 106+ tests green)
 - [ ] No TypeScript errors from changed files
 - [ ] If CRUD changes: tested via curl against running server
 - [ ] If editor changes: tested in browser with an example prototype
