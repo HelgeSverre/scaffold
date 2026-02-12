@@ -17,7 +17,7 @@ async function enterEditMode(page: import("@playwright/test").Page) {
   await expect(editorHost).toBeAttached();
 
   // Access the shadow root (forced open by addInitScript)
-  const editBtn = editorHost.locator('[data-action="edit"]');
+  const editBtn = editorHost.locator('[data-testid="edit-btn"]');
   await editBtn.click();
 
   // Wait for edit mode to activate (AI bar becomes visible)
@@ -43,7 +43,7 @@ test.describe("Editor keyboard handling", () => {
     await selectElement(page, "#target");
 
     // Focus the AI input and type something so Backspace has text to delete
-    const aiInput = page.locator("scaffold-editor .scaffold-ai-input");
+    const aiInput = page.locator('scaffold-editor [data-testid="ai-input"]');
     await aiInput.fill("hello");
     await aiInput.focus();
     await page.keyboard.press("Backspace");
@@ -60,7 +60,7 @@ test.describe("Editor keyboard handling", () => {
     await enterEditMode(page);
     await selectElement(page, "#target");
 
-    const aiInput = page.locator("scaffold-editor .scaffold-ai-input");
+    const aiInput = page.locator('scaffold-editor [data-testid="ai-input"]');
     await aiInput.fill("hello");
     await aiInput.focus();
     // Move cursor to start so Delete removes forward
@@ -97,7 +97,7 @@ test.describe("Editor keyboard handling", () => {
     await enterEditMode(page);
     await selectElement(page, "#target");
 
-    const aiInput = page.locator("scaffold-editor .scaffold-ai-input");
+    const aiInput = page.locator('scaffold-editor [data-testid="ai-input"]');
     await aiInput.focus();
     await aiInput.fill("");
     await page.keyboard.type("test prompt");

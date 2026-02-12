@@ -20,6 +20,7 @@
   let insertionMode = false;
   let insertionHtml = null;
   let componentPaletteOpen = false;
+  let hoveredElement = null;
 
   // ─── Shadow DOM Setup ─────────────────────────────────────────────────────────
 
@@ -42,6 +43,10 @@
       outline: 2px dashed #38bdf8 !important;
       outline-offset: 2px !important;
     }
+    [data-scaffold-hovered] {
+      outline: 1px solid rgba(148, 163, 184, 0.5) !important;
+      outline-offset: 1px !important;
+    }
     .scaffold-insertion-indicator {
       position: absolute;
       left: 0;
@@ -62,25 +67,25 @@
   toolbar.className = "scaffold-toolbar";
 
   let toolbarHtml = `
-    <button class="scaffold-btn" data-action="edit">
+    <button class="scaffold-btn" data-action="edit" data-testid="edit-btn">
       <span class="icon">&#9998;</span> Edit
     </button>
-    <button class="scaffold-btn" data-action="save" style="display:none">
+    <button class="scaffold-btn" data-action="save" data-testid="save-btn" style="display:none">
       <span class="icon">&#128190;</span> Save
     </button>
-    <button class="scaffold-btn" data-action="undo" style="display:none">
+    <button class="scaffold-btn" data-action="undo" data-testid="undo-btn" style="display:none">
       <span class="icon">&#8634;</span> Undo
     </button>`;
 
   if (AI_ENABLED) {
     toolbarHtml += `
-    <button class="scaffold-btn" data-action="new-page" style="display:none" title="Create new page">
+    <button class="scaffold-btn" data-action="new-page" data-testid="new-page-btn" style="display:none" title="Create new page">
       <span class="icon">+</span>
     </button>
-    <button class="scaffold-btn" data-action="components" style="display:none" title="Component palette">
+    <button class="scaffold-btn" data-action="components" data-testid="components-btn" style="display:none" title="Component palette">
       <span class="icon">&#9645;</span>
     </button>
-    <button class="scaffold-btn" data-action="extract" style="display:none" title="Extract component">
+    <button class="scaffold-btn" data-action="extract" data-testid="extract-btn" style="display:none" title="Extract component">
       <span class="icon">&#8689;</span> Extract
     </button>`;
   }
@@ -119,11 +124,11 @@
     aiBar.style.display = "none";
     aiBar.innerHTML = `
       <div class="scaffold-ai-input-row">
-        <input type="text" class="scaffold-ai-input" placeholder="Ask AI..." />
-        <button class="scaffold-btn scaffold-ai-submit" title="Submit">&#9166;</button>
+        <input type="text" class="scaffold-ai-input" data-testid="ai-input" placeholder="Ask AI..." />
+        <button class="scaffold-btn scaffold-ai-submit" data-testid="ai-submit" title="Submit">&#9166;</button>
         <button class="scaffold-btn scaffold-ai-history-btn" title="History">&#9201;</button>
       </div>
-      <div class="scaffold-ai-status"></div>
+      <div class="scaffold-ai-status" data-testid="ai-status"></div>
       <div class="scaffold-ai-history"></div>
     `;
     shadow.appendChild(aiBar);
@@ -263,6 +268,14 @@
     "NOSCRIPT", "IFRAME", "OBJECT", "EMBED", "CANVAS",
   ]);
 
+  function isValidTarget(el) {
+    if (!el || !el.tagName) return false;
+    if (el === document.documentElement || el === document.body) return false;
+    if (SKIP_TAGS.has(el.tagName)) return false;
+    if (el.closest("scaffold-editor")) return false;
+    return true;
+  }
+
   function toggleEditMode() {
     if (editMode) {
       exitEditMode();
@@ -295,8 +308,9 @@
     // Walk DOM to find editable text elements
     makeEditable(document.body);
 
-    // Enable selection
+    // Enable selection and hover
     document.addEventListener("click", onElementClick, true);
+    document.addEventListener("mouseover", onElementHover, true);
 
     showToast("Edit mode ON");
   }
@@ -331,6 +345,8 @@
     });
 
     document.removeEventListener("click", onElementClick, true);
+    document.removeEventListener("mouseover", onElementHover, true);
+    clearHover();
 
     // Reload page to re-init Alpine
     location.reload();
@@ -374,12 +390,13 @@
     e.stopPropagation();
 
     const el = e.target;
-    if (SKIP_TAGS.has(el.tagName)) return;
+    if (!isValidTarget(el)) return;
 
     selectElement(el);
   }
 
   function selectElement(el) {
+    clearHover();
     deselectElement();
     selectedElement = el;
     el.setAttribute("data-scaffold-selected", "");
@@ -414,6 +431,59 @@
     }
     if (AI_ENABLED && extractBtn) {
       extractBtn.style.display = "none";
+    }
+  }
+
+  // ─── Hover Indicator ────────────────────────────────────────────────────────
+
+  function clearHover() {
+    if (hoveredElement) {
+      hoveredElement.removeAttribute("data-scaffold-hovered");
+      hoveredElement = null;
+    }
+  }
+
+  function onElementHover(e) {
+    if (!editMode) return;
+    if (insertionMode) return;
+
+    const path = e.composedPath();
+    if (path.includes(host)) return;
+
+    const el = e.target;
+    if (!isValidTarget(el)) { clearHover(); return; }
+    if (el === selectedElement) { clearHover(); return; }
+    if (el === hoveredElement) return;
+
+    clearHover();
+    hoveredElement = el;
+    el.setAttribute("data-scaffold-hovered", "");
+  }
+
+  // ─── Selection Traversal ────────────────────────────────────────────────────
+
+  function selectParent() {
+    if (!selectedElement) return;
+    let parent = selectedElement.parentElement;
+    while (parent) {
+      if (isValidTarget(parent)) {
+        selectElement(parent);
+        return;
+      }
+      parent = parent.parentElement;
+    }
+  }
+
+  function selectSibling(direction) {
+    if (!selectedElement) return;
+    const prop = direction === "next" ? "nextElementSibling" : "previousElementSibling";
+    let sibling = selectedElement[prop];
+    while (sibling) {
+      if (isValidTarget(sibling)) {
+        selectElement(sibling);
+        return;
+      }
+      sibling = sibling[prop];
     }
   }
 
@@ -604,22 +674,22 @@
         <div class="scaffold-modal-body">
           <div class="scaffold-form-group">
             <label>Page name</label>
-            <input type="text" class="scaffold-ai-input" id="scaffold-new-name" placeholder="my-new-page" />
+            <input type="text" class="scaffold-ai-input" id="scaffold-new-name" data-testid="new-page-name" placeholder="my-new-page" />
           </div>
           <div class="scaffold-form-group">
             <label>Description</label>
-            <textarea class="scaffold-ai-input scaffold-textarea" id="scaffold-new-desc" rows="4" placeholder="Describe the page..."></textarea>
+            <textarea class="scaffold-ai-input scaffold-textarea" id="scaffold-new-desc" data-testid="new-page-desc" rows="4" placeholder="Describe the page..."></textarea>
           </div>
           <div class="scaffold-form-group">
             <label>Use existing page as starting point</label>
-            <select class="scaffold-ai-input" id="scaffold-new-base">
+            <select class="scaffold-ai-input" id="scaffold-new-base" data-testid="new-page-base">
               <option value="">None</option>
               <option value="${PAGE}" selected>${PAGE} (current)</option>
               ${baseOptions}
             </select>
           </div>
-          <button class="scaffold-btn scaffold-ai-generate-btn" id="scaffold-new-go">Generate with AI</button>
-          <div class="scaffold-ai-status" id="scaffold-new-status"></div>
+          <button class="scaffold-btn scaffold-ai-generate-btn" id="scaffold-new-go" data-testid="new-page-go">Generate with AI</button>
+          <div class="scaffold-ai-status" id="scaffold-new-status" data-testid="new-page-status"></div>
         </div>
       </div>
     `;
@@ -873,6 +943,7 @@
   function enterInsertionMode(html) {
     insertionMode = true;
     insertionHtml = html;
+    clearHover();
 
     insertionIndicator = document.createElement("div");
     insertionIndicator.className = "scaffold-insertion-indicator";
@@ -970,15 +1041,15 @@
         <div class="scaffold-modal-body">
           <div class="scaffold-form-group">
             <label>Component name</label>
-            <input type="text" class="scaffold-ai-input" id="scaffold-extract-name" value="${escapeHtml(suggestedName)}" />
+            <input type="text" class="scaffold-ai-input" id="scaffold-extract-name" data-testid="extract-name" value="${escapeHtml(suggestedName)}" />
           </div>
           <div class="scaffold-form-group">
             <label>Category</label>
-            <input type="text" class="scaffold-ai-input" id="scaffold-extract-cat" placeholder="e.g. data-display, forms, layout" />
+            <input type="text" class="scaffold-ai-input" id="scaffold-extract-cat" data-testid="extract-cat" placeholder="e.g. data-display, forms, layout" />
           </div>
           <div class="scaffold-extract-preview"><code>${escapeHtml(html.slice(0, 200))}${html.length > 200 ? "..." : ""}</code></div>
-          <button class="scaffold-btn scaffold-ai-generate-btn" id="scaffold-extract-go">Extract</button>
-          <div class="scaffold-ai-status" id="scaffold-extract-status"></div>
+          <button class="scaffold-btn scaffold-ai-generate-btn" id="scaffold-extract-go" data-testid="extract-go">Extract</button>
+          <div class="scaffold-ai-status" id="scaffold-extract-status" data-testid="extract-status"></div>
         </div>
       </div>
     `;
@@ -1072,6 +1143,9 @@
       clone.querySelectorAll("[data-scaffold-selected]").forEach((el) => {
         el.removeAttribute("data-scaffold-selected");
       });
+      clone.querySelectorAll("[data-scaffold-hovered]").forEach((el) => {
+        el.removeAttribute("data-scaffold-hovered");
+      });
       clone.querySelectorAll("[data-scaffold-paused]").forEach((el) => {
         el.removeAttribute("x-ignore");
         el.removeAttribute("data-scaffold-paused");
@@ -1146,6 +1220,18 @@
     }
 
     if (!editMode || !selectedElement) return;
+
+    // Shift+Arrow — selection traversal (skip when in text inputs)
+    const isShiftOnly = e.shiftKey && !e.metaKey && !e.ctrlKey;
+    if (isShiftOnly && (e.key === "ArrowUp" || e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      e.preventDefault();
+      if (e.key === "ArrowUp") selectParent();
+      else if (e.key === "ArrowLeft") selectSibling("prev");
+      else if (e.key === "ArrowRight") selectSibling("next");
+      return;
+    }
 
     // Delete — remove selected element
     if (e.key === "Delete" || e.key === "Backspace") {
