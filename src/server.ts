@@ -9,11 +9,12 @@ import { scanHtmlFiles, serveHtml, generateIndexPage, handleSave } from "./html"
 import { createWSManager } from "./websocket";
 import { startWatcher } from "./watcher";
 import { loadFunctions } from "./functions";
+import getPort from "get-port";
 import type { ScaffoldContext, RouteEntry } from "./types";
 
 export async function startServer(options?: { dir?: string; port?: number }) {
   const dir = resolve(options?.dir || ".");
-  const port = options?.port || Number(process.env.PORT) || 1234;
+  const port = options?.port || Number(process.env.PORT) || await getPort({ port: 5555 });
 
   // Parse schema
   const ymlPath = join(dir, "scaffold.yml");
@@ -135,8 +136,14 @@ export async function startServer(options?: { dir?: string; port?: number }) {
         return generateIndexPage(pages, port);
       }
 
-      // HTML pages
-      const pageName = pathname.slice(1); // strip leading /
+      // HTML pages — redirect .html extension to clean URL
+      let pageName = pathname.slice(1);
+      if (pageName.endsWith(".html")) {
+        const clean = pageName.slice(0, -5);
+        if (pageMap.has(clean)) {
+          return Response.redirect(`/${clean}${url.search}`, 302);
+        }
+      }
       if (pageMap.has(pageName)) {
         return serveHtml(pageMap.get(pageName)!, pageName, port);
       }
