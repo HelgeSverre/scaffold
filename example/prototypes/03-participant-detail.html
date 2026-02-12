@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kari Nordmann - Participant Detail - Crescat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-soft); }
+
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 10px; border-radius: 9999px;
+      font-size: 12px; font-weight: 500; line-height: 20px;
+    }
+    .badge-success { background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); color: var(--color-success); }
+    .badge-warning { background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); color: var(--color-warning); }
+    .badge-pending { background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); color: var(--color-pending); }
+    .badge-info { background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); color: var(--color-highlight); }
+    .badge-crew { background: hsla(205, 69%, 33%, 0.15); border: 1px solid hsla(205, 69%, 33%, 0.3); color: #5BA3D9; }
+    .badge-access { background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); color: var(--color-highlight); }
+    .badge-consumable { background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); color: var(--color-pending); }
+    .badge-returnable { background: hsla(280, 60%, 55%, 0.1); border: 1px solid hsla(280, 60%, 55%, 0.2); color: hsl(280, 60%, 65%); }
+    .badge-one-time { background: hsla(205, 69%, 33%, 0.1); border: 1px solid hsla(205, 69%, 33%, 0.2); color: hsl(205, 69%, 55%); }
+
+    .card {
+      background: var(--bg-content);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+    }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--bg-sidebar);
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-soft);
+      border-bottom: 1px solid var(--border-default);
+    }
+    .data-table tbody tr:nth-child(odd) { background: var(--bg-row); }
+    .data-table tbody tr:nth-child(even) { background: var(--bg-row-alt); }
+    .data-table tbody tr:hover { background: var(--bg-row-hover); }
+    .data-table td {
+      padding: 10px 16px; font-size: 13px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .tab-btn {
+      padding: 10px 20px; font-size: 13px; font-weight: 500;
+      color: var(--text-soft); background: transparent;
+      border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text-default); }
+    .tab-btn.active { color: var(--color-highlight); border-bottom-color: var(--color-highlight); }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 16px; height: 30px; border-radius: 6px;
+      background: var(--color-primary); color: white;
+      font-size: 13px; font-weight: 500; text-transform: capitalize;
+      border: none; cursor: pointer; white-space: nowrap;
+    }
+    .btn-primary:hover { filter: brightness(1.1); }
+
+    .btn-success {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 16px; height: 30px; border-radius: 6px;
+      background: var(--color-success); color: white;
+      font-size: 13px; font-weight: 500; text-transform: capitalize;
+      border: none; cursor: pointer; white-space: nowrap;
+    }
+
+    .btn-danger {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 16px; height: 30px; border-radius: 6px;
+      background: var(--color-warning); color: white;
+      font-size: 13px; font-weight: 500; text-transform: capitalize;
+      border: none; cursor: pointer; white-space: nowrap;
+    }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 12px; height: 30px; border-radius: 6px;
+      background: transparent; color: var(--text-soft);
+      font-size: 13px; font-weight: 500;
+      border: 1px solid var(--border-default); cursor: pointer; white-space: nowrap;
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--text-default); }
+
+    .action-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 3px;
+      color: var(--text-soft); cursor: pointer; transition: all 0.15s;
+    }
+    .action-btn:hover { background: var(--bg-hover); color: var(--text-default); }
+
+    .rule-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 8px; border-radius: 3px; font-size: 11px;
+      background: hsla(205, 69%, 33%, 0.1); border: 1px solid hsla(205, 69%, 33%, 0.2);
+      color: hsl(205, 69%, 55%);
+    }
+
+    .override-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 8px; border-radius: 3px; font-size: 11px;
+      background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2);
+      color: var(--color-pending);
+    }
+
+    .meta-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border-soft);
+    }
+    .meta-row:last-child { border-bottom: none; }
+
+    .section-header {
+      padding: 8px 16px; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-soft); background: var(--bg-hover);
+      border-bottom: 1px solid var(--border-soft);
+    }
+  </style>
+</head>
+<body class="min-h-screen" x-data="{ helpOpen: false, activeTab: 'entitlements', addEntOpen: false, confirmAction: null, toast: null, showToast(msg) { this.toast = msg; setTimeout(() => this.toast = null, 3000); } }">
+
+  <!-- TOP NAVBAR -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="pt-12" style="margin-left:232px;">
+    <div class="p-8">
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 mb-6 text-sm">
+        <a href="02-participants.html" style="color:var(--color-highlight); text-decoration:none;">Participants</a>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-soft)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span style="color:var(--text-soft);">Kari Nordmann</span>
+      </div>
+
+      <!-- PARTICIPANT HEADER + METADATA SIDEBAR -->
+      <div class="flex gap-6">
+        <!-- Main Content Area -->
+        <div class="flex-1 min-w-0">
+
+          <!-- HEADER CARD -->
+          <div class="card p-6 mb-6">
+            <div class="flex items-start justify-between">
+              <div class="flex items-start gap-5">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0" style="background:#2E7D9C; color:white;">KN</div>
+                <div>
+                  <div class="flex items-center gap-3 mb-1">
+                    <h1 class="text-xl font-bold" style="color:var(--text-default);">Kari Nordmann</h1>
+                    <span class="badge badge-crew">Crew</span>
+                    <span class="badge badge-success">Active</span>
+                  </div>
+                  <div class="flex items-center gap-4 mt-2 text-sm">
+                    <span style="color:var(--text-soft);">
+                      <strong style="color:var(--text-default);">Affiliation:</strong> Sound Department
+                    </span>
+                    <span style="color:var(--border-default);">|</span>
+                    <span style="color:var(--text-soft);">
+                      <strong style="color:var(--text-default);">Role:</strong> Stage Manager
+                    </span>
+                  </div>
+                  <div class="mt-2">
+                    <code class="text-xs px-2 py-1 rounded" style="background:var(--bg-input); color:var(--text-soft); border:1px solid var(--border-soft);">UUID: 7f3a2c9e-1d4b-4e8f-a6c3-9b2e7d5f1a8c</code>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button class="btn-ghost" @click="showToast('Edit participant coming soon')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
+                <button class="btn-danger" @click="confirmAction = {title: 'Suspend Participant', message: 'Are you sure you want to suspend Kari Nordmann? All entitlements will be temporarily disabled.', action: () => showToast('Kari Nordmann suspended')}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                  Suspend
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABS -->
+          <div class="mb-0" style="border-bottom:1px solid var(--border-default);">
+            <button @click="activeTab = 'entitlements'" :class="activeTab === 'entitlements' ? 'active' : ''" class="tab-btn">
+              Entitlements <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);">6</span>
+            </button>
+            <button @click="activeTab = 'credentials'" :class="activeTab === 'credentials' ? 'active' : ''" class="tab-btn">
+              Credentials <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);">2</span>
+            </button>
+            <button @click="activeTab = 'scans'" :class="activeTab === 'scans' ? 'active' : ''" class="tab-btn">
+              Scan History <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);">24</span>
+            </button>
+            <button @click="activeTab = 'activity'" :class="activeTab === 'activity' ? 'active' : ''" class="tab-btn">
+              Activity Log
+            </button>
+          </div>
+
+          <!-- TAB: ENTITLEMENTS -->
+          <div x-show="activeTab === 'entitlements'" class="mt-0">
+            <!-- Add Entitlement button -->
+            <div class="flex items-center justify-between py-4">
+              <p class="text-sm" style="color:var(--text-soft);">6 entitlements assigned across 4 categories</p>
+              <button @click="addEntOpen = true" class="btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Entitlement
+              </button>
+            </div>
+
+            <div class="card overflow-hidden">
+              <!-- ACCREDITATIONS -->
+              <div class="section-header">Accreditations</div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                    <th>Source</th>
+                    <th>Valid</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div>
+                        <p class="font-medium" style="color:var(--text-default);">AAA-Access Pass</p>
+                        <p class="text-xs mt-1" style="color:var(--text-soft);">Zones: Backstage, VIP, Production</p>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-access">access</span></td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td style="color:var(--text-soft);">Full backstage access for all areas</td>
+                    <td>
+                      <span class="rule-tag">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Rule: Crew AAA policy
+                      </span>
+                    </td>
+                    <td style="color:var(--text-soft); white-space:nowrap;">
+                      <div class="text-xs">2026-07-10</div>
+                      <div class="text-xs">2026-07-14</div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="Edit" @click="showToast('Edit entitlement coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click="confirmAction = {title: 'Revoke Entitlement', message: 'Are you sure you want to revoke this entitlement?', action: () => showToast('Entitlement revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div>
+                        <p class="font-medium" style="color:var(--text-default);">Parking Pass</p>
+                        <p class="text-xs mt-1" style="color:var(--text-soft);">Zone: Parking Area</p>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-access">access</span></td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td style="color:var(--text-soft);">Crew parking lot access</td>
+                    <td>
+                      <span class="rule-tag">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Rule: Crew parking
+                      </span>
+                    </td>
+                    <td style="color:var(--text-soft); white-space:nowrap;">
+                      <div class="text-xs">2026-07-09</div>
+                      <div class="text-xs">2026-07-15</div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="Edit" @click="showToast('Edit entitlement coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click="confirmAction = {title: 'Revoke Entitlement', message: 'Are you sure you want to revoke this entitlement?', action: () => showToast('Entitlement revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- MEALS -->
+              <div class="section-header">Meals</div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                    <th>Source</th>
+                    <th>Valid</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div>
+                        <p class="font-medium" style="color:var(--text-default);">Lunch Voucher</p>
+                        <p class="text-xs mt-1" style="color:var(--text-soft);">Quantity: 3/day</p>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-consumable">consumable</span></td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs" style="color:var(--text-soft);">Used today:</span>
+                        <span class="text-sm font-semibold" style="color:var(--color-highlight);">1</span>
+                        <span class="text-xs" style="color:var(--text-soft);">Remaining:</span>
+                        <span class="text-sm font-semibold" style="color:var(--color-success);">2</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="rule-tag">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Rule: Crew meal allowance
+                      </span>
+                    </td>
+                    <td style="color:var(--text-soft); white-space:nowrap;">
+                      <div class="text-xs">Daily</div>
+                      <div class="text-xs">11:30-14:00</div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="Edit" @click="showToast('Edit entitlement coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click="confirmAction = {title: 'Revoke Entitlement', message: 'Are you sure you want to revoke this entitlement?', action: () => showToast('Entitlement revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div>
+                        <p class="font-medium" style="color:var(--text-default);">Dinner Voucher</p>
+                        <p class="text-xs mt-1" style="color:var(--text-soft);">Quantity: 1/day</p>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-consumable">consumable</span></td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs" style="color:var(--text-soft);">Used today:</span>
+                        <span class="text-sm font-semibold" style="color:var(--color-highlight);">0</span>
+                        <span class="text-xs" style="color:var(--text-soft);">Remaining:</span>
+                        <span class="text-sm font-semibold" style="color:var(--color-success);">1</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <span class="rule-tag">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                          Rule: Crew meal allowance
+                        </span>
+                        <span class="override-tag">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                          Overridden
+                        </span>
+                      </div>
+                    </td>
+                    <td style="color:var(--text-soft); white-space:nowrap;">
+                      <div class="text-xs">Daily</div>
+                      <div class="text-xs">17:00-20:00</div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="Edit" @click="showToast('Edit entitlement coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click="confirmAction = {title: 'Revoke Entitlement', message: 'Are you sure you want to revoke this entitlement?', action: () => showToast('Entitlement revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- EQUIPMENT -->
+              <div class="section-header">Equipment</div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                    <th>Source</th>
+                    <th>Valid</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div>
+                        <p class="font-medium" style="color:var(--text-default);">Two-Way Radio</p>
+                        <p class="text-xs mt-1" style="color:var(--text-soft);">Inventory: Radio #247</p>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-returnable">returnable</span></td>
+                    <td><span class="badge badge-pending">Checked Out</span></td>
+                    <td>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs" style="color:var(--text-soft);">Checked out:</span>
+                        <span class="text-sm font-semibold" style="color:var(--color-pending);">1</span>
+                        <span class="text-xs" style="color:var(--text-soft);">Since:</span>
+                        <span class="text-xs" style="color:var(--text-default);">2026-07-11 08:15</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="rule-tag">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Rule: SM radio policy
+                      </span>
+                    </td>
+                    <td style="color:var(--text-soft); white-space:nowrap;">
+                      <div class="text-xs">Return by</div>
+                      <div class="text-xs">2026-07-14 22:00</div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="Return" style="color:var(--color-success);" @click="confirmAction = {title: 'Return Equipment', message: 'Confirm return of Two-Way Radio #247?', action: () => showToast('Radio #247 returned')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></button>
+                        <button class="action-btn" title="Edit" @click="showToast('Edit entitlement coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- SUPPLIES -->
+              <div class="section-header">Supplies</div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                    <th>Source</th>
+                    <th>Valid</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div>
+                        <p class="font-medium" style="color:var(--text-default);">Volunteer T-Shirt M</p>
+                        <p class="text-xs mt-1" style="color:var(--text-soft);">Size: Medium, Color: Black</p>
+                      </div>
+                    </td>
+                    <td><span class="badge badge-one-time">one_time</span></td>
+                    <td><span class="badge badge-success">Collected</span></td>
+                    <td style="color:var(--text-soft);">Collected on 2026-07-10 10:30</td>
+                    <td><span style="color:var(--text-soft); font-size:12px;">Manual</span></td>
+                    <td style="color:var(--text-soft); white-space:nowrap;">
+                      <div class="text-xs">One-time</div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB: CREDENTIALS -->
+          <div x-show="activeTab === 'credentials'" class="mt-0">
+            <div class="flex items-center justify-between py-4">
+              <p class="text-sm" style="color:var(--text-soft);">2 active credentials</p>
+              <div class="flex items-center gap-2">
+                <button class="btn-ghost" @click="showToast('Replace credential coming soon')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                  Replace Lost
+                </button>
+                <button class="btn-primary" @click="showToast('Issue credential coming soon')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Issue New Credential
+                </button>
+              </div>
+            </div>
+            <div class="card overflow-hidden">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Identifier</th>
+                    <th>Status</th>
+                    <th>Issued At</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01"/></svg>
+                        <span class="font-medium" style="color:var(--text-default);">QR Code</span>
+                      </div>
+                    </td>
+                    <td>
+                      <code class="text-xs px-2 py-1 rounded" style="background:var(--bg-input); color:var(--text-soft);">cred_7f3a...1a8c</code>
+                    </td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td style="color:var(--text-soft);">2026-07-09 14:22</td>
+                    <td style="color:var(--text-soft);">Primary credential</td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="View QR" @click="showToast('QR code viewer coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                        <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click="confirmAction = {title: 'Revoke Credential', message: 'Are you sure you want to revoke this credential?', action: () => showToast('Credential revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight)" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <span class="font-medium" style="color:var(--text-default);">Physical Badge</span>
+                      </div>
+                    </td>
+                    <td>
+                      <code class="text-xs px-2 py-1 rounded" style="background:var(--bg-input); color:var(--text-soft);">badge_9c2e...5f1a</code>
+                    </td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td style="color:var(--text-soft);">2026-07-10 09:45</td>
+                    <td style="color:var(--text-soft);">Printed 2026-07-10</td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        <button class="action-btn" title="Reprint" @click="showToast('Badge sent to print queue')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                        <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click="confirmAction = {title: 'Revoke Credential', message: 'Are you sure you want to revoke this credential?', action: () => showToast('Credential revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB: SCAN HISTORY -->
+          <div x-show="activeTab === 'scans'" class="mt-0">
+            <div class="flex items-center justify-between py-4">
+              <p class="text-sm" style="color:var(--text-soft);">24 scans total, showing most recent</p>
+              <button class="btn-ghost" @click="showToast('Exporting scan history...')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+            </div>
+            <div class="card overflow-hidden">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Checkpoint</th>
+                    <th>Item</th>
+                    <th>Scan Type</th>
+                    <th>Result</th>
+                    <th>Operator</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-11 14:32</td>
+                    <td>Backstage Gate A</td>
+                    <td>AAA-Access Pass</td>
+                    <td><span class="badge badge-info">access_in</span></td>
+                    <td><span class="badge badge-success">Granted</span></td>
+                    <td style="color:var(--text-soft);">Thomas Berge</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-11 12:15</td>
+                    <td>Catering Tent</td>
+                    <td>Lunch Voucher</td>
+                    <td><span class="badge badge-consumable">dispense</span></td>
+                    <td><span class="badge badge-success">Dispensed</span></td>
+                    <td style="color:var(--text-soft);">Astrid Kristiansen</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-11 11:45</td>
+                    <td>Backstage Gate A</td>
+                    <td>AAA-Access Pass</td>
+                    <td><span class="badge badge-info">access_out</span></td>
+                    <td><span class="badge badge-success">Recorded</span></td>
+                    <td style="color:var(--text-soft);">Thomas Berge</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-11 09:30</td>
+                    <td>Production Office</td>
+                    <td>AAA-Access Pass</td>
+                    <td><span class="badge badge-info">access_in</span></td>
+                    <td><span class="badge badge-success">Granted</span></td>
+                    <td style="color:var(--text-soft);">Nina Haugen</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-11 08:15</td>
+                    <td>Equipment Desk</td>
+                    <td>Two-Way Radio</td>
+                    <td><span class="badge badge-returnable">checkout</span></td>
+                    <td><span class="badge badge-success">Dispensed</span></td>
+                    <td style="color:var(--text-soft);">Lars Johansen</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-11 08:02</td>
+                    <td>Main Gate</td>
+                    <td>AAA-Access Pass</td>
+                    <td><span class="badge badge-info">access_in</span></td>
+                    <td><span class="badge badge-success">Granted</span></td>
+                    <td style="color:var(--text-soft);">Mats Olsen</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-10 21:45</td>
+                    <td>Parking Gate</td>
+                    <td>Parking Pass</td>
+                    <td><span class="badge badge-info">access_out</span></td>
+                    <td><span class="badge badge-success">Recorded</span></td>
+                    <td style="color:var(--text-soft);">System (auto)</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-10 18:30</td>
+                    <td>Catering Tent</td>
+                    <td>Dinner Voucher</td>
+                    <td><span class="badge badge-consumable">dispense</span></td>
+                    <td><span class="badge badge-success">Dispensed</span></td>
+                    <td style="color:var(--text-soft);">Astrid Kristiansen</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-10 14:05</td>
+                    <td>VIP Entrance</td>
+                    <td>AAA-Access Pass</td>
+                    <td><span class="badge badge-info">access_in</span></td>
+                    <td><span class="badge badge-success">Granted</span></td>
+                    <td style="color:var(--text-soft);">Emilie Vik</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-soft); white-space:nowrap;">2026-07-10 12:20</td>
+                    <td>Catering Tent</td>
+                    <td>Lunch Voucher</td>
+                    <td><span class="badge badge-consumable">dispense</span></td>
+                    <td><span class="badge badge-success">Dispensed</span></td>
+                    <td style="color:var(--text-soft);">Astrid Kristiansen</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB: ACTIVITY LOG -->
+          <div x-show="activeTab === 'activity'" class="mt-0">
+            <div class="flex items-center justify-between py-4">
+              <p class="text-sm" style="color:var(--text-soft);">System activity log for this participant</p>
+            </div>
+            <div class="card p-0 overflow-hidden">
+              <div class="space-y-0">
+                <div class="flex items-start gap-4 p-4" style="border-bottom:1px solid var(--border-soft);">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:hsla(151,61%,43%,0.1);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(151,61%,43%)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm" style="color:var(--text-default);"><strong>Rule Engine</strong> assigned <strong>Lunch Voucher (3/day)</strong></p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">Triggered by rule "Crew meal allowance" - condition: type=Crew AND affiliation=Sound Department</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">2026-07-09 14:22:03</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4 p-4" style="border-bottom:1px solid var(--border-soft); background:var(--bg-row-alt);">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:rgba(69,164,228,0.1);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#45A4E4" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm" style="color:var(--text-default);"><strong>Admin (AH)</strong> issued <strong>Physical Badge</strong> credential</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">Badge printed at Accreditation Office, Station 2</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">2026-07-10 09:45:17</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4 p-4" style="border-bottom:1px solid var(--border-soft);">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:hsla(44,88%,66%,0.1);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(44,88%,66%)" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm" style="color:var(--text-default);"><strong>Admin (AH)</strong> manually overrode <strong>Dinner Voucher</strong> - changed from 0/day to 1/day</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">Override reason: "Stage manager works late shifts, needs dinner access"</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">2026-07-10 11:02:45</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4 p-4" style="border-bottom:1px solid var(--border-soft); background:var(--bg-row-alt);">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:hsla(151,61%,43%,0.1);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(151,61%,43%)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm" style="color:var(--text-default);"><strong>System</strong> created participant from <strong>Crew Import CSV</strong></p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">Source: crew_import_2026_batch3.csv, Row 142</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">2026-07-09 14:20:01</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4 p-4" style="border-bottom:1px solid var(--border-soft);">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:hsla(151,61%,43%,0.1);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(151,61%,43%)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm" style="color:var(--text-default);"><strong>Rule Engine</strong> assigned <strong>AAA-Access Pass</strong></p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">Triggered by rule "Crew AAA policy" - condition: type=Crew AND role=Stage Manager</p>
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">2026-07-09 14:22:03</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- METADATA SIDEBAR -->
+        <div class="w-72 flex-shrink-0">
+          <div class="card p-5 sticky" style="top:80px;">
+            <h3 class="text-xs font-semibold uppercase tracking-wider mb-4" style="color:var(--text-soft);">Participant Info</h3>
+
+            <div class="space-y-0">
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Full Name</span>
+                <span class="text-sm font-medium" style="color:var(--text-default);">Kari Nordmann</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Email</span>
+                <span class="text-sm" style="color:var(--color-highlight);">kari.nordmann@crew.no</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Phone</span>
+                <span class="text-sm" style="color:var(--text-default);">+47 912 34 567</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Type</span>
+                <span class="badge badge-crew">Crew</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Affiliation</span>
+                <span class="text-sm" style="color:var(--text-default);">Sound Department</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Role</span>
+                <span class="text-sm" style="color:var(--text-default);">Stage Manager</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Status</span>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Created</span>
+                <span class="text-xs" style="color:var(--text-default);">2026-07-09</span>
+              </div>
+              <div class="meta-row">
+                <span class="text-xs" style="color:var(--text-soft);">Source</span>
+                <span class="text-xs" style="color:var(--text-default);">CSV Import</span>
+              </div>
+            </div>
+
+            <div class="mt-5 pt-4" style="border-top:1px solid var(--border-soft);">
+              <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-soft);">Quick Stats</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 rounded-md text-center" style="background:var(--bg-hover);">
+                  <p class="text-lg font-bold" style="color:var(--color-highlight);">6</p>
+                  <p class="text-xs" style="color:var(--text-soft);">Entitlements</p>
+                </div>
+                <div class="p-3 rounded-md text-center" style="background:var(--bg-hover);">
+                  <p class="text-lg font-bold" style="color:var(--color-highlight);">2</p>
+                  <p class="text-xs" style="color:var(--text-soft);">Credentials</p>
+                </div>
+                <div class="p-3 rounded-md text-center" style="background:var(--bg-hover);">
+                  <p class="text-lg font-bold" style="color:var(--color-success);">24</p>
+                  <p class="text-xs" style="color:var(--text-soft);">Total Scans</p>
+                </div>
+                <div class="p-3 rounded-md text-center" style="background:var(--bg-hover);">
+                  <p class="text-lg font-bold" style="color:var(--color-success);">6</p>
+                  <p class="text-xs" style="color:var(--text-soft);">Scans Today</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 pt-4" style="border-top:1px solid var(--border-soft);">
+              <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-soft);">Current Zones</h3>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2 p-2 rounded" style="background:var(--bg-hover);">
+                  <span class="w-2 h-2 rounded-full" style="background:var(--color-success);"></span>
+                  <span class="text-xs" style="color:var(--text-default);">Backstage</span>
+                  <span class="text-xs ml-auto" style="color:var(--text-soft);">In since 14:32</span>
+                </div>
+                <div class="flex items-center gap-2 p-2 rounded" style="background:var(--bg-hover);">
+                  <span class="w-2 h-2 rounded-full" style="background:var(--text-soft);"></span>
+                  <span class="text-xs" style="color:var(--text-soft);">VIP Area</span>
+                  <span class="text-xs ml-auto" style="color:var(--text-soft);">Last: 10:15</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ADD ENTITLEMENT MODAL -->
+  <div x-show="addEntOpen" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.6);">
+    <div @click.away="addEntOpen = false" class="w-full max-w-md rounded-lg p-6" style="background:var(--bg-sidebar); border:1px solid var(--border-default);">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-base font-bold" style="color:var(--text-default);">Add Entitlement</h2>
+        <button @click="addEntOpen = false" class="text-lg" style="color:var(--text-soft);">&#10005;</button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-soft);">Entitlement Item</label>
+          <select class="w-full px-3" style="height:38px; background:var(--bg-input); border:1px solid var(--border-default); border-radius:6px; color:var(--text-default); font-size:13px; font-family:'Inter',sans-serif;">
+            <option>Select an item...</option>
+            <option>AAA-Access Pass</option>
+            <option>VIP Pass</option>
+            <option>Crew Pass</option>
+            <option>Lunch Voucher</option>
+            <option>Dinner Voucher</option>
+            <option>Breakfast Voucher</option>
+            <option>Two-Way Radio</option>
+            <option>Volunteer T-Shirt</option>
+            <option>Parking Pass</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-soft);">Valid From</label>
+            <input type="date" value="2026-07-11" class="w-full px-3" style="height:38px; background:var(--bg-input); border:1px solid var(--border-default); border-radius:6px; color:var(--text-default); font-size:13px; font-family:'Inter',sans-serif;">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-soft);">Valid To</label>
+            <input type="date" value="2026-07-14" class="w-full px-3" style="height:38px; background:var(--bg-input); border:1px solid var(--border-default); border-radius:6px; color:var(--text-default); font-size:13px; font-family:'Inter',sans-serif;">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-soft);">Quantity (per day)</label>
+          <input type="number" value="1" class="w-full px-3" style="height:38px; background:var(--bg-input); border:1px solid var(--border-default); border-radius:6px; color:var(--text-default); font-size:13px; font-family:'Inter',sans-serif;">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-soft);">Notes</label>
+          <textarea rows="2" placeholder="Optional notes..." class="w-full px-3 py-2" style="background:var(--bg-input); border:1px solid var(--border-default); border-radius:6px; color:var(--text-default); font-size:13px; font-family:'Inter',sans-serif; resize:none;"></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 mt-6">
+        <button @click="addEntOpen = false" class="btn-ghost">Cancel</button>
+        <button @click="addEntOpen = false" class="btn-primary" style="height:38px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Entitlement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP OVERLAY BUTTON -->
+  <button @click="helpOpen = true"
+    class="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center shadow-lg z-50 text-white font-bold text-lg"
+    style="background:var(--color-primary);">
+    ?
+  </button>
+
+  <!-- HELP MODAL -->
+  <div x-show="helpOpen" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.6);">
+    <div @click.away="helpOpen = false" class="w-full max-w-lg rounded-lg p-6" style="background:var(--bg-sidebar); border:1px solid var(--border-default);">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold" style="color:var(--text-default);">About this Screen</h2>
+        <button @click="helpOpen = false" class="text-lg" style="color:var(--text-soft);">&#10005;</button>
+      </div>
+      <div class="space-y-3 text-sm" style="color:var(--text-default); line-height:1.6;">
+        <p><strong>What is this screen for?</strong></p>
+        <p>The Participant Detail screen shows everything about a single person's relationship with the festival. View all their entitlements, credentials, scan history, and activity in one place.</p>
+        <p><strong>Workflow Coverage</strong></p>
+        <p>This screen covers the Participant Onboarding, Meal Voucher Lifecycle, and Equipment Check-Out workflows from the proposal. It is the central hub for managing a participant's festival experience.</p>
+        <p><strong>Key Interactions</strong></p>
+        <ul class="list-disc pl-5 space-y-1" style="color:var(--text-soft);">
+          <li><strong>Entitlements tab:</strong> View all assigned items with their current state, source (rule or manual), and usage. Add new entitlements or revoke existing ones.</li>
+          <li><strong>Credentials tab:</strong> Manage physical/digital tokens (QR codes, badges). Issue new credentials or replace lost ones.</li>
+          <li><strong>Scan History:</strong> Complete audit trail of every scan for this participant.</li>
+          <li><strong>Activity Log:</strong> System events showing rule evaluations, manual changes, and credential issuance.</li>
+          <li>Entitlements created by rules show a "Rule" tag. Manually overridden ones show an "Overridden" warning badge.</li>
+          <li>The sidebar shows current zone location and quick stats.</li>
+        </ul>
+      </div>
+      <button @click="helpOpen = false" class="mt-5 w-full flex items-center justify-center font-medium capitalize"
+        style="height:38px; background:var(--color-primary); color:white; border-radius:6px; font-size:14px;">
+        Got it
+      </button>
+    </div>
+  </div>
+
+<!-- CONFIRMATION MODAL -->
+<div x-show="confirmAction" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center" style="background:rgba(0,0,0,0.6);">
+  <div @click.stop class="w-full max-w-sm rounded-lg p-6" style="background:var(--bg-sidebar); border:1px solid var(--border-default);">
+    <h3 class="font-semibold mb-2" style="color:var(--text-default);" x-text="confirmAction?.title"></h3>
+    <p class="text-sm mb-4" style="color:var(--text-soft);" x-text="confirmAction?.message"></p>
+    <div class="flex justify-end gap-2">
+      <button class="btn-ghost" @click="confirmAction = null">Cancel</button>
+      <button class="btn-danger" @click="confirmAction?.action(); confirmAction = null">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div x-show="toast" x-transition class="fixed top-16 right-6 z-[60] px-4 py-2 rounded-md text-sm font-medium" style="background:var(--color-primary); color:white;" x-text="toast"></div>
+
+</body>
+</html>

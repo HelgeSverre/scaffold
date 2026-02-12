@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedules - Crescat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 9999px; }
+    .btn-primary { background: var(--color-primary); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+    .btn-lg { height: 38px; padding: 0 20px; font-size: 15px; }
+    .btn-success { background: var(--color-success); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-warning { background: var(--color-warning); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-warning:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); font-weight: 500; border-radius: 6px; padding: 0 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-default); transition: all 0.15s; cursor: pointer; }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .input-field { background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 12px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: var(--color-primary); }
+    .badge-active { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(151, 61%, 43%); background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); }
+    .badge-info { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: #45A4E4; background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); }
+    .badge-pending { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(44, 88%, 66%); background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); }
+    .badge-warning { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(0, 88%, 66%); background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); }
+    .badge-inactive { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: var(--text-soft); background: hsla(205, 16%, 57%, 0.1); border: 1px solid hsla(205, 16%, 57%, 0.2); }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+    .stat-card { background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; padding: 20px; }
+    .schedule-card { background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; transition: all 0.15s; }
+    .schedule-card:hover { border-color: var(--color-primary); }
+    .day-circle { width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .day-circle.active { background: var(--color-highlight); color: #fff; }
+    .day-circle.inactive { background: var(--bg-active); color: var(--text-soft); }
+    .timeline-bar { height: 8px; background: var(--bg-active); border-radius: 4px; position: relative; overflow: hidden; }
+    .timeline-fill { position: absolute; top: 0; bottom: 0; background: var(--color-highlight); border-radius: 4px; opacity: 0.6; }
+  </style>
+</head>
+<body class="min-h-screen" x-data="schedulesApp()">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="pt-[48px]" style="margin-left: 232px;">
+    <div class="p-6">
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-semibold text-white mb-1">Schedules</h1>
+          <p style="color: var(--text-soft); font-size: 13px;">Time-based validity windows for rules and entitlements</p>
+        </div>
+        <button class="btn-primary" @click="openCreateModal()">+ Create Schedule</button>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Total Schedules</div>
+          <div class="text-2xl font-bold text-white" x-text="schedules.length">6</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">Across all time windows</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Currently Active</div>
+          <div class="text-2xl font-bold" style="color: var(--color-success);" x-text="schedules.filter(s => s.status === 'active').length">4</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">Within their date range</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Rules Using Schedules</div>
+          <div class="text-2xl font-bold text-white">8</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">Linked to time windows</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Active Right Now</div>
+          <div class="text-2xl font-bold" style="color: var(--color-highlight);">2</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">In current time window</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex-1 relative">
+          <input type="text" class="input-field w-full pl-9" placeholder="Search schedules..." x-model="searchQuery">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--text-soft); font-size: 13px;">&#128269;</span>
+        </div>
+        <select class="input-field" x-model="filterStatus">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
+
+      <!-- Schedule Cards -->
+      <div class="space-y-3">
+        <template x-for="(schedule, index) in filteredSchedules" :key="schedule.id">
+          <div class="schedule-card border-l-2" :style="schedule.status === 'active' ? 'border-left-color: var(--color-success)' : schedule.status === 'upcoming' ? 'border-left-color: var(--color-pending)' : 'border-left-color: var(--text-soft)'">
+            <!-- Schedule Header -->
+            <div class="flex items-center justify-between px-5 py-4 cursor-pointer" @click="expandedSchedule = expandedSchedule === schedule.id ? null : schedule.id">
+              <div class="flex items-center gap-4">
+                <span class="text-xs transition-transform" :style="expandedSchedule === schedule.id ? 'transform: rotate(90deg)' : ''" style="color: var(--text-soft);">&#9654;</span>
+                <div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-white font-medium text-sm" x-text="schedule.name"></span>
+                    <span :class="schedule.status === 'active' ? 'badge-active' : schedule.status === 'upcoming' ? 'badge-pending' : 'badge-inactive'" x-text="schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)"></span>
+                  </div>
+                  <div class="flex items-center gap-4 mt-1.5 text-xs" style="color: var(--text-soft);">
+                    <span x-text="formatDateRange(schedule.startDate, schedule.endDate)"></span>
+                    <span>&#8226;</span>
+                    <span x-text="schedule.startTime + ' &ndash; ' + schedule.endTime"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-5">
+                <!-- Day-of-week circles (display only) -->
+                <div class="flex items-center gap-1.5">
+                  <template x-for="(active, di) in schedule.days" :key="'day-' + schedule.id + '-' + di">
+                    <div class="day-circle" :class="active ? 'active' : 'inactive'" x-text="dayLabels[di]" style="cursor: default;"></div>
+                  </template>
+                </div>
+                <!-- Action buttons -->
+                <div class="flex items-center gap-1" @click.stop>
+                  <button class="btn-ghost btn-sm" @click="openEditModal(schedule)">Edit</button>
+                  <button class="btn-ghost btn-sm" style="color: var(--color-warning);" @click="deleteSchedule(schedule.id)">Delete</button>
+                </div>
+              </div>
+            </div>
+            <!-- Expanded Detail -->
+            <div x-show="expandedSchedule === schedule.id" x-transition style="border-top: 1px solid var(--border-default);">
+              <div class="px-5 py-4">
+                <div class="grid grid-cols-3 gap-6">
+                  <!-- Timeline -->
+                  <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">24h Timeline</h4>
+                    <div class="mb-2">
+                      <div class="timeline-bar">
+                        <div class="timeline-fill" :style="'left: ' + timelineLeft(schedule.startTime) + '%; width: ' + timelineWidth(schedule.startTime, schedule.endTime) + '%'"></div>
+                      </div>
+                    </div>
+                    <div class="flex justify-between text-[10px]" style="color: var(--text-soft);">
+                      <span>00:00</span>
+                      <span>06:00</span>
+                      <span>12:00</span>
+                      <span>18:00</span>
+                      <span>24:00</span>
+                    </div>
+                    <div class="mt-3 text-xs" style="color: var(--text-soft);">
+                      Active hours: <span class="text-white" x-text="schedule.startTime + ' &ndash; ' + schedule.endTime"></span>
+                    </div>
+                  </div>
+                  <!-- Rules referencing this schedule -->
+                  <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Rules Using This Schedule</h4>
+                    <div class="space-y-1.5">
+                      <template x-for="rule in schedule.rules" :key="rule">
+                        <div class="flex items-center gap-2 text-sm">
+                          <span style="color: var(--color-highlight);">&#9830;</span>
+                          <span x-text="rule"></span>
+                        </div>
+                      </template>
+                      <div x-show="schedule.rules.length === 0" class="text-xs" style="color: var(--text-soft);">No rules reference this schedule yet.</div>
+                    </div>
+                  </div>
+                  <!-- Details -->
+                  <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Schedule Details</h4>
+                    <div class="space-y-2 text-sm">
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Status</span>
+                        <span class="text-white font-medium" x-text="schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Date Range</span>
+                        <span class="text-white font-medium" x-text="formatDateRange(schedule.startDate, schedule.endDate)"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Time Window</span>
+                        <span class="text-white font-medium" x-text="schedule.startTime + ' &ndash; ' + schedule.endTime"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Active Days</span>
+                        <span class="text-white font-medium" x-text="activeDaysSummary(schedule.days)"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Created</span>
+                        <span class="text-white font-medium" x-text="schedule.created"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Empty state -->
+        <div x-show="filteredSchedules.length === 0" class="text-center py-12">
+          <p style="color: var(--text-soft);">No schedules match your filters.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create Schedule Modal -->
+  <div x-show="showCreateModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showCreateModal = false" x-transition>
+    <div class="w-full max-w-lg rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; max-height: 90vh;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <h3 class="text-white font-semibold text-base">Create New Schedule</h3>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showCreateModal = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-5 overflow-y-auto" style="max-height: calc(90vh - 130px);">
+        <!-- Name -->
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Schedule Name</label>
+          <input type="text" class="input-field w-full" placeholder="e.g. Breakfast Window" x-model="newSchedule.name">
+        </div>
+
+        <!-- Date Range -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Start Date</label>
+            <input type="date" class="input-field w-full" x-model="newSchedule.startDate">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">End Date</label>
+            <input type="date" class="input-field w-full" x-model="newSchedule.endDate">
+          </div>
+        </div>
+
+        <!-- Day-of-week circles (clickable) -->
+        <div>
+          <label class="block text-xs font-medium mb-2" style="color: var(--text-soft);">Active Days</label>
+          <div class="flex items-center gap-2">
+            <template x-for="(active, di) in newSchedule.days" :key="'new-day-' + di">
+              <div class="day-circle" :class="active ? 'active' : 'inactive'" x-text="dayLabels[di]" @click="toggleDay(di)"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Time Range -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Start Time</label>
+            <input type="time" class="input-field w-full" x-model="newSchedule.startTime">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">End Time</label>
+            <input type="time" class="input-field w-full" x-model="newSchedule.endTime">
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="rounded-md p-3" style="background: var(--bg-active); border-left: 3px solid var(--color-highlight);">
+          <div class="text-xs font-medium mb-1" style="color: var(--text-soft);">Preview</div>
+          <div class="text-sm text-white" x-text="previewText"></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-ghost" @click="showCreateModal = false">Cancel</button>
+        <button class="btn-success" @click="createSchedule()">Create Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Schedule Modal -->
+  <div x-show="showEditModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showEditModal = false" x-transition>
+    <div class="w-full max-w-lg rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; max-height: 90vh;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <h3 class="text-white font-semibold text-base">Edit Schedule</h3>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showEditModal = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-5 overflow-y-auto" style="max-height: calc(90vh - 130px);">
+        <!-- Name -->
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Schedule Name</label>
+          <input type="text" class="input-field w-full" x-model="editingSchedule.name">
+        </div>
+
+        <!-- Date Range -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Start Date</label>
+            <input type="date" class="input-field w-full" x-model="editingSchedule.startDate">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">End Date</label>
+            <input type="date" class="input-field w-full" x-model="editingSchedule.endDate">
+          </div>
+        </div>
+
+        <!-- Day-of-week circles (clickable) -->
+        <div>
+          <label class="block text-xs font-medium mb-2" style="color: var(--text-soft);">Active Days</label>
+          <div class="flex items-center gap-2">
+            <template x-for="(active, di) in editingSchedule.days" :key="'edit-day-' + di">
+              <div class="day-circle" :class="active ? 'active' : 'inactive'" x-text="dayLabels[di]" @click="editingSchedule.days[di] = editingSchedule.days[di] ? 0 : 1"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Time Range -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Start Time</label>
+            <input type="time" class="input-field w-full" x-model="editingSchedule.startTime">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">End Time</label>
+            <input type="time" class="input-field w-full" x-model="editingSchedule.endTime">
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="rounded-md p-3" style="background: var(--bg-active); border-left: 3px solid var(--color-highlight);">
+          <div class="text-xs font-medium mb-1" style="color: var(--text-soft);">Preview</div>
+          <div class="text-sm text-white" x-text="editPreviewText"></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-ghost" @click="showEditModal = false">Cancel</button>
+        <button class="btn-primary" @click="saveEditSchedule()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Button -->
+  <button class="fixed bottom-6 right-6 z-[90] w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition-transform hover:scale-110" style="background: var(--color-primary);" @click="showHelp = true">?</button>
+
+  <!-- Help Overlay -->
+  <div x-show="showHelp" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showHelp = false" x-transition>
+    <div class="w-full max-w-lg rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style="background: var(--color-primary); color: #fff;">?</span>
+          <h3 class="text-white font-semibold text-base">About This Screen</h3>
+        </div>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showHelp = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4 text-sm leading-relaxed">
+        <p><strong class="text-white">Schedules</strong> define time-based validity windows that can be attached to rules and entitlements. Instead of an entitlement being valid all the time, a schedule restricts it to specific dates, days of the week, and hours of the day.</p>
+        <div class="rounded-md p-3" style="background: var(--bg-active); border-left: 3px solid var(--color-highlight);">
+          <p class="font-medium text-white mb-1">How Schedules Work</p>
+          <p style="color: var(--text-soft);">When a rule references a schedule, entitlements created by that rule are only valid during the schedule's time window. For example, a meal voucher rule can be restricted to lunch hours only.</p>
+        </div>
+        <div>
+          <p class="font-medium text-white mb-2">Schedule Components:</p>
+          <ul class="space-y-1.5" style="color: var(--text-soft);">
+            <li><strong class="text-white">Date Range</strong> &mdash; the start and end dates the schedule is valid between</li>
+            <li><strong class="text-white">Active Days</strong> &mdash; which days of the week the schedule applies (e.g. Mon&ndash;Fri only)</li>
+            <li><strong class="text-white">Time Window</strong> &mdash; the hours during which the schedule is active (e.g. 06:00&ndash;14:00)</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium text-white mb-2">Key Interactions:</p>
+          <ul class="space-y-1" style="color: var(--text-soft);">
+            <li>&#8226; Click a schedule card to expand and see the 24h timeline + linked rules</li>
+            <li>&#8226; Create schedules with date range, day selection, and time window</li>
+            <li>&#8226; Toggle active days on/off by clicking the day circles in the form</li>
+            <li>&#8226; Schedules are referenced by rules in the Rules Engine</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flex justify-end px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-primary" @click="showHelp = false">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div x-show="toast" x-transition class="fixed top-16 right-6 z-[110] px-4 py-2 rounded-md text-sm font-medium" style="background:var(--color-primary); color:white;" x-text="toast"></div>
+
+  <script>
+    function schedulesApp() {
+      return {
+        searchQuery: '',
+        filterStatus: 'all',
+        expandedSchedule: null,
+        showCreateModal: false,
+        showEditModal: false,
+        showHelp: false,
+        toast: null,
+        dayLabels: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+
+        editingSchedule: {
+          id: null,
+          name: '',
+          days: [1,1,1,1,1,1,1],
+          startDate: '',
+          endDate: '',
+          startTime: '08:00',
+          endTime: '18:00'
+        },
+
+        newSchedule: {
+          name: '',
+          days: [1,1,1,1,1,0,0],
+          startDate: '2026-07-10',
+          endDate: '2026-07-20',
+          startTime: '08:00',
+          endTime: '18:00'
+        },
+
+        schedules: [
+          { id: 1, name: 'Build-up Period', status: 'active', days: [1,1,1,1,1,1,0], startDate: '2026-07-10', endDate: '2026-07-13', startTime: '07:00', endTime: '22:00', rules: ['Crew Meal Allowance', 'Stage Crew Radio Assignment'], created: 'Jun 15, 2026' },
+          { id: 2, name: 'Festival Weekend', status: 'active', days: [0,0,0,1,1,1,1], startDate: '2026-07-14', endDate: '2026-07-17', startTime: '06:00', endTime: '02:00', rules: ['VIP Guest Access', 'Media Zone Access', 'Crew Meal Allowance'], created: 'Jun 15, 2026' },
+          { id: 3, name: 'Breakfast Window', status: 'active', days: [1,1,1,1,1,1,1], startDate: '2026-07-10', endDate: '2026-07-20', startTime: '06:00', endTime: '10:00', rules: ['Breakfast Voucher Distribution'], created: 'Jun 20, 2026' },
+          { id: 4, name: 'Lunch Window', status: 'active', days: [1,1,1,1,1,1,1], startDate: '2026-07-10', endDate: '2026-07-20', startTime: '11:00', endTime: '14:00', rules: ['Crew Meal Allowance', 'Short Shift Meal'], created: 'Jun 20, 2026' },
+          { id: 5, name: 'Dinner Window', status: 'upcoming', days: [0,0,0,1,1,1,1], startDate: '2026-07-14', endDate: '2026-07-17', startTime: '17:00', endTime: '21:00', rules: ['Dinner Voucher Distribution'], created: 'Jun 25, 2026' },
+          { id: 6, name: 'Teardown Period', status: 'upcoming', days: [1,1,1,1,1,0,0], startDate: '2026-07-18', endDate: '2026-07-20', startTime: '08:00', endTime: '20:00', rules: ['Teardown Crew Access'], created: 'Jul 1, 2026' }
+        ],
+
+        get filteredSchedules() {
+          let result = this.schedules;
+          if (this.searchQuery) {
+            const q = this.searchQuery.toLowerCase();
+            result = result.filter(s => s.name.toLowerCase().includes(q) || s.rules.some(r => r.toLowerCase().includes(q)));
+          }
+          if (this.filterStatus !== 'all') {
+            result = result.filter(s => s.status === this.filterStatus);
+          }
+          return result;
+        },
+
+        get previewText() {
+          return this.buildPreviewText(this.newSchedule);
+        },
+
+        get editPreviewText() {
+          return this.buildPreviewText(this.editingSchedule);
+        },
+
+        buildPreviewText(sched) {
+          if (!sched.name && !sched.startDate) return 'Fill in the fields above to see a preview';
+          const activeDays = [];
+          const fullDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          sched.days.forEach((d, i) => { if (d) activeDays.push(fullDays[i]); });
+          let dayStr = 'No days selected';
+          if (activeDays.length === 7) {
+            dayStr = 'Every day';
+          } else if (activeDays.length === 0) {
+            dayStr = 'No days selected';
+          } else {
+            dayStr = activeDays.join(', ');
+          }
+          const startStr = sched.startTime || '??:??';
+          const endStr = sched.endTime || '??:??';
+          let dateRange = '';
+          if (sched.startDate && sched.endDate) {
+            dateRange = ' between ' + this.formatShortDate(sched.startDate) + ' \u2013 ' + this.formatShortDate(sched.endDate);
+          }
+          return 'Active ' + dayStr + ' from ' + startStr + ' to ' + endStr + dateRange;
+        },
+
+        formatShortDate(dateStr) {
+          if (!dateStr) return '';
+          const d = new Date(dateStr + 'T00:00:00');
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return months[d.getMonth()] + ' ' + d.getDate();
+        },
+
+        formatDateRange(start, end) {
+          return this.formatShortDate(start) + ' \u2013 ' + this.formatShortDate(end) + ', ' + start.substring(0, 4);
+        },
+
+        activeDaysSummary(days) {
+          const fullDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          const active = [];
+          days.forEach((d, i) => { if (d) active.push(fullDays[i]); });
+          if (active.length === 7) return 'Every day';
+          if (active.length === 0) return 'None';
+          return active.join(', ');
+        },
+
+        toggleDay(index) {
+          this.newSchedule.days[index] = this.newSchedule.days[index] ? 0 : 1;
+        },
+
+        timelineLeft(startTime) {
+          const parts = startTime.split(':');
+          const hours = parseInt(parts[0]) + parseInt(parts[1]) / 60;
+          return (hours / 24) * 100;
+        },
+
+        timelineWidth(startTime, endTime) {
+          const startParts = startTime.split(':');
+          const endParts = endTime.split(':');
+          const startHours = parseInt(startParts[0]) + parseInt(startParts[1]) / 60;
+          const endHours = parseInt(endParts[0]) + parseInt(endParts[1]) / 60;
+          if (endHours > startHours) {
+            return ((endHours - startHours) / 24) * 100;
+          }
+          // Wraps past midnight: extend to end of day
+          return ((24 - startHours) / 24) * 100;
+        },
+
+        openCreateModal() {
+          this.newSchedule = {
+            name: '',
+            days: [1,1,1,1,1,0,0],
+            startDate: '2026-07-10',
+            endDate: '2026-07-20',
+            startTime: '08:00',
+            endTime: '18:00'
+          };
+          this.showCreateModal = true;
+        },
+
+        openEditModal(schedule) {
+          this.editingSchedule = {
+            id: schedule.id,
+            name: schedule.name,
+            days: [...schedule.days],
+            startDate: schedule.startDate,
+            endDate: schedule.endDate,
+            startTime: schedule.startTime,
+            endTime: schedule.endTime
+          };
+          this.showEditModal = true;
+        },
+
+        saveEditSchedule() {
+          const target = this.schedules.find(s => s.id === this.editingSchedule.id);
+          if (target) {
+            target.name = this.editingSchedule.name;
+            target.days = [...this.editingSchedule.days];
+            target.startDate = this.editingSchedule.startDate;
+            target.endDate = this.editingSchedule.endDate;
+            target.startTime = this.editingSchedule.startTime;
+            target.endTime = this.editingSchedule.endTime;
+          }
+          this.showEditModal = false;
+          this.showToast('Schedule updated successfully');
+        },
+
+        createSchedule() {
+          if (!this.newSchedule.name.trim()) {
+            this.showToast('Schedule name is required');
+            return;
+          }
+          this.schedules.push({
+            id: Date.now(),
+            name: this.newSchedule.name,
+            status: 'upcoming',
+            days: [...this.newSchedule.days],
+            startDate: this.newSchedule.startDate,
+            endDate: this.newSchedule.endDate,
+            startTime: this.newSchedule.startTime,
+            endTime: this.newSchedule.endTime,
+            rules: [],
+            created: 'Just now'
+          });
+          this.showCreateModal = false;
+          this.showToast('Schedule created successfully');
+        },
+
+        deleteSchedule(id) {
+          this.schedules = this.schedules.filter(s => s.id !== id);
+          if (this.expandedSchedule === id) this.expandedSchedule = null;
+          this.showToast('Schedule deleted');
+        },
+
+        showToast(msg) {
+          this.toast = msg;
+          setTimeout(() => this.toast = null, 3000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

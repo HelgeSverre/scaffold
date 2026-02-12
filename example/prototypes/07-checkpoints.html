@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkpoints — Crescat Entitlement System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+    .card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; }
+    .badge { border-radius: 9999px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
+    .badge-success { background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); color: var(--color-success); }
+    .badge-warning { background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); color: var(--color-warning); }
+    .badge-pending { background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); color: var(--color-pending); }
+    .badge-primary { background: hsla(205, 69%, 33%, 0.1); border: 1px solid hsla(205, 69%, 33%, 0.2); color: var(--color-highlight); }
+    .btn { border-radius: 6px; padding: 8px 16px; font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.15s; text-transform: capitalize; }
+    .btn-primary { background: var(--color-primary); color: white; border: none; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-success { background: var(--color-success); color: white; border: none; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-warning { background: var(--color-warning); color: white; border: none; }
+    .btn-warning:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); border: 1px solid var(--border-default); }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .input { background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 6px; padding: 8px 12px; color: var(--text-default); font-size: 13px; outline: none; width: 100%; }
+    .input:focus { border-color: var(--color-highlight); }
+    .checkpoint-card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; padding: 16px; cursor: pointer; transition: all 0.15s; }
+    .checkpoint-card:hover { border-color: var(--color-highlight); background: var(--bg-hover); }
+    .checkpoint-card.selected { border-color: var(--color-highlight); box-shadow: 0 0 0 1px var(--color-highlight); }
+    .modal-overlay { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    .drawer-overlay { background: rgba(0,0,0,0.35); }
+    .drawer-panel { position: fixed; top: 48px; right: 0; bottom: 0; width: 520px; background: var(--bg-sidebar); border-left: 1px solid var(--border-default); z-index: 25; overflow-y: auto; transform: translateX(100%); transition: transform 0.25s ease; }
+    .drawer-panel.open { transform: translateX(0); }
+    table th { position: sticky; top: 0; background: var(--bg-sidebar); z-index: 5; }
+    table tr:nth-child(even) td { background: var(--bg-row-alt); }
+    table tr:hover td { background: var(--bg-row-hover); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen" x-data="{
+  toast: null,
+  selectedCheckpoint: null,
+  showAddModal: false,
+  showHelp: false,
+  addForm: { name: '', type: 'Gate', zone: '', direction: 'Both', items: [], publicAccess: false },
+  checkpoints: [
+    { id: 1, name: 'Main Gate', type: 'Gate', zone: 'Main Stage Area', direction: 'In/Out', items: ['AAA-Access', 'Backstage Pass', 'VIP Pass', 'Media Pass'], scansToday: 2341, denied: 45, status: 'online', lastSync: null },
+    { id: 2, name: 'Backstage Gate A', type: 'Gate', zone: 'Backstage', direction: 'In/Out', items: ['AAA-Access', 'Backstage Pass'], scansToday: 156, denied: 12, status: 'online', lastSync: null },
+    { id: 3, name: 'Backstage Gate B', type: 'Gate', zone: 'Backstage', direction: 'In', items: ['AAA-Access', 'Backstage Pass'], scansToday: 89, denied: 3, status: 'online', lastSync: null },
+    { id: 4, name: 'VIP Entrance', type: 'Gate', zone: 'VIP Area', direction: 'In/Out', items: ['VIP Pass', 'AAA-Access'], scansToday: 234, denied: 8, status: 'online', lastSync: null },
+    { id: 5, name: 'Food Truck Alpha', type: 'Dispenser', zone: null, direction: null, items: ['Lunch Voucher', 'Dinner Voucher'], scansToday: 189, denied: 23, status: 'online', lastSync: null },
+    { id: 6, name: 'Food Truck Beta', type: 'Dispenser', zone: null, direction: null, items: ['Lunch Voucher', 'Drink Token'], scansToday: 145, denied: 18, status: 'online', lastSync: null },
+    { id: 7, name: 'Equipment Tent', type: 'Dispenser', zone: null, direction: null, items: ['Two-Way Radio', 'Headset', 'Laptop', 'Toolbox', 'High-Vis Vest'], scansToday: 42, denied: 0, checkouts: 42, returns: 15, status: 'online', lastSync: null },
+    { id: 8, name: 'Merch Stand', type: 'Dispenser', zone: null, direction: null, items: ['Merchandise Bag', 'Volunteer T-Shirt'], scansToday: 134, denied: 0, status: 'online', lastSync: null },
+    { id: 9, name: 'Parking Gate', type: 'Gate', zone: 'Parking Area', direction: 'In/Out', items: ['Parking Pass'], scansToday: 340, denied: 0, status: 'offline', lastSync: '15 min ago' },
+    { id: 10, name: 'Media Check-in', type: 'Scanner', zone: 'Media Center', direction: null, items: ['Media Pass', 'Press Badge'], scansToday: 34, denied: 0, status: 'online', lastSync: null }
+  ],
+  recentScans: [
+    { time: '14:32:15', participant: 'Kari Nordmann', credential: 'QR 3f7a...b2c1', result: 'Granted', item: 'AAA-Access' },
+    { time: '14:32:08', participant: 'Erik Hansen', credential: 'QR a1b2...c3d4', result: 'Granted', item: 'Backstage Pass' },
+    { time: '14:31:55', participant: 'Sofia Andersen', credential: 'QR 5e6f...7g8h', result: 'Denied', item: 'VIP Pass' },
+    { time: '14:31:42', participant: 'Lars Johansen', credential: 'Badge 9i0j...k1l2', result: 'Granted', item: 'AAA-Access' },
+    { time: '14:31:30', participant: 'Anna Svensson', credential: 'WB-00247', result: 'Granted', item: 'Backstage Pass' },
+    { time: '14:31:18', participant: 'Olav Dahl', credential: 'QR q7r8...s9t0', result: 'Granted', item: 'AAA-Access' },
+    { time: '14:31:05', participant: 'Ingrid Berg', credential: 'QR c4d5...e6f7', result: 'Denied', item: 'VIP Pass' },
+    { time: '14:30:52', participant: 'Magnus Lie', credential: 'Badge h8i9...j0k1', result: 'Granted', item: 'Media Pass' },
+    { time: '14:30:40', participant: 'Hilde Strand', credential: 'QR k7l8...m9n0', result: 'Granted', item: 'Backstage Pass' },
+    { time: '14:30:28', participant: 'Kristin Dahl', credential: 'Badge t5u6...v7w8', result: 'Granted', item: 'AAA-Access' },
+    { time: '14:30:15', participant: 'Per Nilsen', credential: 'WB-00312', result: 'Denied', item: 'VIP Pass' },
+    { time: '14:30:02', participant: 'Jan Borg', credential: 'QR b3c4...d5e6', result: 'Granted', item: 'AAA-Access' },
+    { time: '14:29:50', participant: 'Thomas Lund', credential: 'QR j1k2...l3m4', result: 'Granted', item: 'Backstage Pass' },
+    { time: '14:29:38', participant: 'Anders Vik', credential: 'QR x9y0...z1a2', result: 'Denied', item: 'AAA-Access' },
+    { time: '14:29:25', participant: 'Marte Kvalheim', credential: 'QR r9s0...t1u2', result: 'Granted', item: 'Media Pass' }
+  ],
+  allItems: ['AAA-Access', 'Backstage Pass', 'VIP Pass', 'Media Pass', 'Lunch Voucher', 'Dinner Voucher', 'Drink Token', 'Two-Way Radio', 'Headset', 'Laptop', 'Toolbox', 'High-Vis Vest', 'Merchandise Bag', 'Volunteer T-Shirt', 'Parking Pass', 'Press Badge'],
+  zones: ['Main Stage Area', 'Backstage', 'VIP Area', 'Parking Area', 'Media Center', 'Camping Area', 'Food Court']
+}">
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-[232px] mt-[48px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-semibold mb-1">Checkpoints</h1>
+        <p style="color: var(--text-soft);">Manage scanning stations, gates, and dispensers across the festival</p>
+      </div>
+      <button @click="showAddModal = true" class="btn btn-primary flex items-center gap-2">
+        <span class="text-lg leading-none">+</span> Add Checkpoint
+      </button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Checkpoints</div>
+        <div class="text-2xl font-bold" x-text="checkpoints.length">10</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Online</div>
+        <div class="text-2xl font-bold" style="color: var(--color-success);" x-text="checkpoints.filter(c => c.status === 'online').length">9</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Scans Today</div>
+        <div class="text-2xl font-bold" x-text="checkpoints.reduce((a, c) => a + c.scansToday, 0).toLocaleString()">3,554</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Denied</div>
+        <div class="text-2xl font-bold" style="color: var(--color-warning);" x-text="checkpoints.reduce((a, c) => a + (c.denied || 0), 0)">109</div>
+      </div>
+    </div>
+
+    <!-- Checkpoint Grid -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <template x-for="cp in checkpoints" :key="cp.id">
+        <div class="checkpoint-card" :class="{ 'selected': selectedCheckpoint?.id === cp.id }" @click="selectedCheckpoint = (selectedCheckpoint?.id === cp.id) ? null : cp">
+          <!-- Card Header -->
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-sm" x-text="cp.name"></h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="badge badge-primary" x-text="cp.type"></span>
+                <template x-if="cp.zone">
+                  <span class="text-xs" style="color: var(--text-soft);" x-text="cp.zone"></span>
+                </template>
+                <template x-if="cp.direction">
+                  <span class="text-xs" style="color: var(--text-soft);" x-text="'(' + cp.direction + ')'"></span>
+                </template>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full" :class="cp.status === 'online' ? 'bg-green-500' : 'bg-red-500'"></span>
+              <span class="text-xs" :style="cp.status === 'online' ? 'color: var(--color-success)' : 'color: var(--color-warning)'" x-text="cp.status === 'online' ? 'Online' : 'Offline'"></span>
+            </div>
+          </div>
+
+          <!-- Configured Items -->
+          <div class="mb-3">
+            <div class="text-xs mb-1.5" style="color: var(--text-soft);">
+              <span x-text="cp.type === 'Dispenser' ? 'Items:' : 'Configured Items:'"></span>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              <template x-for="item in cp.items" :key="item">
+                <span class="text-xs px-2 py-0.5 rounded" style="background: var(--bg-active); color: var(--text-default);" x-text="item"></span>
+              </template>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="flex items-center gap-4 pt-3" style="border-top: 1px solid var(--border-soft);">
+            <template x-if="cp.type === 'Gate' || cp.type === 'Scanner'">
+              <div class="flex items-center gap-4 text-xs">
+                <span>
+                  <span style="color: var(--text-soft);">Scans:</span>
+                  <span class="font-medium" x-text="cp.scansToday.toLocaleString()"></span>
+                </span>
+                <template x-if="cp.denied > 0">
+                  <span>
+                    <span style="color: var(--text-soft);">Denied:</span>
+                    <span class="font-medium" style="color: var(--color-warning);" x-text="cp.denied"></span>
+                  </span>
+                </template>
+              </div>
+            </template>
+            <template x-if="cp.type === 'Dispenser' && cp.checkouts !== undefined">
+              <div class="flex items-center gap-4 text-xs">
+                <span>
+                  <span style="color: var(--text-soft);">Checkouts:</span>
+                  <span class="font-medium" x-text="cp.checkouts"></span>
+                </span>
+                <span>
+                  <span style="color: var(--text-soft);">Returns:</span>
+                  <span class="font-medium" x-text="cp.returns"></span>
+                </span>
+              </div>
+            </template>
+            <template x-if="cp.type === 'Dispenser' && cp.checkouts === undefined">
+              <div class="flex items-center gap-4 text-xs">
+                <span>
+                  <span style="color: var(--text-soft);">Dispensed:</span>
+                  <span class="font-medium" x-text="cp.scansToday.toLocaleString()"></span>
+                </span>
+                <template x-if="cp.denied > 0">
+                  <span>
+                    <span style="color: var(--text-soft);">Denied:</span>
+                    <span class="font-medium" style="color: var(--color-warning);" x-text="cp.denied"></span>
+                  </span>
+                </template>
+              </div>
+            </template>
+          </div>
+
+          <!-- Offline Warning -->
+          <template x-if="cp.status === 'offline'">
+            <div class="mt-2 text-xs px-2 py-1 rounded" style="background: hsla(0, 88%, 66%, 0.1); color: var(--color-warning);">
+              Last sync: <span x-text="cp.lastSync"></span>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+
+  </main>
+
+  <!-- Drawer Overlay -->
+  <div x-show="selectedCheckpoint" @click="selectedCheckpoint = null" class="fixed inset-0 drawer-overlay z-20" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="top: 48px; left: 232px;"></div>
+
+  <!-- Detail Drawer -->
+  <div class="drawer-panel" :class="{ 'open': selectedCheckpoint }">
+    <template x-if="selectedCheckpoint">
+      <div class="p-6">
+        <!-- Drawer Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-semibold" x-text="selectedCheckpoint.name"></h2>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="badge badge-primary" x-text="selectedCheckpoint.type"></span>
+              <template x-if="selectedCheckpoint.zone">
+                <span class="text-xs" style="color: var(--text-soft);" x-text="selectedCheckpoint.zone"></span>
+              </template>
+              <template x-if="selectedCheckpoint.direction">
+                <span class="text-xs" style="color: var(--text-soft);" x-text="'(' + selectedCheckpoint.direction + ')'"></span>
+              </template>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full" :class="selectedCheckpoint.status === 'online' ? 'bg-green-500' : 'bg-red-500'"></span>
+                <span class="text-xs" :style="selectedCheckpoint.status === 'online' ? 'color: var(--color-success)' : 'color: var(--color-warning)'" x-text="selectedCheckpoint.status === 'online' ? 'Online' : 'Offline'"></span>
+              </div>
+            </div>
+          </div>
+          <button @click="selectedCheckpoint = null" class="w-8 h-8 flex items-center justify-center rounded hover:bg-[var(--bg-hover)]" style="color: var(--text-soft);">✕</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button class="btn btn-ghost text-xs" @click="toast = 'Downloading offline bundle...'; setTimeout(() => toast = null, 3000)">Download Offline Bundle</button>
+          <button class="btn btn-ghost text-xs" @click="toast = 'Edit configuration coming soon'; setTimeout(() => toast = null, 3000)">Edit Configuration</button>
+          <button :class="selectedCheckpoint.status === 'online' ? 'btn btn-warning text-xs' : 'btn btn-success text-xs'" x-text="selectedCheckpoint.status === 'online' ? 'Disable' : 'Enable'" @click="selectedCheckpoint.status = selectedCheckpoint.status === 'online' ? 'offline' : 'online'; const cp = checkpoints.find(c => c.id === selectedCheckpoint.id); if(cp) cp.status = selectedCheckpoint.status; toast = selectedCheckpoint.status === 'online' ? 'Checkpoint enabled' : 'Checkpoint disabled'; setTimeout(() => toast = null, 3000)"></button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="p-3 rounded" style="background: var(--bg-row-alt);">
+            <div class="text-xs" style="color: var(--text-soft);">Total Scans</div>
+            <div class="text-lg font-bold" x-text="selectedCheckpoint.scansToday.toLocaleString()"></div>
+          </div>
+          <div class="p-3 rounded" style="background: var(--bg-row-alt);">
+            <div class="text-xs" style="color: var(--text-soft);">Granted</div>
+            <div class="text-lg font-bold" style="color: var(--color-success);" x-text="(selectedCheckpoint.scansToday - (selectedCheckpoint.denied || 0)).toLocaleString()"></div>
+          </div>
+          <div class="p-3 rounded" style="background: var(--bg-row-alt);">
+            <div class="text-xs" style="color: var(--text-soft);">Denied</div>
+            <div class="text-lg font-bold" style="color: var(--color-warning);" x-text="selectedCheckpoint.denied || 0"></div>
+          </div>
+          <div class="p-3 rounded" style="background: var(--bg-row-alt);">
+            <div class="text-xs" style="color: var(--text-soft);">Success Rate</div>
+            <div class="text-lg font-bold" x-text="selectedCheckpoint.scansToday > 0 ? (((selectedCheckpoint.scansToday - (selectedCheckpoint.denied || 0)) / selectedCheckpoint.scansToday) * 100).toFixed(1) + '%' : 'N/A'"></div>
+          </div>
+          <div class="p-3 rounded" style="background: var(--bg-row-alt);">
+            <div class="text-xs" style="color: var(--text-soft);">Avg. Scan Time</div>
+            <div class="text-lg font-bold">0.8s</div>
+          </div>
+          <div class="p-3 rounded" style="background: var(--bg-row-alt);">
+            <div class="text-xs" style="color: var(--text-soft);">Last Heartbeat</div>
+            <div class="text-lg font-bold" style="color: var(--color-success);">2s ago</div>
+          </div>
+        </div>
+
+        <!-- Configured Items -->
+        <div class="mb-6">
+          <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Configured Items</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <template x-for="item in selectedCheckpoint.items" :key="item">
+              <span class="badge badge-primary" x-text="item"></span>
+            </template>
+            <button class="text-xs px-2 py-0.5 rounded-full border border-dashed cursor-pointer" style="border-color: var(--border-default); color: var(--text-soft);">+ Add</button>
+          </div>
+        </div>
+
+        <!-- Hourly Throughput -->
+        <div class="mb-6">
+          <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Hourly Throughput</h3>
+          <div class="p-3 rounded" style="background: var(--bg-row-alt); border: 1px solid var(--border-soft);">
+            <div class="flex items-end gap-0.5" style="height: 80px;">
+              <template x-for="(bar, i) in [
+                { hour: '06', pct: 3 }, { hour: '07', pct: 10 }, { hour: '08', pct: 42 },
+                { hour: '09', pct: 69 }, { hour: '10', pct: 100 }, { hour: '11', pct: 64 },
+                { hour: '12', pct: 44 }, { hour: '13', pct: 79 }, { hour: '14', pct: 52 },
+                { hour: '15', pct: 0 }, { hour: '16', pct: 0 }, { hour: '17', pct: 0 }
+              ]" :key="i">
+                <div class="flex-1 flex flex-col items-center gap-0.5">
+                  <div class="w-full rounded-t" :style="'height: ' + Math.max(bar.pct, 2) + '%; background: ' + (bar.pct > 0 ? 'var(--color-highlight)' : 'var(--border-soft)') + '; min-height: 2px; opacity: ' + (bar.pct > 0 ? '0.8' : '0.3')"></div>
+                  <span class="text-[8px]" style="color: var(--text-soft);" x-text="bar.hour"></span>
+                </div>
+              </template>
+            </div>
+            <div class="flex justify-between mt-1.5 text-[10px]" style="color: var(--text-soft);">
+              <span>Peak: 10:00 (451)</span>
+              <span>Current: 234</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device Info -->
+        <div class="mb-6">
+          <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Device</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span style="color: var(--text-soft);">ID:</span> <span class="font-mono">CP-MG-001</span>
+            </div>
+            <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span style="color: var(--text-soft);">Battery:</span> 94% (Charging)
+            </div>
+            <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span style="color: var(--text-soft);">Firmware:</span> <span class="font-mono">v2.4.1</span>
+            </div>
+            <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span style="color: var(--text-soft);">Offline bundle:</span> Current
+            </div>
+          </div>
+        </div>
+
+        <!-- Operator Log -->
+        <div class="mb-6">
+          <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Operator Log</h3>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span class="font-mono" style="color: var(--text-soft);">14:00</span>
+              <span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Shift</span>
+              <span><strong>Nils Aas</strong> started</span>
+            </div>
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span class="font-mono" style="color: var(--text-soft);">10:15</span>
+              <span class="badge badge-pending" style="font-size: 10px; padding: 1px 6px;">Config</span>
+              <span>Added <strong>Media Pass</strong></span>
+            </div>
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span class="font-mono" style="color: var(--text-soft);">08:00</span>
+              <span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Shift</span>
+              <span><strong>Kristin Dahl</strong> started</span>
+            </div>
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+              <span class="font-mono" style="color: var(--text-soft);">06:00</span>
+              <span class="badge badge-primary" style="font-size: 10px; padding: 1px 6px;">System</span>
+              <span>Came online, 0 pending</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Scans -->
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Recent Scans</h3>
+          <div class="space-y-1">
+            <template x-for="scan in recentScans.slice(0, 10)" :key="scan.time + scan.participant">
+              <div class="flex items-center justify-between px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);" :style="scan.result === 'Denied' ? 'border-left: 2px solid var(--color-warning)' : 'border-left: 2px solid var(--color-success)'">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-mono shrink-0" style="color: var(--text-soft);" x-text="scan.time"></span>
+                  <span class="truncate" x-text="scan.participant"></span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="truncate" style="color: var(--text-soft); max-width: 100px;" x-text="scan.item"></span>
+                  <span class="badge" :class="scan.result === 'Granted' ? 'badge-success' : 'badge-warning'" x-text="scan.result" style="font-size: 10px; padding: 1px 6px;"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+          <a href="10-scan-log.html" class="block text-center text-xs mt-3 py-2 rounded hover:underline" style="color: var(--text-link);">View full scan log →</a>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Add Checkpoint Modal -->
+  <template x-if="showAddModal">
+    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showAddModal = false">
+      <div class="w-full max-w-lg rounded-lg p-6" style="background: var(--bg-sidebar); border: 1px solid var(--border-default);" @click.stop>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-semibold">Add Checkpoint</h2>
+          <button @click="showAddModal = false" class="text-lg" style="color: var(--text-soft);">✕</button>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Name -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Checkpoint Name</label>
+            <input type="text" class="input" placeholder="e.g., Artist Entrance" x-model="addForm.name">
+          </div>
+
+          <!-- Type -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Type</label>
+            <div class="flex gap-2">
+              <template x-for="t in ['Gate', 'Dispenser', 'Scanner']" :key="t">
+                <button class="btn text-sm" :class="addForm.type === t ? 'btn-primary' : 'btn-ghost'" @click="addForm.type = t" x-text="t"></button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Zone (shown for Gate) -->
+          <template x-if="addForm.type === 'Gate'">
+            <div>
+              <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Zone</label>
+              <select class="input" x-model="addForm.zone">
+                <option value="">Select zone...</option>
+                <template x-for="z in zones" :key="z">
+                  <option :value="z" x-text="z"></option>
+                </template>
+              </select>
+            </div>
+          </template>
+
+          <!-- Direction (shown for Gate) -->
+          <template x-if="addForm.type === 'Gate'">
+            <div>
+              <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Direction</label>
+              <div class="flex gap-2">
+                <template x-for="d in ['In', 'Out', 'Both']" :key="d">
+                  <button class="btn text-sm" :class="addForm.direction === d ? 'btn-primary' : 'btn-ghost'" @click="addForm.direction = d" x-text="d"></button>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- Entitlement Items -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Entitlement Items</label>
+            <div class="grid grid-cols-2 gap-2 p-3 rounded max-h-48 overflow-y-auto" style="background: var(--bg-input); border: 1px solid var(--border-default);">
+              <template x-for="item in allItems" :key="item">
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" :value="item" x-model="addForm.items" class="rounded" style="accent-color: var(--color-highlight);">
+                  <span x-text="item"></span>
+                </label>
+              </template>
+            </div>
+          </div>
+
+          <!-- Public Access -->
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm font-medium">Public Access</label>
+              <p class="text-xs" style="color: var(--text-soft);">Allow scanning without operator login</p>
+            </div>
+            <button @click="addForm.publicAccess = !addForm.publicAccess" class="w-10 h-5 rounded-full relative transition-colors" :style="addForm.publicAccess ? 'background: var(--color-success)' : 'background: var(--border-default)'">
+              <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" :class="addForm.publicAccess ? 'translate-x-5' : ''"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6 pt-4" style="border-top: 1px solid var(--border-default);">
+          <button @click="showAddModal = false" class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary" @click="if(!addForm.name.trim()) return;
+  checkpoints.push({
+    id: Date.now(),
+    name: addForm.name,
+    type: addForm.type,
+    zone: addForm.type === 'Gate' ? addForm.zone : null,
+    direction: addForm.type === 'Gate' ? (addForm.direction === 'Both' ? 'In/Out' : addForm.direction) : null,
+    items: [...addForm.items],
+    scansToday: 0,
+    denied: 0,
+    status: 'online',
+    lastSync: null
+  });
+  addForm = {name:'', type:'Gate', zone:'', direction:'Both', items:[], publicAccess:false};
+  showAddModal = false;
+  toast = 'Checkpoint created';
+  setTimeout(() => toast = null, 3000)">Create Checkpoint</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Help Overlay -->
+  <button @click="showHelp = true" class="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-40 cursor-pointer" style="background: var(--color-primary); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">?</button>
+
+  <template x-if="showHelp">
+    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showHelp = false">
+      <div class="w-full max-w-2xl rounded-lg p-6" style="background: var(--bg-sidebar); border: 1px solid var(--border-default);">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Checkpoints &mdash; Help</h2>
+          <button @click="showHelp = false" class="text-lg" style="color: var(--text-soft);">✕</button>
+        </div>
+        <div class="space-y-4 text-sm leading-relaxed" style="color: var(--text-default);">
+          <p><strong>Checkpoints</strong> are the physical scanning stations at your festival. They are the bridge between your digital entitlement configuration and the real-world access control.</p>
+          <div>
+            <h3 class="font-semibold mb-1">Checkpoint Types</h3>
+            <ul class="list-disc list-inside space-y-1" style="color: var(--text-soft);">
+              <li><strong style="color: var(--text-default);">Gates</strong> control zone access &mdash; they check if a participant's entitlements grant them entry to the zone.</li>
+              <li><strong style="color: var(--text-default);">Dispensers</strong> handle meal vouchers, equipment, and supplies &mdash; they track quotas and limits.</li>
+              <li><strong style="color: var(--text-default);">Scanners</strong> are general-purpose verification points for identity checks or attendance.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-1">Workflow</h3>
+            <ol class="list-decimal list-inside space-y-1" style="color: var(--text-soft);">
+              <li>Create a checkpoint and assign it a type and zone.</li>
+              <li>Configure which entitlement items it should process.</li>
+              <li>When a credential is scanned, the checkpoint's configuration determines what to check and display.</li>
+              <li>Monitor scan activity in real-time from the detail view.</li>
+            </ol>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-1">Offline Mode</h3>
+            <p style="color: var(--text-soft);">Each checkpoint can download an offline bundle for operation without network. Scans sync when connectivity returns.</p>
+          </div>
+          <p style="color: var(--text-soft);">This is the multi-purpose scanning pattern from FestivalPro.</p>
+        </div>
+        <div class="mt-6 pt-4 flex justify-end" style="border-top: 1px solid var(--border-default);">
+          <button @click="showHelp = false" class="btn btn-primary">Got it</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- TOAST -->
+  <div x-show="toast" x-transition class="fixed top-16 right-6 z-[60] px-4 py-2 rounded-md text-sm font-medium" style="background:var(--color-primary); color:white;" x-text="toast"></div>
+</body>
+</html>

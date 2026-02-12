@@ -1,0 +1,180 @@
+name: Crescat Entitlement System Prototype
+
+entities:
+  # --- Core ---
+
+  Participant:
+    properties:
+      - { name: uuid, type: uuid }
+      - { name: festival_id, type: integer, default: 1 }
+      - { name: participant_type, type: enum, values: [user, partner_contact, guest, responder] }
+      - name
+      - { name: email, type: email, nullable: true }
+      - { name: affiliation, type: string, nullable: true }
+      - { name: role, type: string, nullable: true }
+      - { name: status, type: enum, values: [active, inactive, suspended], default: active }
+    seed:
+      - { name: "Astrid Henriksen", email: "astrid@crew.no", participant_type: user, affiliation: "Core Crew", role: "Production Manager", status: active }
+      - { name: "Lars Eriksen", email: "lars@sound.no", participant_type: user, affiliation: "Sound Department", role: "Sound Engineer", status: active }
+      - { name: "Emma Solberg", email: "emma@vol.no", participant_type: responder, affiliation: "Volunteers", role: "Team Lead", status: active }
+
+  EntitlementCategory:
+    properties:
+      - name
+      - { name: description, type: text, nullable: true }
+      - { name: icon, type: string, nullable: true }
+      - { name: sort_order, type: integer, default: 0 }
+    seed:
+      - { name: "Accreditations", icon: "🎫", sort_order: 0 }
+      - { name: "Meals", icon: "🍽️", sort_order: 1 }
+      - { name: "Equipment", icon: "📻", sort_order: 2 }
+      - { name: "Supplies", icon: "📦", sort_order: 3 }
+      - { name: "Perks", icon: "🎁", sort_order: 4 }
+
+  EntitlementItem:
+    properties:
+      - { name: category_id, type: relation, entity: EntitlementCategory }
+      - name
+      - { name: item_type, type: enum, values: [access, consumable, returnable, one_time] }
+      - { name: total_inventory, type: integer, nullable: true }
+      - { name: per_day, type: boolean, default: false }
+      - { name: description, type: text, nullable: true }
+      - { name: uuid, type: uuid }
+    seed:
+      - { name: "AAA Access", item_type: access, category_id: 1 }
+      - { name: "AA Access", item_type: access, category_id: 1 }
+      - { name: "A Access", item_type: access, category_id: 1 }
+      - { name: "Crew Access", item_type: access, category_id: 1 }
+      - { name: "Lunch Voucher", item_type: consumable, per_day: true, category_id: 2 }
+      - { name: "Dinner Voucher", item_type: consumable, per_day: true, category_id: 2 }
+      - { name: "Two-Way Radio", item_type: returnable, total_inventory: 50, category_id: 3 }
+      - { name: "Volunteer T-Shirt", item_type: one_time, category_id: 4 }
+
+  Entitlement:
+    properties:
+      - { name: participant_id, type: relation, entity: Participant }
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: rule_id, type: relation, entity: EntitlementRule, nullable: true }
+      - { name: quantity, type: integer, nullable: true }
+      - { name: status, type: enum, values: [assigned, collected, active, depleted, expired, returned, revoked], default: assigned }
+      - { name: schedule_id, type: relation, entity: EntitlementSchedule, nullable: true }
+      - { name: valid_from, type: timestamp, nullable: true }
+      - { name: valid_to, type: timestamp, nullable: true }
+      - { name: rule_overridden, type: boolean, default: false }
+      - { name: notes, type: text, nullable: true }
+
+  EntitlementTransaction:
+    properties:
+      - { name: entitlement_id, type: relation, entity: Entitlement }
+      - { name: checkpoint_id, type: relation, entity: Checkpoint, nullable: true }
+      - { name: modifier, type: integer }
+      - { name: scanned_by, type: string, nullable: true }
+      - { name: timestamp, type: timestamp }
+      - { name: notes, type: text, nullable: true }
+
+  # --- Rules ---
+
+  EntitlementRule:
+    properties:
+      - name
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: quantity, type: integer, nullable: true }
+      - { name: priority, type: integer, default: 0 }
+      - { name: is_active, type: boolean, default: true }
+      - { name: per_day, type: boolean, default: false }
+      - { name: stacking_behavior, type: enum, values: [stack, replace, highest], default: stack }
+      - { name: schedule_id, type: relation, entity: EntitlementSchedule, nullable: true }
+    seed:
+      - { name: "All Crew — Basic Access", entitlement_item_id: 4, is_active: true, priority: 0 }
+      - { name: "All Crew — Lunch", entitlement_item_id: 5, quantity: 1, per_day: true, is_active: true }
+      - { name: "Sound Dept — AAA Access", entitlement_item_id: 1, is_active: true, priority: 10 }
+
+  EntitlementRuleCriteria:
+    properties:
+      - { name: rule_id, type: relation, entity: EntitlementRule }
+      - { name: criteria_type, type: enum, values: [all_crew, all_responders, all_festival_members, all_travel_party, all_guests, festival_section, role, public_form, shift_hours] }
+      - { name: criteria_model_type, type: string, nullable: true }
+      - { name: criteria_model_id, type: integer, nullable: true }
+      - { name: min_shift_hours, type: number, nullable: true }
+      - { name: max_shift_hours, type: number, nullable: true }
+
+  EntitlementSchedule:
+    properties:
+      - name
+      - { name: valid_from, type: date, nullable: true }
+      - { name: valid_to, type: date, nullable: true }
+      - { name: valid_days, type: json, nullable: true }
+      - { name: valid_time_from, type: string, nullable: true }
+      - { name: valid_time_to, type: string, nullable: true }
+
+  # --- Zones & Access ---
+
+  Zone:
+    properties:
+      - name
+      - { name: description, type: text, nullable: true }
+      - { name: parent_zone_id, type: relation, entity: Zone, nullable: true }
+      - { name: capacity, type: integer, nullable: true }
+    seed:
+      - { name: "Front of House" }
+      - { name: "Backstage" }
+      - { name: "Green Room", parent_zone_id: 2 }
+      - { name: "Production Office", parent_zone_id: 2 }
+      - { name: "VIP Area" }
+      - { name: "Artist Village", parent_zone_id: 2 }
+
+  EntitlementItemZone:
+    pivot: true
+    properties:
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: zone_id, type: relation, entity: Zone }
+
+  # --- Credentials & Scanning ---
+
+  Credential:
+    properties:
+      - { name: participant_id, type: relation, entity: Participant }
+      - { name: credential_type, type: enum, values: [qr, badge, wristband, nfc], default: qr }
+      - { name: identifier, type: uuid }
+      - { name: status, type: enum, values: [active, suspended, revoked, lost], default: active }
+      - { name: issued_at, type: timestamp, nullable: true }
+      - { name: expires_at, type: timestamp, nullable: true }
+
+  Checkpoint:
+    properties:
+      - name
+      - { name: checkpoint_type, type: enum, values: [gate, dispenser, scanner] }
+      - { name: zone_id, type: relation, entity: Zone, nullable: true }
+      - { name: is_public, type: boolean, default: false }
+      - { name: config, type: json, nullable: true }
+    seed:
+      - { name: "Main Gate", checkpoint_type: gate, zone_id: 1, config: '{"direction":"both"}' }
+      - { name: "Backstage Gate", checkpoint_type: gate, zone_id: 2, config: '{"direction":"in"}' }
+      - { name: "Food Truck Alpha", checkpoint_type: dispenser, config: '{"auto_dispense":false}' }
+      - { name: "Equipment Tent", checkpoint_type: dispenser }
+
+  CheckpointEntitlementItem:
+    pivot: true
+    properties:
+      - { name: checkpoint_id, type: relation, entity: Checkpoint }
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+
+  CheckpointScan:
+    properties:
+      - { name: checkpoint_id, type: relation, entity: Checkpoint }
+      - { name: credential_id, type: relation, entity: Credential, nullable: true }
+      - { name: participant_id, type: relation, entity: Participant, nullable: true }
+      - { name: scan_type, type: enum, values: [access_in, access_out, dispense, return, verify] }
+      - { name: result, type: enum, values: [granted, denied, error] }
+      - { name: denial_reason, type: string, nullable: true }
+      - { name: timestamp, type: timestamp }
+      - { name: scanned_by, type: string, nullable: true }
+
+  EntitlementAllocation:
+    properties:
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: group_type, type: string }
+      - { name: group_id, type: integer }
+      - { name: total_quantity, type: integer }
+      - { name: distributed, type: integer, default: 0 }
+      - { name: notes, type: text, nullable: true }

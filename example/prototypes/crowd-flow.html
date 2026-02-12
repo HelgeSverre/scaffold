@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crowd Flow & Zone Capacity — Crescat Entitlement System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; margin: 0; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 9999px; }
+
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+
+    .btn-primary { background: var(--color-primary); color: #fff; font-weight: 500; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); font-weight: 500; border-radius: 6px; padding: 0 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-default); transition: all 0.15s; cursor: pointer; font-family: inherit; font-size: 13px; }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .btn-sm { padding: 0 10px; height: 26px; font-size: 12px; }
+    .btn-danger { background: var(--color-warning); color: #fff; font-weight: 500; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+
+    .input-field { background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 12px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: var(--color-primary); }
+    .input-field::placeholder { color: var(--text-soft); }
+
+    .card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; }
+    .stat-card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; padding: 20px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 20px; }
+    .badge-success { background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); color: var(--color-success); }
+    .badge-warning { background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); color: var(--color-warning); }
+    .badge-pending { background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); color: var(--color-pending); }
+    .badge-info { background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); color: var(--color-highlight); }
+    .badge-inactive { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: var(--text-soft); background: hsla(205, 16%, 57%, 0.1); border: 1px solid hsla(205, 16%, 57%, 0.2); }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--bg-sidebar);
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-soft);
+      border-bottom: 1px solid var(--border-default);
+    }
+    .data-table tbody tr { transition: background 0.1s; }
+    .data-table tbody tr:nth-child(odd) { background: var(--bg-row); }
+    .data-table tbody tr:nth-child(even) { background: var(--bg-row-alt); }
+    .data-table tbody tr:hover { background: var(--bg-row-hover); }
+    .data-table td {
+      padding: 10px 16px; font-size: 13px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .tab-btn {
+      padding: 10px 20px; font-size: 13px; font-weight: 500;
+      color: var(--text-soft); background: transparent;
+      border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .tab-btn:hover { color: var(--text-default); }
+    .tab-btn.active { color: var(--color-highlight); border-bottom-color: var(--color-highlight); }
+
+    .progress-bar { height: 8px; background: var(--bg-active); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-success);
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+    .live-dot-warning {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-pending);
+      animation: pulseGlow 1.2s ease-in-out infinite;
+    }
+    .live-dot-danger {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-warning);
+      animation: pulseGlow 0.8s ease-in-out infinite;
+    }
+
+    /* Site map */
+    .map-container {
+      position: relative;
+      background: hsl(204, 60%, 10%);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .map-grid {
+      background-image:
+        linear-gradient(hsla(205, 40%, 20%, 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, hsla(205, 40%, 20%, 0.3) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .zone-shape {
+      position: absolute;
+      border-radius: 8px;
+      border: 2px solid;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .zone-shape:hover {
+      filter: brightness(1.3);
+      transform: scale(1.02);
+      z-index: 10;
+    }
+    .zone-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    .zone-count {
+      font-size: 18px;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    .zone-pct {
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    /* Flow arrows on map */
+    .flow-arrow {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    /* Checkpoint marker */
+    .checkpoint-marker {
+      position: absolute;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--color-highlight);
+      border: 2px solid #fff;
+      cursor: pointer;
+      z-index: 15;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .checkpoint-marker:hover {
+      transform: scale(1.3);
+      z-index: 20;
+    }
+
+    /* Sparkline */
+    .sparkline-bar {
+      display: inline-block;
+      width: 3px;
+      border-radius: 1px;
+      margin-right: 1px;
+      vertical-align: bottom;
+      transition: height 0.3s ease;
+    }
+
+    /* Alert banner */
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .alert-banner {
+      animation: slideDown 0.3s ease;
+    }
+
+    /* Heatmap legend */
+    .heatmap-gradient {
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(90deg,
+        hsla(151, 61%, 43%, 0.6) 0%,
+        hsla(151, 61%, 43%, 0.4) 30%,
+        hsla(44, 88%, 66%, 0.5) 60%,
+        hsla(0, 88%, 66%, 0.5) 80%,
+        hsla(0, 88%, 66%, 0.8) 100%
+      );
+    }
+  </style>
+</head>
+<body class="min-h-screen" x-data="crowdFlowApp()">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <!-- Live indicator -->
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full" style="background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2);">
+        <div class="live-dot"></div>
+        <span class="text-xs font-medium" style="color: var(--color-success);">LIVE</span>
+      </div>
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="pt-[48px]" style="margin-left: 232px;">
+
+    <!-- Active Alerts Banner -->
+    <template x-if="activeAlerts.length > 0">
+      <div class="alert-banner" style="background: hsla(0, 88%, 66%, 0.08); border-bottom: 1px solid hsla(0, 88%, 66%, 0.2);">
+        <div class="p-3 px-6 flex items-center gap-3">
+          <div class="live-dot-danger"></div>
+          <span class="text-xs font-semibold" style="color: var(--color-warning);" x-text="activeAlerts.length + ' CAPACITY ALERT' + (activeAlerts.length > 1 ? 'S' : '')"></span>
+          <span class="text-xs" style="color: var(--text-soft);">—</span>
+          <template x-for="(alert, i) in activeAlerts.slice(0, 3)" :key="i">
+            <span class="text-xs">
+              <span class="font-medium" x-text="alert.zone" style="color: var(--color-warning);"></span>
+              <span style="color: var(--text-soft);" x-text="'at ' + alert.pct + '%'"></span>
+              <span x-show="i < Math.min(activeAlerts.length, 3) - 1" style="color: var(--text-soft);">&nbsp;&middot;&nbsp;</span>
+            </span>
+          </template>
+          <button class="ml-auto btn-ghost btn-sm" style="border-color: hsla(0, 88%, 66%, 0.3); color: var(--color-warning); font-size: 11px;" @click="tab = 'alerts'">View All</button>
+        </div>
+      </div>
+    </template>
+
+    <div class="p-6">
+
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <h1 class="text-xl font-semibold text-white">Crowd Flow & Zone Capacity</h1>
+            <div class="flex items-center gap-2 px-2.5 py-0.5 rounded-full" style="background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2);">
+              <div class="live-dot" style="width: 6px; height: 6px;"></div>
+              <span class="text-[10px] font-semibold" style="color: var(--color-success);">LIVE</span>
+            </div>
+          </div>
+          <p style="color: var(--text-soft); font-size: 13px;">Real-time crowd density, zone capacity monitoring, and flow analytics</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 text-xs" style="color: var(--text-soft);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Last update: <span class="font-medium" style="color: var(--text-default);" x-text="lastUpdate"></span>
+          </div>
+          <select class="input-field" style="width: auto; min-width: 130px; font-size: 12px; padding: 4px 8px;" x-model="refreshRate">
+            <option value="5">Refresh: 5s</option>
+            <option value="10">Refresh: 10s</option>
+            <option value="30">Refresh: 30s</option>
+            <option value="60">Refresh: 60s</option>
+          </select>
+          <button class="btn-ghost btn-sm" @click="toggleFullscreen()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-5 gap-4 mb-5">
+        <div class="stat-card" style="padding: 16px;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: hsla(205, 69%, 33%, 0.15);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-highlight);"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--text-soft);">On-Site Now</p>
+          </div>
+          <p class="text-2xl font-bold" x-text="totalOnSite.toLocaleString()"></p>
+          <div class="flex items-center gap-1 mt-1">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-success);"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+            <span class="text-[10px]" style="color: var(--color-success);">+127 last 15min</span>
+          </div>
+        </div>
+
+        <div class="stat-card" style="padding: 16px;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: hsla(151, 61%, 43%, 0.15);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-success);"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--text-soft);">Avg Occupancy</p>
+          </div>
+          <p class="text-2xl font-bold" x-text="avgOccupancy + '%'"></p>
+          <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px]" style="color: var(--text-soft);">Across all zones</span>
+          </div>
+        </div>
+
+        <div class="stat-card" style="padding: 16px;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: hsla(44, 88%, 66%, 0.15);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-pending);"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--text-soft);">Zones Warning</p>
+          </div>
+          <p class="text-2xl font-bold" style="color: var(--color-pending);" x-text="zonesAtWarning"></p>
+          <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px]" style="color: var(--text-soft);">&gt;80% capacity</span>
+          </div>
+        </div>
+
+        <div class="stat-card" style="padding: 16px;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: hsla(0, 88%, 66%, 0.15);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-warning);"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--text-soft);">Zones Critical</p>
+          </div>
+          <p class="text-2xl font-bold" style="color: var(--color-warning);" x-text="zonesCritical"></p>
+          <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px]" style="color: var(--text-soft);">&gt;95% capacity</span>
+          </div>
+        </div>
+
+        <div class="stat-card" style="padding: 16px;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: hsla(205, 69%, 33%, 0.15);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-highlight);"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--text-soft);">Scans / min</p>
+          </div>
+          <p class="text-2xl font-bold" x-text="scansPerMin"></p>
+          <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px]" style="color: var(--text-soft);">Across 14 checkpoints</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex mb-5" style="border-bottom: 1px solid var(--border-default);">
+        <button class="tab-btn" :class="tab === 'map' && 'active'" @click="tab = 'map'">Site Map</button>
+        <button class="tab-btn" :class="tab === 'zones' && 'active'" @click="tab = 'zones'">Zone Detail</button>
+        <button class="tab-btn" :class="tab === 'flow' && 'active'" @click="tab = 'flow'">Flow Analytics</button>
+        <button class="tab-btn" :class="tab === 'alerts' && 'active'" @click="tab = 'alerts'">
+          Alerts
+          <template x-if="activeAlerts.length > 0">
+            <span class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style="background: var(--color-warning); color: #fff;" x-text="activeAlerts.length"></span>
+          </template>
+        </button>
+        <button class="tab-btn" :class="tab === 'history' && 'active'" @click="tab = 'history'">History</button>
+      </div>
+
+      <!-- ========== SITE MAP TAB ========== -->
+      <div x-show="tab === 'map'">
+        <div class="grid gap-4" style="grid-template-columns: 1fr 320px;">
+
+          <!-- Map -->
+          <div class="map-container map-grid" style="height: 580px; position: relative;">
+            <!-- Map legend -->
+            <div class="absolute top-3 left-3 z-20 p-3 rounded-lg" style="background: hsla(204, 77%, 12%, 0.92); border: 1px solid var(--border-default); backdrop-filter: blur(8px);">
+              <p class="text-[10px] font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Zone Capacity</p>
+              <div class="heatmap-gradient mb-1" style="width: 120px;"></div>
+              <div class="flex justify-between text-[9px]" style="color: var(--text-soft); width: 120px;">
+                <span>0%</span><span>50%</span><span>100%</span>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full" style="background: var(--color-highlight); border: 1.5px solid #fff;"></div>
+                  <span class="text-[10px]" style="color: var(--text-soft);">Checkpoint</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg width="12" height="8"><line x1="0" y1="4" x2="12" y2="4" stroke="var(--color-highlight)" stroke-width="2" stroke-dasharray="2,2"/></svg>
+                  <span class="text-[10px]" style="color: var(--text-soft);">Flow direction</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Map controls -->
+            <div class="absolute top-3 right-3 z-20 flex flex-col gap-1">
+              <button class="w-7 h-7 rounded flex items-center justify-center" style="background: hsla(204, 77%, 12%, 0.9); border: 1px solid var(--border-default); color: var(--text-soft); cursor: pointer; font-size: 16px;">+</button>
+              <button class="w-7 h-7 rounded flex items-center justify-center" style="background: hsla(204, 77%, 12%, 0.9); border: 1px solid var(--border-default); color: var(--text-soft); cursor: pointer; font-size: 16px;">−</button>
+            </div>
+
+            <!-- Zone: Main Stage -->
+            <div class="zone-shape" @click="selectZone('main-stage')"
+                 :style="'left: 8%; top: 10%; width: 35%; height: 32%;' + zoneStyle(zones[0])"
+                 :class="selectedZone === 'main-stage' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff;">Main Stage</span>
+              <span class="zone-count" style="color: #fff;" x-text="zones[0].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[0].current / zones[0].capacity * 100) + '% capacity'"></span>
+            </div>
+
+            <!-- Zone: Second Stage -->
+            <div class="zone-shape" @click="selectZone('second-stage')"
+                 :style="'left: 55%; top: 8%; width: 22%; height: 25%;' + zoneStyle(zones[1])"
+                 :class="selectedZone === 'second-stage' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff;">Second Stage</span>
+              <span class="zone-count" style="color: #fff;" x-text="zones[1].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[1].current / zones[1].capacity * 100) + '% capacity'"></span>
+            </div>
+
+            <!-- Zone: VIP Area -->
+            <div class="zone-shape" @click="selectZone('vip')"
+                 :style="'left: 80%; top: 10%; width: 16%; height: 20%;' + zoneStyle(zones[2])"
+                 :class="selectedZone === 'vip' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff; font-size: 10px;">VIP</span>
+              <span class="zone-count" style="color: #fff; font-size: 15px;" x-text="zones[2].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[2].current / zones[2].capacity * 100) + '%'"></span>
+            </div>
+
+            <!-- Zone: Food Court -->
+            <div class="zone-shape" @click="selectZone('food-court')"
+                 :style="'left: 8%; top: 48%; width: 25%; height: 22%;' + zoneStyle(zones[3])"
+                 :class="selectedZone === 'food-court' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff;">Food Court</span>
+              <span class="zone-count" style="color: #fff;" x-text="zones[3].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[3].current / zones[3].capacity * 100) + '% capacity'"></span>
+            </div>
+
+            <!-- Zone: Campground -->
+            <div class="zone-shape" @click="selectZone('campground')"
+                 :style="'left: 38%; top: 46%; width: 30%; height: 28%;' + zoneStyle(zones[4])"
+                 :class="selectedZone === 'campground' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff;">Campground</span>
+              <span class="zone-count" style="color: #fff;" x-text="zones[4].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[4].current / zones[4].capacity * 100) + '% capacity'"></span>
+            </div>
+
+            <!-- Zone: Backstage -->
+            <div class="zone-shape" @click="selectZone('backstage')"
+                 :style="'left: 72%; top: 38%; width: 24%; height: 18%;' + zoneStyle(zones[5])"
+                 :class="selectedZone === 'backstage' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff; font-size: 10px;">Backstage</span>
+              <span class="zone-count" style="color: #fff; font-size: 15px;" x-text="zones[5].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[5].current / zones[5].capacity * 100) + '%'"></span>
+            </div>
+
+            <!-- Zone: Entrance / General Area -->
+            <div class="zone-shape" @click="selectZone('entrance')"
+                 :style="'left: 8%; top: 76%; width: 55%; height: 18%;' + zoneStyle(zones[6])"
+                 :class="selectedZone === 'entrance' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff;">Main Entrance & General Area</span>
+              <span class="zone-count" style="color: #fff;" x-text="zones[6].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[6].current / zones[6].capacity * 100) + '% capacity'"></span>
+            </div>
+
+            <!-- Zone: Third Stage / Tent -->
+            <div class="zone-shape" @click="selectZone('tent-stage')"
+                 :style="'left: 72%; top: 62%; width: 24%; height: 20%;' + zoneStyle(zones[7])"
+                 :class="selectedZone === 'tent-stage' ? 'ring-2 ring-white/40' : ''">
+              <span class="zone-label" style="color: #fff; font-size: 10px;">Tent Stage</span>
+              <span class="zone-count" style="color: #fff; font-size: 15px;" x-text="zones[7].current.toLocaleString()"></span>
+              <span class="zone-pct" style="color: #fff;" x-text="Math.round(zones[7].current / zones[7].capacity * 100) + '%'"></span>
+            </div>
+
+            <!-- Checkpoint Markers -->
+            <template x-for="cp in checkpoints" :key="cp.id">
+              <div class="checkpoint-marker" :style="'left: ' + cp.x + '%; top: ' + cp.y + '%;'"
+                   :title="cp.name + ': ' + cp.scansPerMin + ' scans/min'"
+                   @click="selectCheckpoint(cp)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+              </div>
+            </template>
+
+            <!-- Flow Arrows (SVG overlay) -->
+            <svg class="absolute inset-0 w-full h-full" style="pointer-events: none; z-index: 5;">
+              <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="rgba(69, 164, 228, 0.5)"/>
+                </marker>
+              </defs>
+              <!-- Entrance to Main Stage -->
+              <line x1="35%" y1="76%" x2="25%" y2="45%" stroke="rgba(69, 164, 228, 0.3)" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+              <!-- Entrance to Food Court -->
+              <line x1="22%" y1="76%" x2="20%" y2="70%" stroke="rgba(69, 164, 228, 0.3)" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+              <!-- Main Stage to Second Stage -->
+              <line x1="43%" y1="22%" x2="55%" y2="20%" stroke="rgba(69, 164, 228, 0.25)" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+              <!-- Food Court to Campground -->
+              <line x1="33%" y1="58%" x2="38%" y2="58%" stroke="rgba(69, 164, 228, 0.2)" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+              <!-- Entrance to Tent Stage -->
+              <line x1="60%" y1="82%" x2="72%" y2="75%" stroke="rgba(69, 164, 228, 0.2)" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+            </svg>
+          </div>
+
+          <!-- Side Panel -->
+          <div class="space-y-4">
+            <!-- Selected Zone Detail -->
+            <div class="card p-4" x-show="selectedZoneData">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-white" x-text="selectedZoneData?.name || ''"></h3>
+                <span class="badge" :class="zoneStatusBadge(selectedZoneData)" x-text="zoneStatusLabel(selectedZoneData)"></span>
+              </div>
+              <div class="space-y-3">
+                <div>
+                  <div class="flex items-center justify-between text-xs mb-1">
+                    <span style="color: var(--text-soft);">Capacity</span>
+                    <span x-text="(selectedZoneData?.current || 0).toLocaleString() + ' / ' + (selectedZoneData?.capacity || 0).toLocaleString()"></span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" :style="'width: ' + (selectedZoneData ? Math.round(selectedZoneData.current / selectedZoneData.capacity * 100) : 0) + '%; background: ' + zoneCapacityColor(selectedZoneData)"></div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="p-2 rounded" style="background: var(--bg-hover);">
+                    <p class="text-[10px] uppercase font-semibold" style="color: var(--text-soft);">In / 15min</p>
+                    <p class="text-sm font-bold" style="color: var(--color-success);" x-text="'+' + (selectedZoneData?.inFlow || 0)"></p>
+                  </div>
+                  <div class="p-2 rounded" style="background: var(--bg-hover);">
+                    <p class="text-[10px] uppercase font-semibold" style="color: var(--text-soft);">Out / 15min</p>
+                    <p class="text-sm font-bold" style="color: var(--color-warning);" x-text="'-' + (selectedZoneData?.outFlow || 0)"></p>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-[10px] uppercase font-semibold mb-1" style="color: var(--text-soft);">Last Hour Trend</p>
+                  <div class="flex items-end" style="height: 32px;">
+                    <template x-for="(v, i) in (selectedZoneData?.sparkline || [])" :key="i">
+                      <div class="sparkline-bar" :style="'height: ' + (v / (selectedZoneData?.capacity || 1) * 100) + '%; background: ' + zoneCapacityColorForValue(v, selectedZoneData?.capacity || 1)"></div>
+                    </template>
+                  </div>
+                </div>
+                <div class="pt-2" style="border-top: 1px solid var(--border-soft);">
+                  <p class="text-[10px] uppercase font-semibold mb-2" style="color: var(--text-soft);">Checkpoints</p>
+                  <template x-for="cp in (selectedZoneData?.checkpointList || [])" :key="cp">
+                    <div class="flex items-center justify-between text-xs mb-1">
+                      <span x-text="cp.name"></span>
+                      <span style="color: var(--text-soft);" x-text="cp.rate + '/min'"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zone List (quick overview) -->
+            <div class="card p-4">
+              <h3 class="text-sm font-semibold text-white mb-3">All Zones</h3>
+              <div class="space-y-2">
+                <template x-for="zone in zones" :key="zone.id">
+                  <div class="flex items-center gap-3 p-2 rounded cursor-pointer transition-all"
+                       :style="selectedZone === zone.id ? 'background: var(--bg-active)' : ''"
+                       @click="selectZone(zone.id)"
+                       @mouseenter="$el.style.background = 'var(--bg-hover)'"
+                       @mouseleave="$el.style.background = selectedZone === zone.id ? 'var(--bg-active)' : 'transparent'">
+                    <div class="w-2 h-2 rounded-full flex-shrink-0" :style="'background: ' + zoneCapacityColor(zone)"></div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-xs font-medium truncate" x-text="zone.name"></div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <div class="text-xs font-bold" :style="'color: ' + zoneCapacityColor(zone)" x-text="Math.round(zone.current / zone.capacity * 100) + '%'"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== ZONE DETAIL TAB ========== -->
+      <div x-show="tab === 'zones'">
+        <div class="card overflow-hidden">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Zone</th>
+                <th>Capacity</th>
+                <th>Current</th>
+                <th>Occupancy</th>
+                <th>In (15m)</th>
+                <th>Out (15m)</th>
+                <th>Net Flow</th>
+                <th>Trend</th>
+                <th>Status</th>
+                <th>Prediction</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="zone in zones" :key="zone.id">
+                <tr class="cursor-pointer" @click="selectZone(zone.id); tab = 'map'">
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <div class="w-2.5 h-2.5 rounded-full" :style="'background: ' + zoneCapacityColor(zone)"></div>
+                      <span class="font-medium text-white" x-text="zone.name"></span>
+                    </div>
+                  </td>
+                  <td x-text="zone.capacity.toLocaleString()"></td>
+                  <td>
+                    <span class="font-semibold" x-text="zone.current.toLocaleString()"></span>
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <div class="progress-bar flex-1" style="height: 6px; min-width: 60px;">
+                        <div class="progress-fill" :style="'width: ' + Math.round(zone.current / zone.capacity * 100) + '%; background: ' + zoneCapacityColor(zone)"></div>
+                      </div>
+                      <span class="text-xs font-bold" style="min-width: 32px; text-align: right;" :style="'color: ' + zoneCapacityColor(zone)" x-text="Math.round(zone.current / zone.capacity * 100) + '%'"></span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style="color: var(--color-success);" x-text="'+' + zone.inFlow"></span>
+                  </td>
+                  <td>
+                    <span style="color: var(--color-warning);" x-text="'-' + zone.outFlow"></span>
+                  </td>
+                  <td>
+                    <span :style="zone.inFlow - zone.outFlow >= 0 ? 'color: var(--color-success)' : 'color: var(--color-highlight)'" x-text="(zone.inFlow - zone.outFlow >= 0 ? '+' : '') + (zone.inFlow - zone.outFlow)"></span>
+                  </td>
+                  <td>
+                    <div class="flex items-end" style="height: 20px;">
+                      <template x-for="(v, i) in zone.sparkline.slice(-12)" :key="i">
+                        <div class="sparkline-bar" :style="'height: ' + (v / zone.capacity * 100) + '%; background: ' + zoneCapacityColorForValue(v, zone.capacity)"></div>
+                      </template>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge" :class="zoneStatusBadge(zone)" x-text="zoneStatusLabel(zone)"></span>
+                  </td>
+                  <td>
+                    <span class="text-xs" :style="zone.prediction === 'Rising' ? 'color: var(--color-pending)' : zone.prediction === 'Falling' ? 'color: var(--color-success)' : 'color: var(--text-soft)'" x-text="zone.prediction">
+                    </span>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========== FLOW ANALYTICS TAB ========== -->
+      <div x-show="tab === 'flow'">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <!-- Hourly Flow Chart -->
+          <div class="card p-5">
+            <h3 class="text-sm font-semibold text-white mb-1">Hourly Crowd Flow — Total Site</h3>
+            <p class="text-xs mb-4" style="color: var(--text-soft);">People entering vs. leaving over the past 12 hours</p>
+            <div class="flex items-end gap-1" style="height: 160px;">
+              <template x-for="(h, i) in hourlyFlow" :key="i">
+                <div class="flex-1 flex flex-col items-center gap-0.5">
+                  <div class="w-full flex flex-col items-center" style="height: 130px; position: relative;">
+                    <!-- In bar -->
+                    <div class="w-full rounded-t-sm" style="position: absolute; bottom: 0;"
+                         :style="'height: ' + (h.inCount / 600 * 100) + '%; background: hsla(151, 61%, 43%, 0.5); max-height: 100%;'"></div>
+                    <!-- Out bar (overlaid, thinner) -->
+                    <div class="rounded-t-sm" style="position: absolute; bottom: 0; width: 60%; opacity: 0.7;"
+                         :style="'height: ' + (h.outCount / 600 * 100) + '%; background: hsla(0, 88%, 66%, 0.4); max-height: 100%;'"></div>
+                  </div>
+                  <span class="text-[9px]" style="color: var(--text-soft);" x-text="h.label"></span>
+                </div>
+              </template>
+            </div>
+            <div class="flex items-center gap-4 mt-3">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-2 rounded-sm" style="background: hsla(151, 61%, 43%, 0.5);"></div>
+                <span class="text-[10px]" style="color: var(--text-soft);">Entering</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-2 rounded-sm" style="background: hsla(0, 88%, 66%, 0.4);"></div>
+                <span class="text-[10px]" style="color: var(--text-soft);">Leaving</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Flow Corridors -->
+          <div class="card p-5">
+            <h3 class="text-sm font-semibold text-white mb-1">Busiest Flow Corridors</h3>
+            <p class="text-xs mb-4" style="color: var(--text-soft);">Zone-to-zone movement in the last 30 minutes</p>
+            <div class="space-y-3">
+              <template x-for="(corridor, i) in flowCorridors" :key="i">
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="font-medium" x-text="corridor.from"></span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-highlight);"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      <span class="font-medium" x-text="corridor.to"></span>
+                    </div>
+                    <span class="text-xs font-bold" x-text="corridor.count + ' people'"></span>
+                  </div>
+                  <div class="progress-bar" style="height: 4px;">
+                    <div class="progress-fill" :style="'width: ' + (corridor.count / 400 * 100) + '%; background: var(--color-highlight);'"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checkpoint Throughput -->
+        <div class="card overflow-hidden">
+          <div class="p-4" style="border-bottom: 1px solid var(--border-default);">
+            <h3 class="text-sm font-semibold text-white">Checkpoint Throughput</h3>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Checkpoint</th>
+                <th>Zone</th>
+                <th>Direction</th>
+                <th>Scans/min</th>
+                <th>Total Today</th>
+                <th>Granted</th>
+                <th>Denied</th>
+                <th>Deny Rate</th>
+                <th>Avg Queue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="cp in checkpointStats" :key="cp.id">
+                <tr>
+                  <td>
+                    <span class="font-medium text-white text-[13px]" x-text="cp.name"></span>
+                  </td>
+                  <td x-text="cp.zone"></td>
+                  <td>
+                    <span class="badge" :class="cp.direction === 'Entry' ? 'badge-success' : cp.direction === 'Exit' ? 'badge-info' : 'badge-inactive'" x-text="cp.direction" style="font-size: 11px; padding: 1px 8px;"></span>
+                  </td>
+                  <td>
+                    <span class="font-semibold" x-text="cp.scansPerMin"></span>
+                  </td>
+                  <td x-text="cp.totalToday.toLocaleString()"></td>
+                  <td style="color: var(--color-success);" x-text="cp.granted.toLocaleString()"></td>
+                  <td style="color: var(--color-warning);" x-text="cp.denied"></td>
+                  <td>
+                    <span :style="cp.denyRate > 5 ? 'color: var(--color-warning)' : 'color: var(--text-soft)'" x-text="cp.denyRate + '%'"></span>
+                  </td>
+                  <td x-text="cp.avgQueue + ' min'"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========== ALERTS TAB ========== -->
+      <div x-show="tab === 'alerts'">
+        <div class="grid gap-4" style="grid-template-columns: 1fr 320px;">
+          <div>
+            <!-- Active Alerts -->
+            <div class="card p-4 mb-4" style="border-color: hsla(0, 88%, 66%, 0.2);" x-show="activeAlerts.length > 0">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="live-dot-danger"></div>
+                <h3 class="text-sm font-semibold" style="color: var(--color-warning);">Active Alerts</h3>
+              </div>
+              <div class="space-y-2">
+                <template x-for="alert in activeAlerts" :key="alert.id">
+                  <div class="p-3 rounded-lg flex items-center gap-4" style="background: hsla(0, 88%, 66%, 0.06); border: 1px solid hsla(0, 88%, 66%, 0.15);">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                         :style="alert.severity === 'critical' ? 'background: hsla(0, 88%, 66%, 0.15);' : 'background: hsla(44, 88%, 66%, 0.15);'">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                           :style="alert.severity === 'critical' ? 'color: var(--color-warning);' : 'color: var(--color-pending);'">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-0.5">
+                        <span class="text-xs font-semibold text-white" x-text="alert.zone"></span>
+                        <span class="badge" :class="alert.severity === 'critical' ? 'badge-warning' : 'badge-pending'" x-text="alert.severity" style="font-size: 10px; padding: 0 6px; text-transform: uppercase;"></span>
+                      </div>
+                      <p class="text-xs" style="color: var(--text-soft);" x-text="alert.message"></p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <p class="text-lg font-bold" :style="alert.severity === 'critical' ? 'color: var(--color-warning)' : 'color: var(--color-pending)'" x-text="alert.pct + '%'"></p>
+                      <p class="text-[10px]" style="color: var(--text-soft);" x-text="alert.time"></p>
+                    </div>
+                    <button class="btn-ghost btn-sm" style="font-size: 11px;" @click="acknowledgeAlert(alert.id)">ACK</button>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Alert History -->
+            <div class="card overflow-hidden">
+              <div class="p-4" style="border-bottom: 1px solid var(--border-default);">
+                <h3 class="text-sm font-semibold text-white">Alert History — Today</h3>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Zone</th>
+                    <th>Severity</th>
+                    <th>Message</th>
+                    <th>Peak</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="log in alertHistory" :key="log.id">
+                    <tr>
+                      <td style="white-space: nowrap; font-family: monospace; font-size: 12px;" x-text="log.time"></td>
+                      <td class="font-medium text-white" x-text="log.zone"></td>
+                      <td>
+                        <span class="badge" :class="log.severity === 'critical' ? 'badge-warning' : 'badge-pending'" x-text="log.severity" style="font-size: 10px; padding: 0 6px; text-transform: uppercase;"></span>
+                      </td>
+                      <td x-text="log.message"></td>
+                      <td x-text="log.peak + '%'"></td>
+                      <td x-text="log.duration"></td>
+                      <td>
+                        <span class="badge" :class="log.resolved ? 'badge-success' : 'badge-warning'" x-text="log.resolved ? 'Resolved' : 'Active'" style="font-size: 10px; padding: 0 6px;"></span>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Alert Config Panel -->
+          <div class="card p-4">
+            <h3 class="text-sm font-semibold text-white mb-3">Alert Thresholds</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Warning Level</label>
+                <div class="flex items-center gap-2">
+                  <input class="input-field flex-1" type="range" min="50" max="100" x-model="thresholds.warning" style="accent-color: var(--color-pending);">
+                  <span class="text-xs font-bold" style="color: var(--color-pending); min-width: 32px;" x-text="thresholds.warning + '%'"></span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Critical Level</label>
+                <div class="flex items-center gap-2">
+                  <input class="input-field flex-1" type="range" min="50" max="100" x-model="thresholds.critical" style="accent-color: var(--color-warning);">
+                  <span class="text-xs font-bold" style="color: var(--color-warning); min-width: 32px;" x-text="thresholds.critical + '%'"></span>
+                </div>
+              </div>
+              <div style="border-top: 1px solid var(--border-soft); padding-top: 12px;">
+                <label class="block text-xs font-medium mb-2" style="color: var(--text-soft);">Notify via</label>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked class="accent-[var(--color-primary)]">
+                    <span class="text-xs">Dashboard alerts</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked class="accent-[var(--color-primary)]">
+                    <span class="text-xs">Push notifications</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="accent-[var(--color-primary)]">
+                    <span class="text-xs">SMS to safety team</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="accent-[var(--color-primary)]">
+                    <span class="text-xs">Email summary</span>
+                  </label>
+                </div>
+              </div>
+              <button class="btn-primary w-full justify-center" style="margin-top: 8px;">Save Thresholds</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== HISTORY TAB ========== -->
+      <div x-show="tab === 'history'">
+        <div class="card p-5 mb-4">
+          <div class="flex items-center gap-4 mb-4">
+            <h3 class="text-sm font-semibold text-white">Occupancy Timeline — All Zones</h3>
+            <div class="ml-auto flex items-center gap-2">
+              <button class="btn-ghost btn-sm" :class="historyRange === '6h' && 'text-white'" :style="historyRange === '6h' ? 'background: var(--bg-active); border-color: var(--color-highlight);' : ''" @click="historyRange = '6h'" style="font-size: 11px;">6h</button>
+              <button class="btn-ghost btn-sm" :class="historyRange === '12h' && 'text-white'" :style="historyRange === '12h' ? 'background: var(--bg-active); border-color: var(--color-highlight);' : ''" @click="historyRange = '12h'" style="font-size: 11px;">12h</button>
+              <button class="btn-ghost btn-sm" :class="historyRange === '24h' && 'text-white'" :style="historyRange === '24h' ? 'background: var(--bg-active); border-color: var(--color-highlight);' : ''" @click="historyRange = '24h'" style="font-size: 11px;">24h</button>
+            </div>
+          </div>
+          <!-- Stacked area chart simulation -->
+          <div class="relative" style="height: 200px;">
+            <div class="absolute inset-0 flex items-end gap-[2px]">
+              <template x-for="(point, i) in historyData" :key="i">
+                <div class="flex-1 flex flex-col-reverse">
+                  <template x-for="(seg, j) in point.segments" :key="j">
+                    <div :style="'height: ' + (seg.value / 12000 * 100) + '%; background: ' + seg.color + '; opacity: 0.6;'" class="w-full transition-all duration-300"></div>
+                  </template>
+                </div>
+              </template>
+            </div>
+            <!-- Y-axis labels -->
+            <div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between pointer-events-none" style="width: 40px; margin-left: -44px;">
+              <span class="text-[9px]" style="color: var(--text-soft);">12k</span>
+              <span class="text-[9px]" style="color: var(--text-soft);">6k</span>
+              <span class="text-[9px]" style="color: var(--text-soft);">0</span>
+            </div>
+            <!-- Threshold lines -->
+            <div class="absolute left-0 right-0 pointer-events-none" :style="'bottom: ' + (thresholds.warning / 100 * 100) + '%; border-top: 1px dashed var(--color-pending); opacity: 0.3;'"></div>
+            <div class="absolute left-0 right-0 pointer-events-none" :style="'bottom: ' + (thresholds.critical / 100 * 100) + '%; border-top: 1px dashed var(--color-warning); opacity: 0.3;'"></div>
+          </div>
+          <div class="flex items-center gap-4 mt-3 flex-wrap">
+            <template x-for="zone in zones.slice(0, 6)" :key="zone.id">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-sm" :style="'background: ' + zone.chartColor + '; opacity: 0.6;'"></div>
+                <span class="text-[10px]" style="color: var(--text-soft);" x-text="zone.name"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Peak times comparison -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="card p-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Peak Occupancy Today</h3>
+            <p class="text-3xl font-bold mb-1" x-text="peakToday.count.toLocaleString()"></p>
+            <p class="text-xs" style="color: var(--text-soft);">at <span style="color: var(--text-default);" x-text="peakToday.time"></span></p>
+            <p class="text-xs mt-1" style="color: var(--text-soft);">(<span x-text="peakToday.pct"></span>% of total site capacity)</p>
+          </div>
+          <div class="card p-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Predicted Peak</h3>
+            <p class="text-3xl font-bold mb-1" style="color: var(--color-pending);" x-text="predictedPeak.count.toLocaleString()"></p>
+            <p class="text-xs" style="color: var(--text-soft);">Expected at <span style="color: var(--text-default);" x-text="predictedPeak.time"></span></p>
+            <p class="text-xs mt-1" style="color: var(--text-soft);">Based on scan trends and schedule</p>
+          </div>
+          <div class="card p-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Yesterday's Peak</h3>
+            <p class="text-3xl font-bold mb-1" style="color: var(--text-soft);" x-text="yesterdayPeak.count.toLocaleString()"></p>
+            <p class="text-xs" style="color: var(--text-soft);">at <span style="color: var(--text-default);" x-text="yesterdayPeak.time"></span></p>
+            <p class="text-xs mt-1" style="color: var(--text-soft);">(<span x-text="yesterdayPeak.pct"></span>% of total site capacity)</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div x-show="toast" x-transition class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-lg text-sm font-medium"
+       style="background: var(--color-success); color: #fff; display: none;">
+    <span x-text="toast"></span>
+  </div>
+
+  <script>
+    function crowdFlowApp() {
+      return {
+        tab: 'map',
+        selectedZone: 'main-stage',
+        refreshRate: '10',
+        lastUpdate: '21:42:18',
+        toast: '',
+        historyRange: '6h',
+        thresholds: { warning: 80, critical: 95 },
+
+        totalOnSite: 8247,
+        avgOccupancy: 62,
+        zonesAtWarning: 2,
+        zonesCritical: 1,
+        scansPerMin: 42,
+
+        zones: [
+          { id: 'main-stage', name: 'Main Stage', capacity: 5000, current: 4780, inFlow: 245, outFlow: 68, prediction: 'Rising',
+            chartColor: 'hsl(205, 69%, 45%)',
+            sparkline: [2100, 2400, 2800, 3200, 3600, 3900, 4100, 4300, 4500, 4650, 4720, 4780],
+            checkpointList: [
+              { name: 'Main Stage North', rate: 14 },
+              { name: 'Main Stage South', rate: 11 },
+              { name: 'Main Stage VIP Gate', rate: 3 },
+            ]
+          },
+          { id: 'second-stage', name: 'Second Stage', capacity: 2000, current: 1120, inFlow: 89, outFlow: 42, prediction: 'Rising',
+            chartColor: 'hsl(151, 61%, 43%)',
+            sparkline: [400, 450, 520, 600, 680, 750, 820, 900, 960, 1020, 1080, 1120],
+            checkpointList: [
+              { name: 'Second Stage Entry', rate: 8 },
+            ]
+          },
+          { id: 'vip', name: 'VIP Lounge', capacity: 300, current: 267, inFlow: 18, outFlow: 5, prediction: 'Rising',
+            chartColor: 'hsl(258, 60%, 55%)',
+            sparkline: [80, 95, 110, 130, 155, 180, 200, 220, 235, 248, 258, 267],
+            checkpointList: [
+              { name: 'VIP North Gate', rate: 2 },
+              { name: 'VIP South Gate', rate: 1 },
+            ]
+          },
+          { id: 'food-court', name: 'Food Court', capacity: 1500, current: 890, inFlow: 76, outFlow: 63, prediction: 'Stable',
+            chartColor: 'hsl(44, 88%, 56%)',
+            sparkline: [600, 650, 700, 780, 820, 870, 900, 920, 890, 870, 880, 890],
+            checkpointList: [
+              { name: 'Food Court West', rate: 6 },
+              { name: 'Food Court East', rate: 5 },
+            ]
+          },
+          { id: 'campground', name: 'Campground', capacity: 3000, current: 420, inFlow: 12, outFlow: 45, prediction: 'Falling',
+            chartColor: 'hsl(30, 70%, 50%)',
+            sparkline: [1200, 1100, 980, 880, 780, 700, 640, 580, 530, 490, 460, 420],
+            checkpointList: [
+              { name: 'Camp Gate A', rate: 2 },
+              { name: 'Camp Gate B', rate: 1 },
+            ]
+          },
+          { id: 'backstage', name: 'Backstage', capacity: 200, current: 87, inFlow: 8, outFlow: 6, prediction: 'Stable',
+            chartColor: 'hsl(0, 60%, 55%)',
+            sparkline: [45, 50, 55, 62, 68, 72, 78, 82, 85, 86, 87, 87],
+            checkpointList: [
+              { name: 'Backstage Gate', rate: 2 },
+            ]
+          },
+          { id: 'entrance', name: 'Main Entrance & General', capacity: 2500, current: 483, inFlow: 120, outFlow: 95, prediction: 'Stable',
+            chartColor: 'hsl(180, 50%, 45%)',
+            sparkline: [200, 250, 300, 350, 380, 410, 430, 450, 465, 475, 480, 483],
+            checkpointList: [
+              { name: 'Main Gate', rate: 12 },
+              { name: 'East Gate', rate: 6 },
+            ]
+          },
+          { id: 'tent-stage', name: 'Tent Stage', capacity: 800, current: 200, inFlow: 34, outFlow: 22, prediction: 'Rising',
+            chartColor: 'hsl(320, 50%, 50%)',
+            sparkline: [50, 60, 75, 90, 105, 120, 135, 150, 165, 180, 192, 200],
+            checkpointList: [
+              { name: 'Tent Entry', rate: 4 },
+            ]
+          },
+        ],
+
+        checkpoints: [
+          { id: 1, name: 'Main Gate', x: 28, y: 90, scansPerMin: 12 },
+          { id: 2, name: 'East Gate', x: 50, y: 90, scansPerMin: 6 },
+          { id: 3, name: 'Main Stage North', x: 15, y: 12, scansPerMin: 14 },
+          { id: 4, name: 'Main Stage South', x: 30, y: 40, scansPerMin: 11 },
+          { id: 5, name: 'Second Stage Entry', x: 56, y: 10, scansPerMin: 8 },
+          { id: 6, name: 'VIP North', x: 82, y: 12, scansPerMin: 2 },
+          { id: 7, name: 'VIP South', x: 88, y: 28, scansPerMin: 1 },
+          { id: 8, name: 'Food Court West', x: 10, y: 50, scansPerMin: 6 },
+          { id: 9, name: 'Food Court East', x: 31, y: 55, scansPerMin: 5 },
+          { id: 10, name: 'Camp Gate A', x: 40, y: 72, scansPerMin: 2 },
+          { id: 11, name: 'Camp Gate B', x: 60, y: 55, scansPerMin: 1 },
+          { id: 12, name: 'Backstage Gate', x: 75, y: 40, scansPerMin: 2 },
+          { id: 13, name: 'Tent Entry', x: 73, y: 65, scansPerMin: 4 },
+          { id: 14, name: 'Main Stage VIP Gate', x: 40, y: 20, scansPerMin: 3 },
+        ],
+
+        get selectedZoneData() {
+          return this.zones.find(z => z.id === this.selectedZone) || this.zones[0];
+        },
+
+        get activeAlerts() {
+          return this.zones
+            .filter(z => Math.round(z.current / z.capacity * 100) >= this.thresholds.warning)
+            .map(z => {
+              const pct = Math.round(z.current / z.capacity * 100);
+              return {
+                id: z.id,
+                zone: z.name,
+                pct,
+                severity: pct >= this.thresholds.critical ? 'critical' : 'warning',
+                message: pct >= this.thresholds.critical
+                  ? `Zone at ${pct}% capacity — consider restricting entry`
+                  : `Zone approaching capacity limit (${pct}%)`,
+                time: '2 min ago',
+              };
+            })
+            .sort((a, b) => b.pct - a.pct);
+        },
+
+        alertHistory: [
+          { id: 1, time: '21:38', zone: 'Main Stage', severity: 'critical', message: 'Zone exceeded 95% capacity', peak: 96, duration: '4 min', resolved: false },
+          { id: 2, time: '21:22', zone: 'VIP Lounge', severity: 'warning', message: 'Zone reached 80% capacity', peak: 89, duration: '20 min', resolved: false },
+          { id: 3, time: '20:45', zone: 'Main Stage', severity: 'warning', message: 'Zone reached 80% capacity', peak: 84, duration: '53 min', resolved: false },
+          { id: 4, time: '19:30', zone: 'Food Court', severity: 'warning', message: 'Zone reached 80% during dinner rush', peak: 86, duration: '35 min', resolved: true },
+          { id: 5, time: '18:15', zone: 'Main Stage', severity: 'critical', message: 'Zone exceeded 95% during Wardruna set', peak: 98, duration: '12 min', resolved: true },
+          { id: 6, time: '16:40', zone: 'Second Stage', severity: 'warning', message: 'Rapid fill rate detected', peak: 82, duration: '18 min', resolved: true },
+          { id: 7, time: '14:20', zone: 'Tent Stage', severity: 'warning', message: 'Zone reached 80% during workshop', peak: 81, duration: '8 min', resolved: true },
+        ],
+
+        hourlyFlow: [
+          { label: '10:00', inCount: 120, outCount: 30 },
+          { label: '11:00', inCount: 280, outCount: 45 },
+          { label: '12:00', inCount: 420, outCount: 80 },
+          { label: '13:00', inCount: 380, outCount: 120 },
+          { label: '14:00', inCount: 350, outCount: 150 },
+          { label: '15:00', inCount: 300, outCount: 180 },
+          { label: '16:00', inCount: 450, outCount: 140 },
+          { label: '17:00', inCount: 520, outCount: 160 },
+          { label: '18:00', inCount: 580, outCount: 200 },
+          { label: '19:00', inCount: 440, outCount: 280 },
+          { label: '20:00', inCount: 320, outCount: 250 },
+          { label: '21:00', inCount: 180, outCount: 150 },
+        ],
+
+        flowCorridors: [
+          { from: 'Main Entrance', to: 'Main Stage', count: 380 },
+          { from: 'Campground', to: 'Main Stage', count: 245 },
+          { from: 'Main Stage', to: 'Food Court', count: 198 },
+          { from: 'Food Court', to: 'Second Stage', count: 134 },
+          { from: 'Main Entrance', to: 'Tent Stage', count: 112 },
+          { from: 'Second Stage', to: 'Main Stage', count: 98 },
+          { from: 'VIP Lounge', to: 'Main Stage', count: 76 },
+          { from: 'Main Stage', to: 'Campground', count: 52 },
+        ],
+
+        checkpointStats: [
+          { id: 1, name: 'Main Gate', zone: 'Entrance', direction: 'Entry', scansPerMin: 12, totalToday: 4820, granted: 4756, denied: 64, denyRate: 1.3, avgQueue: 2.1 },
+          { id: 2, name: 'Main Stage North', zone: 'Main Stage', direction: 'Entry', scansPerMin: 14, totalToday: 3240, granted: 3198, denied: 42, denyRate: 1.3, avgQueue: 1.8 },
+          { id: 3, name: 'Main Stage South', zone: 'Main Stage', direction: 'Both', scansPerMin: 11, totalToday: 2870, granted: 2834, denied: 36, denyRate: 1.3, avgQueue: 1.2 },
+          { id: 4, name: 'East Gate', zone: 'Entrance', direction: 'Entry', scansPerMin: 6, totalToday: 2180, granted: 2142, denied: 38, denyRate: 1.7, avgQueue: 3.4 },
+          { id: 5, name: 'Second Stage Entry', zone: 'Second Stage', direction: 'Entry', scansPerMin: 8, totalToday: 1850, granted: 1832, denied: 18, denyRate: 1.0, avgQueue: 0.8 },
+          { id: 6, name: 'Food Court West', zone: 'Food Court', direction: 'Both', scansPerMin: 6, totalToday: 1620, granted: 1620, denied: 0, denyRate: 0, avgQueue: 0.5 },
+          { id: 7, name: 'VIP North Gate', zone: 'VIP Lounge', direction: 'Entry', scansPerMin: 2, totalToday: 420, granted: 398, denied: 22, denyRate: 5.2, avgQueue: 0.3 },
+          { id: 8, name: 'Backstage Gate', zone: 'Backstage', direction: 'Both', scansPerMin: 2, totalToday: 380, granted: 342, denied: 38, denyRate: 10, avgQueue: 0.2 },
+          { id: 9, name: 'Tent Entry', zone: 'Tent Stage', direction: 'Entry', scansPerMin: 4, totalToday: 960, granted: 948, denied: 12, denyRate: 1.3, avgQueue: 0.4 },
+        ],
+
+        get historyData() {
+          const points = [];
+          const count = this.historyRange === '6h' ? 36 : this.historyRange === '12h' ? 72 : 144;
+          for (let i = 0; i < count; i++) {
+            const t = i / count;
+            const curve = Math.sin(t * Math.PI * 1.2) * 0.7 + 0.3;
+            points.push({
+              segments: this.zones.slice(0, 6).map(z => ({
+                value: Math.round(z.capacity * curve * (0.4 + Math.random() * 0.3)),
+                color: z.chartColor,
+              }))
+            });
+          }
+          return points;
+        },
+
+        peakToday: { count: 9120, time: '18:45', pct: 68 },
+        predictedPeak: { count: 10200, time: '22:30', pct: 76 },
+        yesterdayPeak: { count: 8740, time: '21:15', pct: 65 },
+
+        selectZone(id) { this.selectedZone = id; },
+        selectCheckpoint(cp) {
+          const zone = this.zones.find(z => z.checkpointList.some(c => c.name === cp.name));
+          if (zone) this.selectedZone = zone.id;
+        },
+
+        zoneStyle(zone) {
+          const pct = zone.current / zone.capacity;
+          let bg, border;
+          if (pct >= 0.95) {
+            bg = 'hsla(0, 88%, 66%, 0.25)'; border = 'hsla(0, 88%, 66%, 0.6)';
+          } else if (pct >= 0.8) {
+            bg = 'hsla(44, 88%, 66%, 0.18)'; border = 'hsla(44, 88%, 66%, 0.5)';
+          } else if (pct >= 0.6) {
+            bg = 'hsla(151, 61%, 43%, 0.15)'; border = 'hsla(151, 61%, 43%, 0.4)';
+          } else {
+            bg = 'hsla(205, 69%, 33%, 0.12)'; border = 'hsla(205, 69%, 33%, 0.3)';
+          }
+          return ' background: ' + bg + '; border-color: ' + border + ';';
+        },
+
+        zoneCapacityColor(zone) {
+          if (!zone) return 'var(--text-soft)';
+          const pct = zone.current / zone.capacity;
+          if (pct >= 0.95) return 'var(--color-warning)';
+          if (pct >= 0.8) return 'var(--color-pending)';
+          if (pct >= 0.6) return 'var(--color-success)';
+          return 'var(--color-highlight)';
+        },
+
+        zoneCapacityColorForValue(value, capacity) {
+          const pct = value / capacity;
+          if (pct >= 0.95) return 'var(--color-warning)';
+          if (pct >= 0.8) return 'var(--color-pending)';
+          if (pct >= 0.6) return 'var(--color-success)';
+          return 'var(--color-highlight)';
+        },
+
+        zoneStatusBadge(zone) {
+          if (!zone) return 'badge-info';
+          const pct = zone.current / zone.capacity;
+          if (pct >= 0.95) return 'badge-warning';
+          if (pct >= 0.8) return 'badge-pending';
+          return 'badge-success';
+        },
+
+        zoneStatusLabel(zone) {
+          if (!zone) return 'Normal';
+          const pct = zone.current / zone.capacity;
+          if (pct >= 0.95) return 'Critical';
+          if (pct >= 0.8) return 'Warning';
+          return 'Normal';
+        },
+
+        acknowledgeAlert(id) {
+          this.showToast('Alert acknowledged');
+        },
+
+        toggleFullscreen() {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+          } else {
+            document.exitFullscreen();
+          }
+        },
+
+        showToast(msg) {
+          this.toast = msg;
+          setTimeout(() => { this.toast = ''; }, 3000);
+        }
+      };
+    }
+  </script>
+
+</body>
+</html>

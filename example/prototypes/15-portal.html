@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self-Service Portal - Crescat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+      --color-portal: hsl(258, 60%, 55%);
+      --color-portal-light: hsl(258, 60%, 65%);
+      --color-portal-bg: hsla(258, 60%, 55%, 0.08);
+      --color-portal-border: hsla(258, 60%, 55%, 0.2);
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-default);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-soft); }
+
+    /* Buttons */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 500;
+      background: var(--color-primary); color: #fff;
+      border: none; cursor: pointer; transition: filter 0.15s;
+    }
+    .btn-primary:hover { filter: brightness(1.15); }
+
+    .btn-portal {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 500;
+      background: var(--color-portal); color: #fff;
+      border: none; cursor: pointer; transition: filter 0.15s;
+    }
+    .btn-portal:hover { filter: brightness(1.15); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 500;
+      background: transparent; color: var(--text-soft);
+      border: 1px solid var(--border-default); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--text-default); }
+
+    .btn-success {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 500;
+      background: var(--color-success); color: #fff;
+      border: none; cursor: pointer; transition: filter 0.15s;
+    }
+    .btn-success:hover { filter: brightness(1.15); }
+
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    /* Input */
+    .input-field {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-input);
+      color: var(--text-default);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-field:focus { border-color: var(--color-portal); }
+    .input-field::placeholder { color: var(--text-soft); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 10px; border-radius: 9999px;
+      font-size: 12px; font-weight: 500; line-height: 20px;
+    }
+    .badge-active {
+      background: hsla(151, 61%, 43%, 0.1);
+      border: 1px solid hsla(151, 61%, 43%, 0.2);
+      color: var(--color-success);
+    }
+    .badge-info {
+      background: rgba(69, 164, 228, 0.1);
+      border: 1px solid rgba(69, 164, 228, 0.2);
+      color: var(--color-highlight);
+    }
+
+    /* Portal card */
+    .portal-card {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-active);
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 100;
+      padding: 12px 20px; border-radius: 8px;
+      background: var(--color-success); color: #fff;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      transform: translateY(0); opacity: 1;
+      transition: all 0.3s ease;
+    }
+    .toast.hidden { transform: translateY(20px); opacity: 0; pointer-events: none; }
+
+    /* Modal backdrop */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 80;
+      background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-content {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    /* Radio custom */
+    .radio-option {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 6px;
+      border: 1px solid var(--border-default);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .radio-option:hover { background: var(--bg-hover); }
+    .radio-option.selected {
+      border-color: var(--color-portal);
+      background: var(--color-portal-bg);
+    }
+    .radio-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid var(--border-default);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .radio-option.selected .radio-dot {
+      border-color: var(--color-portal);
+    }
+    .radio-dot-inner {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-portal);
+      transform: scale(0); transition: transform 0.15s;
+    }
+    .radio-option.selected .radio-dot-inner {
+      transform: scale(1);
+    }
+
+    /* Distribution row */
+    .dist-row {
+      display: flex; align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border-soft);
+      transition: background 0.1s;
+    }
+    .dist-row:hover { background: var(--bg-hover); }
+    .dist-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body class="min-h-screen" x-data="portalApp()">
+
+  <!-- HEADER -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6" style="height:56px; background:var(--bg-sidebar); border-bottom:1px solid var(--border-default);">
+    <div class="flex items-center gap-3">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span class="text-xs font-semibold px-2 py-0.5 rounded" style="background: var(--color-portal); color: #fff;">Portal</span>
+    </div>
+    <div class="flex items-center">
+      <span class="text-sm font-medium text-white">Kygo Travel Party</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm" style="color: var(--text-soft);">Jan Borg</span>
+      <span class="text-xs" style="color: var(--text-soft);">&#183; Tour Manager</span>
+      <a href="#" class="text-sm font-medium" style="color: var(--color-portal-light);">Sign Out</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="pt-[56px]">
+
+    <!-- Welcome Banner -->
+    <div class="max-w-4xl mx-auto px-6 pt-8 pb-2">
+      <div class="flex items-center justify-between p-6 rounded-lg" style="background: linear-gradient(135deg, hsla(258, 60%, 55%, 0.12), hsla(258, 60%, 55%, 0.04)); border: 1px solid var(--color-portal-border); border-radius: 8px;">
+        <div>
+          <h1 class="text-2xl font-semibold text-white mb-1">Welcome, Jan</h1>
+          <p class="text-sm" style="color: var(--text-soft);">Manage and distribute your allocated credentials for Midgard Festival 2026</p>
+        </div>
+        <div class="text-right flex-shrink-0 ml-6">
+          <div class="text-sm font-medium text-white">Jul 10&ndash;20, 2026</div>
+          <div class="text-xs mt-0.5" style="color: var(--text-soft);">Festival Dates</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="max-w-4xl mx-auto px-6 py-6">
+      <div class="grid grid-cols-3 gap-4">
+        <!-- Total Allocated -->
+        <div class="portal-card p-5">
+          <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Total Allocated</div>
+          <div class="text-3xl font-bold" style="color: var(--color-portal);" x-text="totalAllocated"></div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">credentials</div>
+        </div>
+        <!-- Distributed -->
+        <div class="portal-card p-5">
+          <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Distributed</div>
+          <div class="text-3xl font-bold" style="color: var(--color-success);" x-text="totalDistributed"></div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">to team members</div>
+        </div>
+        <!-- Remaining -->
+        <div class="portal-card p-5">
+          <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Remaining</div>
+          <div class="text-3xl font-bold" style="color: var(--color-pending);" x-text="totalRemaining"></div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">to distribute</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Allocation Cards -->
+    <div class="max-w-4xl mx-auto px-6 pb-10 space-y-6">
+
+      <template x-for="(alloc, index) in allocations" :key="index">
+        <div class="portal-card">
+          <!-- Card Header -->
+          <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-soft);">
+            <h2 class="text-base font-semibold text-white" x-text="alloc.name"></h2>
+            <div class="flex items-center gap-3">
+              <span class="badge" :class="alloc.distributions.length >= alloc.allocated ? 'badge-active' : 'badge-info'">
+                <span x-text="alloc.distributions.length + ' of ' + alloc.allocated + ' distributed'"></span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="px-6 pt-4 pb-2">
+            <div class="progress-bar">
+              <div class="progress-fill" :style="'width:' + progressPercent(alloc) + '%; background:' + (alloc.distributions.length >= alloc.allocated ? 'var(--color-success)' : 'var(--color-portal)')"></div>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <template x-if="alloc.distributions.length < alloc.allocated">
+                <span class="text-xs font-medium" style="color: var(--color-pending);" x-text="(alloc.allocated - alloc.distributions.length) + ' remaining'"></span>
+              </template>
+              <template x-if="alloc.distributions.length >= alloc.allocated">
+                <span class="text-xs font-medium flex items-center gap-1" style="color: var(--color-success);">
+                  &#10003; Fully distributed
+                </span>
+              </template>
+              <span class="text-xs" style="color: var(--text-soft);" x-text="Math.round(progressPercent(alloc)) + '%'"></span>
+            </div>
+          </div>
+
+          <!-- Distribution List -->
+          <div class="mt-2">
+            <!-- List header -->
+            <div class="flex items-center px-6 py-2" style="background: var(--bg-active); border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft);">
+              <div class="flex-1 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft);">Name</div>
+              <div class="w-36 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft);">Role</div>
+              <div class="w-28 text-xs font-semibold uppercase tracking-wider text-center" style="color: var(--text-soft);">Credential</div>
+              <div class="w-20 text-xs font-semibold uppercase tracking-wider text-right" style="color: var(--text-soft);">Status</div>
+            </div>
+            <!-- Rows -->
+            <template x-for="(dist, di) in alloc.distributions" :key="di">
+              <div class="dist-row">
+                <div class="flex-1">
+                  <span class="text-sm font-medium text-white" x-text="dist.name"></span>
+                </div>
+                <div class="w-36">
+                  <span class="text-sm" style="color: var(--text-soft);" x-text="dist.role"></span>
+                </div>
+                <div class="w-28 text-center">
+                  <span class="badge badge-info text-xs" x-text="dist.credential"></span>
+                </div>
+                <div class="w-20 text-right">
+                  <span class="badge badge-active text-xs" x-text="dist.status"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Card Footer -->
+          <div class="px-6 py-4" style="border-top: 1px solid var(--border-soft);">
+            <template x-if="alloc.distributions.length < alloc.allocated">
+              <button class="btn-portal" @click="openDistribute(index)">
+                &#43; Distribute to Person
+              </button>
+            </template>
+            <template x-if="alloc.distributions.length >= alloc.allocated">
+              <div class="flex items-center gap-2 text-sm font-medium" style="color: var(--color-success);">
+                &#10003; All distributed
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-8 text-center" style="border-top: 1px solid var(--border-soft);">
+      <p class="text-sm" style="color: var(--text-soft);">Midgard Festival 2026 &nbsp;&#124;&nbsp; Powered by Crescat</p>
+    </footer>
+
+  </main>
+
+  <!-- Distribute Modal -->
+  <template x-if="showDistributeModal">
+    <div class="modal-backdrop" @click.self="showDistributeModal = false" x-transition>
+      <div class="modal-content" @click.stop>
+        <!-- Modal Header -->
+        <div class="px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+          <h3 class="text-lg font-semibold text-white">
+            Distribute <span x-text="allocations[distributingAllocation]?.name"></span>
+          </h3>
+          <p class="text-xs mt-1" style="color: var(--text-soft);">
+            <span x-text="allocations[distributingAllocation]?.allocated - allocations[distributingAllocation]?.distributions.length"></span> remaining to distribute
+          </p>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-5 space-y-4">
+          <!-- Full Name -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color: var(--text-soft);">Full Name <span style="color: var(--color-warning);">*</span></label>
+            <input type="text" class="input-field" placeholder="Enter full name" x-model="distributeForm.name">
+          </div>
+          <!-- Role -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color: var(--text-soft);">Role / Title</label>
+            <input type="text" class="input-field" placeholder="e.g. Sound Engineer" x-model="distributeForm.role">
+          </div>
+          <!-- Email -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color: var(--text-soft);">Email</label>
+            <input type="email" class="input-field" placeholder="name@example.com" x-model="distributeForm.email">
+          </div>
+          <!-- Credential Type -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Credential Type</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="radio-option" :class="distributeForm.credentialType === 'qr' ? 'selected' : ''" @click="distributeForm.credentialType = 'qr'">
+                <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                <div>
+                  <div class="text-sm font-medium text-white">QR Code Only</div>
+                  <div class="text-xs" style="color: var(--text-soft);">Digital credential</div>
+                </div>
+              </div>
+              <div class="radio-option" :class="distributeForm.credentialType === 'qr_badge' ? 'selected' : ''" @click="distributeForm.credentialType = 'qr_badge'">
+                <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                <div>
+                  <div class="text-sm font-medium text-white">QR + Badge</div>
+                  <div class="text-xs" style="color: var(--text-soft);">Digital + printed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-end gap-3 px-6 py-4" style="border-top: 1px solid var(--border-default);">
+          <button class="btn-ghost" @click="showDistributeModal = false">Cancel</button>
+          <button class="btn-portal" @click="submitDistribute()">Distribute</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Toast -->
+  <div class="toast" :class="toast ? '' : 'hidden'" x-text="toast"></div>
+
+  <script>
+    function portalApp() {
+      return {
+        allocations: [
+          {
+            name: 'AAA-Access Pass',
+            allocated: 15,
+            distributions: [
+              { name: 'Jan Borg', role: 'Tour Manager', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Maria Olsen', role: 'Sound Engineer', credential: 'QR', status: 'Active' },
+              { name: 'Thomas Lund', role: 'Stage Manager', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Elise Haugen', role: 'Lighting Tech', credential: 'QR', status: 'Active' },
+              { name: 'Nils Aas', role: 'Guitar Tech', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Sofie Moen', role: 'Wardrobe', credential: 'QR', status: 'Active' },
+              { name: 'Per Nilsen', role: 'Drum Tech', credential: 'QR', status: 'Active' },
+              { name: 'Kristin Dahl', role: 'Tour Coordinator', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Anders Vik', role: 'Security Liaison', credential: 'QR', status: 'Active' },
+              { name: 'Hilde Strand', role: 'Catering Coordinator', credential: 'QR', status: 'Active' },
+              { name: 'Jonas Berg', role: 'FOH Engineer', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Marte Kvalheim', role: 'Artist Liaison', credential: 'QR', status: 'Active' }
+            ]
+          },
+          {
+            name: 'Backstage Pass',
+            allocated: 10,
+            distributions: [
+              { name: 'Jan Borg', role: 'Tour Manager', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Thomas Lund', role: 'Stage Manager', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Maria Olsen', role: 'Sound Engineer', credential: 'QR', status: 'Active' },
+              { name: 'Nils Aas', role: 'Guitar Tech', credential: 'QR', status: 'Active' },
+              { name: 'Per Nilsen', role: 'Drum Tech', credential: 'QR', status: 'Active' },
+              { name: 'Kristin Dahl', role: 'Tour Coordinator', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Elise Haugen', role: 'Lighting Tech', credential: 'QR', status: 'Active' },
+              { name: 'Jonas Berg', role: 'FOH Engineer', credential: 'QR + Badge', status: 'Active' },
+              { name: 'Sofie Moen', role: 'Wardrobe', credential: 'QR', status: 'Active' },
+              { name: 'Anders Vik', role: 'Security Liaison', credential: 'QR', status: 'Active' }
+            ]
+          },
+          {
+            name: 'Parking Pass',
+            allocated: 8,
+            distributions: [
+              { name: 'Jan Borg', role: 'Tour Manager', credential: 'QR', status: 'Active' },
+              { name: 'Magnus Transport', role: 'Driver', credential: 'QR', status: 'Active' },
+              { name: 'Thomas Lund', role: 'Stage Manager', credential: 'QR', status: 'Active' },
+              { name: 'Rune Paulsen', role: 'Monitor Engineer', credential: 'QR', status: 'Active' },
+              { name: 'Tone Larsen', role: 'Backline Tech', credential: 'QR', status: 'Active' }
+            ]
+          }
+        ],
+
+        showDistributeModal: false,
+        distributingAllocation: null,
+        distributeForm: { name: '', role: '', email: '', credentialType: 'qr' },
+        toast: '',
+        showHelp: false,
+
+        get totalAllocated() {
+          return this.allocations.reduce((sum, a) => sum + a.allocated, 0);
+        },
+
+        get totalDistributed() {
+          return this.allocations.reduce((sum, a) => sum + a.distributions.length, 0);
+        },
+
+        get totalRemaining() {
+          return this.totalAllocated - this.totalDistributed;
+        },
+
+        progressPercent(alloc) {
+          return (alloc.distributions.length / alloc.allocated) * 100;
+        },
+
+        openDistribute(index) {
+          this.distributingAllocation = index;
+          this.distributeForm = { name: '', role: '', email: '', credentialType: 'qr' };
+          this.showDistributeModal = true;
+        },
+
+        submitDistribute() {
+          if (!this.distributeForm.name.trim()) {
+            this.showToast('Please enter a name');
+            return;
+          }
+
+          const alloc = this.allocations[this.distributingAllocation];
+          const credentialLabel = this.distributeForm.credentialType === 'qr_badge' ? 'QR + Badge' : 'QR';
+          const personName = this.distributeForm.name.trim();
+          const allocName = alloc.name;
+
+          alloc.distributions.push({
+            name: personName,
+            role: this.distributeForm.role.trim() || 'Team Member',
+            credential: credentialLabel,
+            status: 'Active'
+          });
+
+          this.showDistributeModal = false;
+          this.distributeForm = { name: '', role: '', email: '', credentialType: 'qr' };
+          this.distributingAllocation = null;
+          this.showToast(personName + ' has been distributed a ' + allocName);
+        },
+
+        showToast(msg) {
+          this.toast = msg;
+          setTimeout(() => { this.toast = ''; }, 3000);
+        }
+      };
+    }
+  </script>
+
+</body>
+</html>

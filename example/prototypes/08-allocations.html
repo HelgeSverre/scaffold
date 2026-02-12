@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Allocations — Crescat Entitlement System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+    .card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; }
+    .badge { border-radius: 9999px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
+    .badge-success { background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); color: var(--color-success); }
+    .badge-warning { background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); color: var(--color-warning); }
+    .badge-pending { background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); color: var(--color-pending); }
+    .badge-primary { background: hsla(205, 69%, 33%, 0.1); border: 1px solid hsla(205, 69%, 33%, 0.2); color: var(--color-highlight); }
+    .badge-neutral { background: hsla(205, 16%, 57%, 0.1); border: 1px solid hsla(205, 16%, 57%, 0.2); color: var(--text-soft); }
+    .btn { border-radius: 6px; padding: 8px 16px; font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.15s; text-transform: capitalize; }
+    .btn-primary { background: var(--color-primary); color: white; border: none; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-success { background: var(--color-success); color: white; border: none; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-warning { background: var(--color-warning); color: white; border: none; }
+    .btn-warning:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); border: 1px solid var(--border-default); }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .input { background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 6px; padding: 8px 12px; color: var(--text-default); font-size: 13px; outline: none; width: 100%; }
+    .input:focus { border-color: var(--color-highlight); }
+    .progress-bar { height: 6px; border-radius: 3px; background: var(--bg-active); overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .modal-overlay { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    .drawer-overlay { background: rgba(0,0,0,0.35); }
+    .drawer-panel { position: fixed; top: 48px; right: 0; bottom: 0; width: 540px; background: var(--bg-sidebar); border-left: 1px solid var(--border-default); z-index: 25; overflow-y: auto; transform: translateX(100%); transition: transform 0.25s ease; }
+    .drawer-panel.open { transform: translateX(0); }
+    table th { position: sticky; top: 0; background: var(--bg-sidebar); z-index: 5; }
+    table tr:nth-child(even) td { background: var(--bg-row-alt); }
+    table tr:hover td { background: var(--bg-row-hover); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen" x-data="{
+  toast: null,
+  showCreateModal: false,
+  showDistributeModal: false,
+  showHelp: false,
+  expandedRow: null,
+  filterGroup: '',
+  filterItem: '',
+  createForm: { item: '', groupType: 'Performance', group: '', quantity: '' },
+  distributeSearch: '',
+  allocations: [
+    { id: 1, group: 'Kygo', groupType: 'Performance', groupLabel: 'Travel Party', item: 'AAA-Access Pass', allocated: 15, distributed: 12, remaining: 3 },
+    { id: 2, group: 'Aurora', groupType: 'Performance', groupLabel: 'Travel Party', item: 'AAA-Access Pass', allocated: 10, distributed: 10, remaining: 0 },
+    { id: 3, group: 'Red Bull', groupType: 'Partner', groupLabel: 'Partner', item: 'VIP Pass', allocated: 20, distributed: 15, remaining: 5 },
+    { id: 4, group: 'Sound Department', groupType: 'Section', groupLabel: 'Section', item: 'Two-Way Radio', allocated: 8, distributed: 8, remaining: 0 },
+    { id: 5, group: 'Stage Crew', groupType: 'Section', groupLabel: 'Section', item: 'AAA-Access Pass', allocated: 30, distributed: 28, remaining: 2 },
+    { id: 6, group: 'Press Corps', groupType: 'Section', groupLabel: 'Section', item: 'Media Pass', allocated: 25, distributed: 18, remaining: 7 },
+    { id: 7, group: 'Catering Team', groupType: 'Section', groupLabel: 'Section', item: 'Backstage Pass', allocated: 12, distributed: 12, remaining: 0 },
+    { id: 8, group: 'DJ Tiesto', groupType: 'Performance', groupLabel: 'Travel Party', item: 'AAA-Access Pass', allocated: 8, distributed: 5, remaining: 3 },
+    { id: 9, group: 'Volunteers Section', groupType: 'Section', groupLabel: 'Section', item: 'Lunch Voucher', allocated: 50, distributed: 45, remaining: 5, bulk: true }
+  ],
+  kygoDistributions: [
+    { name: 'Jan Borg', role: 'Tour Manager', status: 'Active', date: 'Jul 10, 14:30', credential: 'QR + Badge' },
+    { name: 'Maria Olsen', role: 'Sound Engineer', status: 'Active', date: 'Jul 10, 14:31', credential: 'QR' },
+    { name: 'Thomas Lund', role: 'Stage Manager', status: 'Active', date: 'Jul 11, 09:15', credential: 'QR + Badge' },
+    { name: 'Elise Haugen', role: 'Lighting Tech', status: 'Active', date: 'Jul 11, 09:20', credential: 'QR' },
+    { name: 'Nils Aas', role: 'Guitar Tech', status: 'Active', date: 'Jul 11, 09:22', credential: 'QR + Badge' },
+    { name: 'Sofie Moen', role: 'Wardrobe', status: 'Active', date: 'Jul 11, 10:05', credential: 'QR' },
+    { name: 'Per Nilsen', role: 'Drum Tech', status: 'Active', date: 'Jul 12, 08:30', credential: 'QR' },
+    { name: 'Kristin Dahl', role: 'Tour Coordinator', status: 'Active', date: 'Jul 12, 08:45', credential: 'QR + Badge' },
+    { name: 'Anders Vik', role: 'Security Liaison', status: 'Active', date: 'Jul 12, 09:00', credential: 'QR' },
+    { name: 'Hilde Strand', role: 'Catering Coordinator', status: 'Active', date: 'Jul 13, 11:30', credential: 'QR' },
+    { name: 'Jonas Berg', role: 'FOH Engineer', status: 'Active', date: 'Jul 13, 11:35', credential: 'QR + Badge' },
+    { name: 'Marte Kvalheim', role: 'Artist Liaison', status: 'Active', date: 'Jul 14, 08:15', credential: 'QR' }
+  ],
+  participantSuggestions: [
+    { name: 'Rune Paulsen', role: 'Monitor Engineer' },
+    { name: 'Tone Larsen', role: 'Backline Tech' },
+    { name: 'Geir Homme', role: 'Production Assistant' },
+    { name: 'Silje Nergaard', role: 'Photographer' }
+  ],
+  get filteredAllocations() {
+    return this.allocations.filter(a => {
+      if (this.filterGroup && !a.group.toLowerCase().includes(this.filterGroup.toLowerCase())) return false;
+      if (this.filterItem && a.item !== this.filterItem) return false;
+      return true;
+    });
+  },
+  get totalAllocated() { return this.allocations.reduce((a, b) => a + b.allocated, 0); },
+  get totalDistributed() { return this.allocations.reduce((a, b) => a + b.distributed, 0); },
+  get totalRemaining() { return this.allocations.reduce((a, b) => a + b.remaining, 0); },
+  progressPercent(a) { return a.allocated > 0 ? Math.round((a.distributed / a.allocated) * 100) : 0; },
+  progressColor(pct) { return pct >= 100 ? 'var(--color-success)' : pct >= 75 ? 'var(--color-highlight)' : pct >= 50 ? 'var(--color-pending)' : 'var(--color-warning)'; },
+  groupsByType: {
+    Performance: ['Kygo', 'Aurora', 'DJ Tiesto', 'Sigrid', 'Astrid S', 'Boy Pablo'],
+    Partner: ['Red Bull', 'Spotify', 'Ticketmaster', 'Live Nation', 'Pepsi'],
+    Section: ['Sound Department', 'Stage Crew', 'Press Corps', 'Catering Team', 'Volunteers Section', 'Security Team', 'Medical Team', 'Transport']
+  },
+  allItems: ['AAA-Access Pass', 'Backstage Pass', 'VIP Pass', 'Media Pass', 'Lunch Voucher', 'Dinner Voucher', 'Drink Token', 'Two-Way Radio', 'Parking Pass']
+}">
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-[232px] mt-[48px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-semibold mb-1">Group Allocations</h1>
+        <p style="color: var(--text-soft);">Allocate entitlements to bands, sponsors, and departments in bulk</p>
+      </div>
+      <button @click="showCreateModal = true" class="btn btn-primary flex items-center gap-2">
+        <span class="text-lg leading-none">+</span> Create Allocation
+      </button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Allocations</div>
+        <div class="text-2xl font-bold" x-text="allocations.length">24</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Quantity Allocated</div>
+        <div class="text-2xl font-bold" x-text="totalAllocated">186</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Distributed</div>
+        <div class="text-2xl font-bold" style="color: var(--color-success);" x-text="totalDistributed">142</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-soft);">Remaining</div>
+        <div class="text-2xl font-bold" style="color: var(--color-pending);" x-text="totalRemaining">44</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex items-center gap-3 mb-4">
+      <div class="relative flex-1 max-w-xs">
+        <input type="text" class="input pl-8" placeholder="Filter by group name..." x-model="filterGroup">
+        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-soft);">&#x1F50D;</span>
+      </div>
+      <select class="input" style="width: auto;" x-model="filterItem">
+        <option value="">All Items</option>
+        <template x-for="item in allItems" :key="item">
+          <option :value="item" x-text="item"></option>
+        </template>
+      </select>
+      <div class="ml-auto text-sm" style="color: var(--text-soft);">
+        <span x-text="filteredAllocations.length"></span> allocations
+      </div>
+    </div>
+
+    <!-- Allocations Table -->
+    <div class="card overflow-hidden mb-4">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Group</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Type</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Item</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Allocated</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Distributed</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Remaining</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default); min-width: 180px;">Progress</th>
+              <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft); border-bottom: 1px solid var(--border-default);">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="a in filteredAllocations" :key="a.id">
+              <tr class="cursor-pointer" @click="expandedRow = expandedRow === a.id ? null : a.id">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium" x-text="a.group"></span>
+                    <template x-if="a.groupType === 'Performance'">
+                      <span class="text-xs" style="color: var(--text-soft);">(Performance)</span>
+                    </template>
+                    <template x-if="a.groupType === 'Partner'">
+                      <span class="text-xs" style="color: var(--text-soft);">(Sponsor)</span>
+                    </template>
+                  </div>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="badge" :class="a.groupType === 'Performance' ? 'badge-primary' : a.groupType === 'Partner' ? 'badge-pending' : 'badge-neutral'" x-text="a.groupLabel"></span>
+                </td>
+                <td class="px-4 py-3" x-text="a.item"></td>
+                <td class="px-4 py-3 text-center font-medium">
+                  <span x-text="a.allocated"></span>
+                  <template x-if="a.bulk">
+                    <span class="text-xs ml-1" style="color: var(--text-soft);">(bulk)</span>
+                  </template>
+                </td>
+                <td class="px-4 py-3 text-center font-medium" style="color: var(--color-success);" x-text="a.distributed"></td>
+                <td class="px-4 py-3 text-center font-medium" :style="a.remaining > 0 ? 'color: var(--color-pending)' : 'color: var(--text-soft)'" x-text="a.remaining"></td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="progress-bar flex-1">
+                      <div class="progress-fill" :style="'width: ' + progressPercent(a) + '%; background: ' + progressColor(progressPercent(a))"></div>
+                    </div>
+                    <span class="text-xs font-medium w-10 text-right" :style="'color: ' + progressColor(progressPercent(a))" x-text="progressPercent(a) + '%'"></span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button class="btn btn-ghost btn-sm" @click.stop="expandedRow = a.id">View</button>
+                    <template x-if="a.remaining > 0">
+                      <button class="btn btn-ghost btn-sm" @click.stop="toast = 'Edit allocation coming soon'; setTimeout(() => toast = null, 3000)">Edit</button>
+                    </template>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Drawer Overlay -->
+  <div x-show="expandedRow" @click="expandedRow = null" class="fixed inset-0 drawer-overlay z-20" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="top: 48px; left: 232px;"></div>
+
+  <!-- Detail Drawer -->
+  <div class="drawer-panel" :class="{ 'open': expandedRow }">
+    <!-- Kygo detail (id=1) with full distribution data -->
+    <template x-if="expandedRow === 1">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold">Kygo</h2>
+            <p class="text-xs" style="color: var(--text-soft);">Travel Party &middot; AAA-Access Pass</p>
+          </div>
+          <button @click="expandedRow = null" class="w-8 h-8 flex items-center justify-center rounded hover:bg-[var(--bg-hover)]" style="color: var(--text-soft);">✕</button>
+        </div>
+
+        <!-- Progress -->
+        <div class="mb-5">
+          <div class="flex justify-between text-xs mb-1">
+            <span style="color: var(--text-soft);">Distribution Progress</span>
+            <span class="font-medium">12 / 15 (80%)</span>
+          </div>
+          <div class="progress-bar" style="height: 8px;">
+            <div class="progress-fill" style="width: 80%; background: var(--color-highlight);"></div>
+          </div>
+        </div>
+
+        <!-- Action -->
+        <button @click="showDistributeModal = true" class="btn btn-success text-xs w-full mb-5 flex items-center justify-center gap-1">
+          <span>+</span> Distribute to Participant (3 remaining)
+        </button>
+
+        <!-- Distribution List -->
+        <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Distributed To</h3>
+        <div class="space-y-1 mb-5">
+          <template x-for="d in kygoDistributions" :key="d.name">
+            <div class="flex items-center justify-between px-3 py-2 rounded text-xs" style="background: var(--bg-row-alt);">
+              <div class="min-w-0">
+                <div class="font-medium" x-text="d.name"></div>
+                <div style="color: var(--text-soft);" x-text="d.role"></div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[10px]" style="color: var(--text-soft);" x-text="d.credential"></span>
+                <span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Active</span>
+              </div>
+            </div>
+          </template>
+          <!-- Available slots -->
+          <template x-for="i in 3" :key="'avail-'+i">
+            <div class="flex items-center justify-between px-3 py-2 rounded text-xs" style="background: var(--bg-row-alt); border: 1px dashed var(--border-default);">
+              <span style="color: var(--text-soft);">&mdash; Available &mdash;</span>
+              <span class="badge badge-pending" style="font-size: 10px; padding: 1px 6px;">Pending</span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Metadata -->
+        <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Details</h3>
+        <div class="space-y-2 mb-5">
+          <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span style="color: var(--text-soft);">Created by:</span> Helge Nordstrom &middot; Jul 8, 10:00
+          </div>
+          <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span style="color: var(--text-soft);">Modified:</span> Jul 14, 08:15 &middot; Qty 12 → 15
+          </div>
+          <div class="p-2 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span style="color: var(--text-soft);">Contact:</span> Jan Borg (Tour Manager)
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <h3 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Activity</h3>
+        <div class="space-y-1.5">
+          <div class="flex items-start gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span class="font-mono shrink-0" style="color: var(--text-soft);">Jul 14</span>
+            <span>Marte Kvalheim distributed pass to herself</span>
+          </div>
+          <div class="flex items-start gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span class="font-mono shrink-0" style="color: var(--text-soft);">Jul 14</span>
+            <span>Allocation increased from 12 to 15</span>
+          </div>
+          <div class="flex items-start gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span class="font-mono shrink-0" style="color: var(--text-soft);">Jul 13</span>
+            <span>Jonas Berg received pass (by Jan Borg)</span>
+          </div>
+          <div class="flex items-start gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span class="font-mono shrink-0" style="color: var(--text-soft);">Jul 13</span>
+            <span>Hilde Strand received pass (by Jan Borg)</span>
+          </div>
+          <div class="flex items-start gap-2 px-2 py-1.5 rounded text-xs" style="background: var(--bg-row-alt);">
+            <span class="font-mono shrink-0" style="color: var(--text-soft);">Jul 08</span>
+            <span>Allocation created: 12 passes for Kygo</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Generic detail for other allocations -->
+    <template x-if="expandedRow && expandedRow !== 1">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold" x-text="allocations.find(a => a.id === expandedRow)?.group"></h2>
+            <p class="text-xs" style="color: var(--text-soft);" x-text="allocations.find(a => a.id === expandedRow)?.groupLabel + ' · ' + allocations.find(a => a.id === expandedRow)?.item"></p>
+          </div>
+          <button @click="expandedRow = null" class="w-8 h-8 flex items-center justify-center rounded hover:bg-[var(--bg-hover)]" style="color: var(--text-soft);">✕</button>
+        </div>
+
+        <!-- Progress -->
+        <div class="mb-5">
+          <div class="flex justify-between text-xs mb-1">
+            <span style="color: var(--text-soft);">Distribution Progress</span>
+            <span class="font-medium" x-text="allocations.find(a => a.id === expandedRow)?.distributed + ' / ' + allocations.find(a => a.id === expandedRow)?.allocated + ' (' + progressPercent(allocations.find(a => a.id === expandedRow)) + '%)'"></span>
+          </div>
+          <div class="progress-bar" style="height: 8px;">
+            <div class="progress-fill" :style="'width: ' + progressPercent(allocations.find(a => a.id === expandedRow)) + '%; background: ' + progressColor(progressPercent(allocations.find(a => a.id === expandedRow)))"></div>
+          </div>
+        </div>
+
+        <template x-if="allocations.find(a => a.id === expandedRow)?.remaining > 0">
+          <button @click="showDistributeModal = true" class="btn btn-success text-xs w-full mb-5 flex items-center justify-center gap-1">
+            <span>+</span> Distribute to Participant (<span x-text="allocations.find(a => a.id === expandedRow)?.remaining"></span> remaining)
+          </button>
+        </template>
+        <template x-if="allocations.find(a => a.id === expandedRow)?.remaining === 0">
+          <div class="text-center py-4 mb-5 rounded text-xs" style="background: hsla(151, 61%, 43%, 0.1); color: var(--color-success);">
+            All items have been distributed ✓
+          </div>
+        </template>
+
+        <div class="text-center py-6" style="color: var(--text-soft);">
+          <p class="text-sm">Distribution details would appear here.</p>
+          <p class="text-xs mt-1">Each distributed participant shown with status and credential info.</p>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Create Allocation Modal -->
+  <template x-if="showCreateModal">
+    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showCreateModal = false">
+      <div class="w-full max-w-lg rounded-lg p-6" style="background: var(--bg-sidebar); border: 1px solid var(--border-default);" @click.stop>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-semibold">Create Allocation</h2>
+          <button @click="showCreateModal = false" class="text-lg" style="color: var(--text-soft);">✕</button>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Entitlement Item -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Entitlement Item</label>
+            <select class="input" x-model="createForm.item">
+              <option value="">Select item...</option>
+              <template x-for="item in allItems" :key="item">
+                <option :value="item" x-text="item"></option>
+              </template>
+            </select>
+          </div>
+
+          <!-- Group Type -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Group Type</label>
+            <div class="flex gap-2">
+              <template x-for="t in ['Performance', 'Partner', 'Section']" :key="t">
+                <button class="btn text-sm flex-1" :class="createForm.groupType === t ? 'btn-primary' : 'btn-ghost'" @click="createForm.groupType = t; createForm.group = '';">
+                  <div>
+                    <span x-text="t === 'Partner' ? 'Partner Company' : t === 'Section' ? 'Festival Section' : t"></span>
+                  </div>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Group -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Group</label>
+            <select class="input" x-model="createForm.group">
+              <option value="">Select group...</option>
+              <template x-for="g in groupsByType[createForm.groupType]" :key="g">
+                <option :value="g" x-text="g"></option>
+              </template>
+            </select>
+          </div>
+
+          <!-- Quantity -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Quantity</label>
+            <input type="number" class="input" placeholder="e.g., 10" x-model="createForm.quantity" min="1">
+            <p class="text-xs mt-1" style="color: var(--text-soft);">How many of this item to allocate to the group</p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6 pt-4" style="border-top: 1px solid var(--border-default);">
+          <button @click="showCreateModal = false" class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary" @click="if(!createForm.item || !createForm.group || !createForm.quantity) return;
+  allocations.push({
+    id: Date.now(),
+    group: createForm.group,
+    groupType: createForm.groupType,
+    groupLabel: createForm.groupType === 'Performance' ? 'Travel Party' : createForm.groupType === 'Partner' ? 'Partner' : 'Section',
+    item: createForm.item,
+    allocated: parseInt(createForm.quantity),
+    distributed: 0,
+    remaining: parseInt(createForm.quantity)
+  });
+  createForm = {item:'', groupType:'Performance', group:'', quantity:''};
+  showCreateModal = false;
+  toast = 'Allocation created';
+  setTimeout(() => toast = null, 3000)">Create Allocation</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Distribute to Participant Modal -->
+  <template x-if="showDistributeModal">
+    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showDistributeModal = false">
+      <div class="w-full max-w-lg rounded-lg p-6" style="background: var(--bg-sidebar); border: 1px solid var(--border-default);" @click.stop>
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-semibold">Distribute to Participant</h2>
+            <p class="text-sm" style="color: var(--text-soft);">Kygo &mdash; AAA-Access Pass (3 remaining)</p>
+          </div>
+          <button @click="showDistributeModal = false" class="text-lg" style="color: var(--text-soft);">✕</button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Search Participant</label>
+            <input type="text" class="input" placeholder="Search by name..." x-model="distributeSearch">
+          </div>
+
+          <!-- Suggestions -->
+          <div class="rounded overflow-hidden" style="border: 1px solid var(--border-default);">
+            <template x-for="p in participantSuggestions.filter(p => !distributeSearch || p.name.toLowerCase().includes(distributeSearch.toLowerCase()))" :key="p.name">
+              <div class="flex items-center justify-between px-4 py-3 cursor-pointer" style="border-bottom: 1px solid var(--border-soft);" :style="''" @mouseenter="$el.style.background='var(--bg-hover)'" @mouseleave="$el.style.background='transparent'">
+                <div>
+                  <div class="font-medium text-sm" x-text="p.name"></div>
+                  <div class="text-xs" style="color: var(--text-soft);" x-text="p.role"></div>
+                </div>
+                <button class="btn btn-success btn-sm" @click="const a = allocations.find(a => a.id === expandedRow);
+  if(a && a.remaining > 0) {
+    a.distributed++;
+    a.remaining--;
+    toast = p.name + ' received ' + (a?.item || 'item');
+    setTimeout(() => toast = null, 3000);
+    if(a.remaining <= 0) showDistributeModal = false;
+  }">Distribute</button>
+              </div>
+            </template>
+          </div>
+
+          <p class="text-xs" style="color: var(--text-soft);">
+            Distributing will assign one AAA-Access Pass from Kygo's allocation to the selected participant. A credential can be issued separately.
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6 pt-4" style="border-top: 1px solid var(--border-default);">
+          <button @click="showDistributeModal = false" class="btn btn-ghost">Close</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Help Overlay -->
+  <button @click="showHelp = true" class="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-40 cursor-pointer" style="background: var(--color-primary); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">?</button>
+
+  <template x-if="showHelp">
+    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showHelp = false">
+      <div class="w-full max-w-2xl rounded-lg p-6" style="background: var(--bg-sidebar); border: 1px solid var(--border-default);">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Allocations &mdash; Help</h2>
+          <button @click="showHelp = false" class="text-lg" style="color: var(--text-soft);">✕</button>
+        </div>
+        <div class="space-y-4 text-sm leading-relaxed" style="color: var(--text-default);">
+          <p><strong>Allocations</strong> let you assign bulk quantities of entitlements to groups &mdash; bands, sponsors, departments. The group leader or admin then distributes individual passes to specific people.</p>
+          <div>
+            <h3 class="font-semibold mb-1">How It Works</h3>
+            <ol class="list-decimal list-inside space-y-1" style="color: var(--text-soft);">
+              <li><strong style="color: var(--text-default);">Create an allocation:</strong> "Band X gets 10 AAA passes"</li>
+              <li><strong style="color: var(--text-default);">Distribute individually:</strong> Tour manager assigns passes to specific crew members</li>
+              <li><strong style="color: var(--text-default);">Track progress:</strong> See how many are distributed vs. remaining</li>
+            </ol>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-1">Group Types</h3>
+            <ul class="list-disc list-inside space-y-1" style="color: var(--text-soft);">
+              <li><strong style="color: var(--text-default);">Performance (Travel Party):</strong> Bands and artists with touring crews</li>
+              <li><strong style="color: var(--text-default);">Partner Company:</strong> Sponsors and partner organizations</li>
+              <li><strong style="color: var(--text-default);">Festival Section:</strong> Internal departments (sound, stage, catering)</li>
+            </ul>
+          </div>
+          <p style="color: var(--text-soft);">This covers the Group Allocation and Distribution workflow. Inspired by Lennd's allocation model and Axess' Flex Days shared pool.</p>
+        </div>
+        <div class="mt-6 pt-4 flex justify-end" style="border-top: 1px solid var(--border-default);">
+          <button @click="showHelp = false" class="btn btn-primary">Got it</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- TOAST -->
+  <div x-show="toast" x-transition class="fixed top-16 right-6 z-[60] px-4 py-2 rounded-md text-sm font-medium" style="background:var(--color-primary); color:white;" x-text="toast"></div>
+</body>
+</html>

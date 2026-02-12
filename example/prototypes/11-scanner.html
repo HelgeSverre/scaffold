@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Scanner - Crescat Entitlement System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; margin: 0; overflow: hidden; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; box-sizing: border-box; }
+
+    .scanner-bg-idle { background: var(--bg-main); }
+    .scanner-bg-granted { background: hsl(151, 61%, 43%); }
+    .scanner-bg-denied { background: hsl(0, 72%, 50%); }
+    .scanner-bg-warning { background: hsl(44, 88%, 55%); }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .pulse-icon { animation: pulseGlow 2s ease-in-out infinite; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.3s ease-out; }
+
+    @keyframes countdownBar {
+      from { width: 100%; }
+      to { width: 0%; }
+    }
+
+    .btn-scanner {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-scanner:hover { filter: brightness(1.1); }
+    .btn-scanner:active { transform: scale(0.97); }
+
+    .entitlement-card {
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .entitlement-card-granted { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); }
+    .entitlement-card-denied { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.25); }
+    .entitlement-card-info { background: rgba(69,164,228,0.15); border: 2px solid rgba(69,164,228,0.3); }
+    .entitlement-card-warning { background: rgba(0,0,0,0.1); border: 2px solid rgba(0,0,0,0.2); }
+
+    .help-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+    }
+    .help-card {
+      background: var(--bg-sidebar); border: 1px solid var(--border-default);
+      border-radius: 12px; padding: 32px; max-width: 600px; width: 90%; color: var(--text-default);
+    }
+
+    .recent-scan-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; border-radius: 8px;
+      background: var(--bg-sidebar); border: 1px solid var(--border-soft);
+      margin-bottom: 6px; font-size: 13px;
+    }
+
+    .scanner-input {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-size: 20px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .scanner-input:focus { border-color: var(--color-highlight); }
+    .scanner-input::placeholder { color: rgba(255,255,255,0.4); }
+
+    .scanner-input-idle {
+      background: var(--bg-input);
+      border: 2px solid var(--border-default);
+      color: var(--text-default);
+    }
+    .scanner-input-idle:focus { border-color: var(--color-primary); }
+    .scanner-input-idle::placeholder { color: var(--text-soft); }
+
+    .avatar-circle {
+      width: 80px; height: 80px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 700;
+      background: rgba(255,255,255,0.2); color: white;
+      border: 3px solid rgba(255,255,255,0.4);
+    }
+
+    .mode-toggle {
+      display: flex; border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--border-default);
+    }
+    .mode-toggle button {
+      padding: 6px 16px; font-size: 12px; font-weight: 600;
+      font-family: 'Inter', sans-serif; border: none; cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .countdown-bar {
+      height: 4px; background: rgba(255,255,255,0.5); border-radius: 2px;
+      animation: countdownBar 5s linear forwards;
+    }
+
+    .direction-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 20px; border-radius: 12px;
+      font-size: 18px; font-weight: 700;
+      background: rgba(255,255,255,0.2); color: white;
+    }
+  </style>
+</head>
+<body x-data="scannerApp()">
+
+  <!-- Full-screen scanner container -->
+  <div class="fixed inset-0 flex flex-col transition-colors duration-300"
+       :class="{
+         'scanner-bg-idle': state === 'idle',
+         'scanner-bg-granted': state === 'granted',
+         'scanner-bg-denied': state === 'denied',
+         'scanner-bg-warning': state === 'warning'
+       }">
+
+    <!-- Top Bar -->
+    <div class="flex items-center justify-between px-5 py-3" style="background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);">
+      <div class="flex items-center gap-4">
+        <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+        <span style="color: rgba(255,255,255,0.4);">|</span>
+        <span class="text-white font-semibold" x-text="checkpointName"></span>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- Checkpoint Mode Toggle -->
+        <div class="mode-toggle">
+          <button @click="checkpointMode = 'dispenser'; updateCheckpointName()"
+                  :style="checkpointMode === 'dispenser' ? 'background: var(--color-primary); color: white;' : 'background: var(--bg-input); color: var(--text-soft);'">
+            Dispenser
+          </button>
+          <button @click="checkpointMode = 'gate'; updateCheckpointName()"
+                  :style="checkpointMode === 'gate' ? 'background: var(--color-primary); color: white;' : 'background: var(--bg-input); color: var(--text-soft);'">
+            Gate
+          </button>
+        </div>
+
+        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2);"></div>
+
+        <div class="flex items-center gap-2">
+          <span style="font-size: 13px; color: rgba(255,255,255,0.7);">Operator:</span>
+          <span class="text-white font-medium text-sm">Ole Bratteng</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full" :style="isOnline ? 'background: hsl(151, 61%, 43%);' : 'background: hsl(0, 88%, 66%);'"></span>
+          <span style="font-size: 12px;" :style="isOnline ? 'color: hsl(151, 61%, 43%);' : 'color: hsl(0, 88%, 66%);'" x-text="isOnline ? 'Online' : 'Offline'"></span>
+        </div>
+
+        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2);"></div>
+
+        <button @click="showSettings = !showSettings" style="color: rgba(255,255,255,0.7); font-size: 18px; background: none; border: none; cursor: pointer;">&#9881;</button>
+        <button @click="showHelp = true" style="color: rgba(255,255,255,0.7); font-size: 14px; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">&#10067; Help</button>
+        <a href="01-dashboard.html" style="color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">Back to Admin</a>
+      </div>
+    </div>
+
+    <!-- Settings Dropdown -->
+    <div x-show="showSettings" x-transition @click.away="showSettings = false"
+         class="absolute top-14 right-5 z-50 p-4" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 12px; width: 280px;">
+      <div style="font-size: 13px; font-weight: 600; color: white; margin-bottom: 12px;">Scanner Settings</div>
+      <div class="mb-3">
+        <label style="font-size: 12px; color: var(--text-soft); display: block; margin-bottom: 4px;">Auto-return delay (seconds)</label>
+        <input type="number" x-model.number="autoReturnDelay" min="3" max="30" style="background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 80px; font-family: 'Inter', sans-serif;">
+      </div>
+      <div class="mb-3">
+        <label style="font-size: 12px; color: var(--text-soft); display: block; margin-bottom: 4px;">Sound alerts</label>
+        <div class="flex items-center gap-2">
+          <button @click="soundAlerts = !soundAlerts" class="w-8 h-4 rounded-full relative" :style="soundAlerts ? 'background: var(--color-success);' : 'background: var(--bg-input); border: 1px solid var(--border-default);'">
+            <span class="block w-3 h-3 bg-white rounded-full absolute top-0.5" :style="soundAlerts ? 'right: 2px;' : 'left: 2px;'"></span>
+          </button>
+          <span style="font-size: 12px;" :style="soundAlerts ? 'color: var(--text-default);' : 'color: var(--text-soft);'" x-text="soundAlerts ? 'Enabled' : 'Disabled'"></span>
+        </div>
+      </div>
+      <div>
+        <label style="font-size: 12px; color: var(--text-soft); display: block; margin-bottom: 4px;">Camera scanner</label>
+        <div class="flex items-center gap-2">
+          <button @click="cameraScanner = !cameraScanner" class="w-8 h-4 rounded-full relative" :style="cameraScanner ? 'background: var(--color-success);' : 'background: var(--bg-input); border: 1px solid var(--border-default);'">
+            <span class="block w-3 h-3 bg-white rounded-full absolute top-0.5" :style="cameraScanner ? 'right: 2px;' : 'left: 2px;'"></span>
+          </button>
+          <span style="font-size: 12px;" :style="cameraScanner ? 'color: var(--text-default);' : 'color: var(--text-soft);'" x-text="cameraScanner ? 'Enabled' : 'Disabled'"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Scanner Area -->
+    <div class="flex-1 flex flex-col items-center justify-center px-6 relative">
+
+      <!-- STATE: IDLE / Waiting for Scan -->
+      <template x-if="state === 'idle'">
+        <div class="text-center w-full max-w-xl slide-up">
+          <!-- Scan Icon -->
+          <div class="pulse-icon mb-6" style="font-size: 72px; color: var(--text-soft);">&#9744;</div>
+          <h2 class="text-2xl font-semibold text-white mb-2">
+            <span x-show="checkpointMode === 'dispenser'">Scan Credential or Enter ID</span>
+            <span x-show="checkpointMode === 'gate'">Scan to Check Access</span>
+          </h2>
+          <p class="mb-8" style="color: var(--text-soft); font-size: 15px;">
+            <span x-show="checkpointMode === 'dispenser'" x-text="'Checkpoint: ' + checkpointName"></span>
+            <span x-show="checkpointMode === 'gate'" x-text="'Gate: ' + checkpointName"></span>
+          </p>
+
+          <!-- Manual Input -->
+          <div class="flex items-center justify-center gap-3 mb-6">
+            <input type="text" class="scanner-input scanner-input-idle" placeholder="Enter credential ID..."
+                   x-model="manualInput" @keyup.enter="simulateScan('granted')">
+            <button @click="simulateScan('granted')" class="btn-scanner" style="background: var(--color-primary); color: white; padding: 16px 32px; font-size: 18px;">
+              Scan
+            </button>
+          </div>
+
+          <!-- Last Scan -->
+          <div x-show="lastScan" class="mb-8" style="color: var(--text-soft); font-size: 14px;">
+            Last scan: <span class="text-white" x-text="lastScan?.name"></span> -
+            <span x-text="lastScan?.item"></span>
+            <span :style="lastScan?.result === 'Granted' ? 'color: var(--color-success);' : 'color: var(--color-warning);'" x-text="lastScan?.result === 'Granted' ? '✓ Granted' : '✗ Denied'"></span>
+            <span style="color: var(--text-soft);" x-text="'(' + (lastScan?.time || '') + ')'"></span>
+          </div>
+
+          <!-- Recent Scans -->
+          <div class="w-full max-w-lg mx-auto">
+            <div style="font-size: 12px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; text-align: left;">Recent Scans</div>
+            <template x-for="scan in recentScans" :key="scan.id">
+              <div class="recent-scan-item">
+                <div class="flex items-center gap-3">
+                  <span :style="scan.result === 'Granted' ? 'color: var(--color-success);' : 'color: var(--color-warning);'" x-text="scan.result === 'Granted' ? '✓' : '✗'"></span>
+                  <span class="text-white font-medium" x-text="scan.name"></span>
+                  <span style="color: var(--text-soft);" x-text="scan.item"></span>
+                </div>
+                <span style="color: var(--text-soft); font-size: 12px; font-family: monospace;" x-text="scan.time"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <!-- STATE: GRANTED (Dispenser Mode) -->
+      <template x-if="state === 'granted' && checkpointMode === 'dispenser'">
+        <div class="text-center w-full max-w-lg slide-up">
+          <!-- Countdown bar -->
+          <div class="w-full max-w-md mx-auto mb-6">
+            <div class="countdown-bar" :key="scanCounter"></div>
+          </div>
+
+          <!-- Avatar and Info -->
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <div class="avatar-circle">KN</div>
+            <div class="text-left">
+              <div class="text-3xl font-bold text-white mb-1">Kari Nordmann</div>
+              <div style="font-size: 16px; color: rgba(255,255,255,0.8);">Sound Department</div>
+              <div style="font-size: 14px; color: rgba(255,255,255,0.6);">Stage Manager</div>
+            </div>
+          </div>
+
+          <!-- Entitlement Cards -->
+          <div class="max-w-md mx-auto mb-8">
+            <div class="entitlement-card entitlement-card-granted">
+              <span style="font-size: 24px;">&#9989;</span>
+              <div class="text-left flex-1">
+                <div class="text-white font-semibold" style="font-size: 16px;">Lunch Voucher</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px;">DISPENSED -- 2 of 3 remaining today</div>
+              </div>
+            </div>
+            <div class="entitlement-card entitlement-card-info">
+              <span style="font-size: 24px;">&#8505;</span>
+              <div class="text-left flex-1">
+                <div class="text-white font-semibold" style="font-size: 16px;">Drink Token</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px;">Available -- 4 of 5 remaining</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="text-5xl font-bold text-white mb-8">&#10003; GRANTED</div>
+
+          <!-- Done Button -->
+          <button @click="resetToIdle()" class="btn-scanner" style="background: rgba(255,255,255,0.25); color: white; padding: 16px 48px; font-size: 18px; border: 2px solid rgba(255,255,255,0.4);">
+            Done
+          </button>
+        </div>
+      </template>
+
+      <!-- STATE: GRANTED (Gate Mode) -->
+      <template x-if="state === 'granted' && checkpointMode === 'gate'">
+        <div class="text-center w-full max-w-lg slide-up">
+          <!-- Countdown bar -->
+          <div class="w-full max-w-md mx-auto mb-6">
+            <div class="countdown-bar" :key="scanCounter"></div>
+          </div>
+
+          <!-- Direction -->
+          <div class="mb-6">
+            <span class="direction-badge">&rarr; IN</span>
+          </div>
+
+          <!-- Avatar and Info -->
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <div class="avatar-circle">EH</div>
+            <div class="text-left">
+              <div class="text-3xl font-bold text-white mb-1">Erik Hansen</div>
+              <div style="font-size: 16px; color: rgba(255,255,255,0.8);">Lighting Department</div>
+              <div style="font-size: 14px; color: rgba(255,255,255,0.6);">Lighting Tech</div>
+            </div>
+          </div>
+
+          <!-- Access Info -->
+          <div class="max-w-md mx-auto mb-6">
+            <div class="entitlement-card entitlement-card-granted">
+              <span style="font-size: 24px;">&#9989;</span>
+              <div class="text-left flex-1">
+                <div class="text-white font-semibold" style="font-size: 16px;">AAA-Access Pass</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px;">Full access to Backstage zone</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="text-5xl font-bold text-white mb-4">&#10003; ACCESS GRANTED</div>
+          <div class="text-xl text-white mb-8" style="color: rgba(255,255,255,0.8);">Backstage</div>
+
+          <button @click="resetToIdle()" class="btn-scanner" style="background: rgba(255,255,255,0.25); color: white; padding: 16px 48px; font-size: 18px; border: 2px solid rgba(255,255,255,0.4);">
+            Done
+          </button>
+        </div>
+      </template>
+
+      <!-- STATE: DENIED (Dispenser Mode) -->
+      <template x-if="state === 'denied' && checkpointMode === 'dispenser'">
+        <div class="text-center w-full max-w-lg slide-up">
+          <!-- Avatar and Info -->
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <div class="avatar-circle" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">LJ</div>
+            <div class="text-left">
+              <div class="text-3xl font-bold text-white mb-1">Lars Johansen</div>
+              <div style="font-size: 16px; color: rgba(255,255,255,0.8);">Volunteer</div>
+              <div style="font-size: 14px; color: rgba(255,255,255,0.6);">Stage Assistant</div>
+            </div>
+          </div>
+
+          <!-- Entitlement Cards -->
+          <div class="max-w-md mx-auto mb-8">
+            <div class="entitlement-card entitlement-card-denied">
+              <span style="font-size: 24px;">&#10060;</span>
+              <div class="text-left flex-1">
+                <div class="text-white font-semibold" style="font-size: 16px;">Lunch Voucher</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px;">DENIED -- Daily limit reached (3 of 3 used)</div>
+              </div>
+            </div>
+            <div class="entitlement-card entitlement-card-info">
+              <span style="font-size: 24px;">&#8505;</span>
+              <div class="text-left flex-1">
+                <div class="text-white font-semibold" style="font-size: 16px;">Drink Token</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px;">Available -- 2 of 5 remaining</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="text-5xl font-bold text-white mb-2">&#10007; DENIED</div>
+          <div class="text-lg mb-8" style="color: rgba(255,255,255,0.8);">Daily limit reached</div>
+
+          <!-- Buttons -->
+          <div class="flex items-center justify-center gap-4">
+            <button @click="showOverrideConfirm = true" class="btn-scanner" style="background: hsl(44, 88%, 55%); color: hsl(204, 77%, 12%); padding: 16px 32px; font-size: 16px;">
+              &#9888; Override
+            </button>
+            <button @click="resetToIdle()" class="btn-scanner" style="background: rgba(255,255,255,0.2); color: white; padding: 16px 48px; font-size: 18px; border: 2px solid rgba(255,255,255,0.3);">
+              Done
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- STATE: DENIED (Gate Mode) -->
+      <template x-if="state === 'denied' && checkpointMode === 'gate'">
+        <div class="text-center w-full max-w-lg slide-up">
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <div class="avatar-circle" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">CV</div>
+            <div class="text-left">
+              <div class="text-3xl font-bold text-white mb-1">Camilla Vik</div>
+              <div style="font-size: 16px; color: rgba(255,255,255,0.8);">Guest</div>
+              <div style="font-size: 14px; color: rgba(255,255,255,0.6);">VIP Attendee</div>
+            </div>
+          </div>
+
+          <div class="max-w-md mx-auto mb-6">
+            <div class="entitlement-card entitlement-card-denied">
+              <span style="font-size: 24px;">&#10060;</span>
+              <div class="text-left flex-1">
+                <div class="text-white font-semibold" style="font-size: 16px;">Backstage Pass</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px;">No access to Backstage zone</div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.6); text-align: left; margin-top: 8px; padding-left: 4px;">
+              Zones with access: <span class="text-white">General Area, VIP Lounge, Parking</span>
+            </div>
+          </div>
+
+          <div class="text-5xl font-bold text-white mb-2">&#10007; ACCESS DENIED</div>
+          <div class="text-lg mb-8" style="color: rgba(255,255,255,0.8);">No access to Backstage</div>
+
+          <div class="flex items-center justify-center gap-4">
+            <button @click="showOverrideConfirm = true" class="btn-scanner" style="background: hsl(44, 88%, 55%); color: hsl(204, 77%, 12%); padding: 16px 32px; font-size: 16px;">
+              &#9888; Override
+            </button>
+            <button @click="resetToIdle()" class="btn-scanner" style="background: rgba(255,255,255,0.2); color: white; padding: 16px 48px; font-size: 18px; border: 2px solid rgba(255,255,255,0.3);">
+              Done
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- STATE: WARNING (Dispenser Mode) -->
+      <template x-if="state === 'warning' && checkpointMode === 'dispenser'">
+        <div class="text-center w-full max-w-lg slide-up">
+          <div class="w-full max-w-md mx-auto mb-6">
+            <div class="countdown-bar" :key="scanCounter" style="background: rgba(0,0,0,0.3);"></div>
+          </div>
+
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <div class="avatar-circle" style="background: rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.3); color: hsl(204, 77%, 12%);">AS</div>
+            <div class="text-left">
+              <div class="text-3xl font-bold mb-1" style="color: hsl(204, 77%, 12%);">Anna Svensson</div>
+              <div style="font-size: 16px; color: rgba(0,0,0,0.7);">Crew / Sound Department</div>
+              <div style="font-size: 14px; color: rgba(0,0,0,0.5);">Audio Engineer</div>
+            </div>
+          </div>
+
+          <div class="max-w-md mx-auto mb-8">
+            <div class="entitlement-card entitlement-card-warning">
+              <span style="font-size: 24px;">&#9888;</span>
+              <div class="text-left flex-1">
+                <div class="font-semibold" style="font-size: 16px; color: hsl(204, 77%, 12%);">Lunch Voucher</div>
+                <div style="color: rgba(0,0,0,0.7); font-size: 13px;">DISPENSED -- Last meal of the day! (3 of 3)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-5xl font-bold mb-8" style="color: hsl(204, 77%, 12%);">&#9888; WARNING</div>
+
+          <button @click="resetToIdle()" class="btn-scanner" style="background: rgba(0,0,0,0.2); color: hsl(204, 77%, 12%); padding: 16px 48px; font-size: 18px; border: 2px solid rgba(0,0,0,0.3);">
+            Done
+          </button>
+        </div>
+      </template>
+
+      <!-- STATE: WARNING (Gate Mode) -->
+      <template x-if="state === 'warning' && checkpointMode === 'gate'">
+        <div class="text-center w-full max-w-lg slide-up">
+          <div class="w-full max-w-md mx-auto mb-6">
+            <div class="countdown-bar" :key="scanCounter" style="background: rgba(0,0,0,0.3);"></div>
+          </div>
+
+          <div class="mb-4">
+            <span class="direction-badge" style="background: rgba(0,0,0,0.15); color: hsl(204, 77%, 12%);">&larr; OUT</span>
+          </div>
+
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <div class="avatar-circle" style="background: rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.3); color: hsl(204, 77%, 12%);">AS</div>
+            <div class="text-left">
+              <div class="text-3xl font-bold mb-1" style="color: hsl(204, 77%, 12%);">Anna Svensson</div>
+              <div style="font-size: 16px; color: rgba(0,0,0,0.7);">Crew / Sound Department</div>
+            </div>
+          </div>
+
+          <div class="max-w-md mx-auto mb-6">
+            <div class="entitlement-card entitlement-card-warning">
+              <span style="font-size: 24px;">&#9888;</span>
+              <div class="text-left flex-1">
+                <div class="font-semibold" style="font-size: 16px; color: hsl(204, 77%, 12%);">Backstage Access</div>
+                <div style="color: rgba(0,0,0,0.7); font-size: 13px;">ACCESS GRANTED -- Credential expiring soon (2h remaining)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-5xl font-bold mb-8" style="color: hsl(204, 77%, 12%);">&#9888; WARNING</div>
+
+          <button @click="resetToIdle()" class="btn-scanner" style="background: rgba(0,0,0,0.2); color: hsl(204, 77%, 12%); padding: 16px 48px; font-size: 18px; border: 2px solid rgba(0,0,0,0.3);">
+            Done
+          </button>
+        </div>
+      </template>
+
+    </div>
+
+    <!-- Bottom Toolbar -->
+    <div class="flex items-center justify-between px-5 py-3" style="background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);">
+      <div class="flex items-center gap-3">
+        <button @click="showUndoConfirm = true" class="btn-scanner" style="background: rgba(255,255,255,0.1); color: white; padding: 8px 16px; font-size: 13px; border: 1px solid rgba(255,255,255,0.2);"
+                :disabled="!lastScan">
+          &#8630; Undo Last
+        </button>
+        <div x-show="!isOnline" class="flex items-center gap-2" style="background: hsla(0, 88%, 66%, 0.2); border: 1px solid hsla(0, 88%, 66%, 0.3); padding: 6px 12px; border-radius: 8px;">
+          <span style="color: hsl(0, 88%, 66%); font-size: 12px;">&#9888; Offline -- 12 scans pending sync</span>
+        </div>
+      </div>
+
+      <div style="font-size: 13px; color: rgba(255,255,255,0.6);">
+        Today: <span class="text-white font-semibold">189</span> dispensed, <span style="color: hsl(0, 88%, 66%);">23</span> denied
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Demo Buttons -->
+        <span style="font-size: 11px; color: rgba(255,255,255,0.4); margin-right: 8px;">Demo:</span>
+        <button @click="simulateScan('granted')" class="btn-scanner" style="background: hsl(151, 61%, 43%); color: white; padding: 6px 14px; font-size: 12px;">
+          Granted
+        </button>
+        <button @click="simulateScan('denied')" class="btn-scanner" style="background: hsl(0, 72%, 50%); color: white; padding: 6px 14px; font-size: 12px;">
+          Denied
+        </button>
+        <button @click="simulateScan('warning')" class="btn-scanner" style="background: hsl(44, 88%, 55%); color: hsl(204, 77%, 12%); padding: 6px 14px; font-size: 12px;">
+          Warning
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Override Confirmation Modal -->
+  <div x-show="showOverrideConfirm" x-transition class="help-overlay" @click.self="showOverrideConfirm = false" style="z-index: 200;">
+    <div class="help-card" style="max-width: 420px;">
+      <h3 class="text-lg font-semibold text-white mb-3">&#9888; Confirm Override</h3>
+      <p style="font-size: 13px; color: var(--text-default); margin-bottom: 16px;">
+        You are about to override a denied entitlement. This will be logged with your operator ID and requires justification.
+      </p>
+      <div class="mb-4">
+        <label style="font-size: 12px; color: var(--text-soft); display: block; margin-bottom: 4px;">Reason for override</label>
+        <input type="text" x-model="overrideReason" style="background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 8px 12px; font-size: 13px; width: 100%; font-family: 'Inter', sans-serif;" placeholder="Enter justification...">
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button @click="showOverrideConfirm = false" class="btn-scanner" style="background: var(--bg-input); color: var(--text-default); padding: 8px 20px; font-size: 13px; border: 1px solid var(--border-default);">Cancel</button>
+        <button @click="showOverrideConfirm = false; state = 'granted'" class="btn-scanner" style="background: hsl(44, 88%, 55%); color: hsl(204, 77%, 12%); padding: 8px 20px; font-size: 13px;">Confirm Override</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Undo Confirmation Modal -->
+  <div x-show="showUndoConfirm" x-transition class="help-overlay" @click.self="showUndoConfirm = false" style="z-index: 200;">
+    <div class="help-card" style="max-width: 420px;">
+      <h3 class="text-lg font-semibold text-white mb-3">&#8630; Undo Last Scan</h3>
+      <p style="font-size: 13px; color: var(--text-default); margin-bottom: 8px;" x-show="lastScan">
+        Undo the last scan for <strong class="text-white" x-text="lastScan?.name"></strong>?
+      </p>
+      <p style="font-size: 12px; color: var(--text-soft); margin-bottom: 16px;">
+        This will reverse the entitlement transaction and restore the previous state. The undo action will be logged.
+      </p>
+      <div class="flex gap-3 justify-end">
+        <button @click="showUndoConfirm = false" class="btn-scanner" style="background: var(--bg-input); color: var(--text-default); padding: 8px 20px; font-size: 13px; border: 1px solid var(--border-default);">Cancel</button>
+        <button @click="showUndoConfirm = false; undoLast()" class="btn-scanner" style="background: var(--color-warning); color: white; padding: 8px 20px; font-size: 13px;">Confirm Undo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Overlay -->
+  <div x-show="showHelp" x-transition class="help-overlay" @click.self="showHelp = false">
+    <div class="help-card" style="max-width: 640px;">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-white">&#10067; Scanner Interface Help</h2>
+        <button @click="showHelp = false" style="color: var(--text-soft); font-size: 20px; cursor: pointer; background: none; border: none;">&#10005;</button>
+      </div>
+      <div style="font-size: 13px; line-height: 1.7;">
+        <p class="mb-3">This is the <strong>Scanner Interface</strong> -- the on-site tool used at gates, food trucks, and equipment tents. When a credential is scanned, the system instantly shows the result with color-coded feedback:</p>
+        <ul class="mb-3" style="list-style: none; padding: 0;">
+          <li class="mb-1"><span style="color: hsl(151, 61%, 43%); font-weight: 600;">GREEN</span> -- Granted: Access or entitlement approved</li>
+          <li class="mb-1"><span style="color: hsl(0, 88%, 66%); font-weight: 600;">RED</span> -- Denied: Access or entitlement refused (with reason)</li>
+          <li class="mb-1"><span style="color: hsl(44, 88%, 66%); font-weight: 600;">YELLOW</span> -- Warning: Approved but with caution (e.g., last use)</li>
+        </ul>
+        <p class="mb-3">The checkpoint's configuration determines what items to check. Use the <strong>Checkpoint Mode</strong> toggle to switch between:</p>
+        <ul class="mb-3" style="list-style: none; padding: 0;">
+          <li class="mb-1"><strong>Dispenser Mode:</strong> Handles meals, equipment, and supplies dispensing</li>
+          <li class="mb-1"><strong>Gate Mode:</strong> Handles zone access control with directional indicators</li>
+        </ul>
+        <p class="mb-3">Designed for tablet use with large touch targets. Supports offline operation with local transaction queuing. When offline, scans are stored locally and synced when connectivity resumes.</p>
+        <p><strong>Override:</strong> Authorized operators can override denied scans with a justification. All overrides are logged for audit purposes.</p>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button @click="showHelp = false" class="btn-scanner" style="background: var(--color-primary); color: white; padding: 10px 24px; font-size: 14px;">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function scannerApp() {
+      return {
+        state: 'idle', // idle, granted, denied, warning
+        checkpointMode: 'dispenser', // dispenser, gate
+        checkpointName: 'Food Truck Alpha',
+        isOnline: true,
+        showHelp: false,
+        showSettings: false,
+        showOverrideConfirm: false,
+        showUndoConfirm: false,
+        manualInput: '',
+        autoReturnTimer: null,
+        scanCounter: 0,
+        autoReturnDelay: 5,
+        soundAlerts: true,
+        cameraScanner: false,
+        overrideReason: '',
+
+        lastScan: { name: 'Kari Nordmann', item: 'Lunch Voucher', result: 'Granted', time: '14:32' },
+
+        recentScans: [
+          { id: 1, name: 'Kari Nordmann', item: 'Lunch Voucher', result: 'Granted', time: '14:32:15' },
+          { id: 2, name: 'Erik Hansen', item: 'AAA-Access', result: 'Granted', time: '14:31:58' },
+          { id: 3, name: 'Sofia Andersen', item: 'VIP Pass', result: 'Granted', time: '14:31:45' },
+          { id: 4, name: 'Lars Johansen', item: 'Lunch Voucher', result: 'Denied', time: '14:31:22' },
+          { id: 5, name: 'Anna Svensson', item: 'AAA-Access', result: 'Granted', time: '14:30:55' },
+        ],
+
+        updateCheckpointName() {
+          if (this.checkpointMode === 'dispenser') {
+            this.checkpointName = 'Food Truck Alpha';
+          } else {
+            this.checkpointName = 'Backstage Gate A';
+          }
+        },
+
+        simulateScan(result) {
+          this.scanCounter++;
+          this.state = result;
+          this.manualInput = '';
+
+          // Update last scan based on result
+          const now = new Date();
+          const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+          const timeFullStr = timeStr + ':' + String(now.getSeconds()).padStart(2, '0');
+
+          let name, item;
+          if (result === 'granted') {
+            if (this.checkpointMode === 'gate') {
+              name = 'Erik Hansen'; item = 'AAA-Access';
+            } else {
+              name = 'Kari Nordmann'; item = 'Lunch Voucher';
+            }
+          } else if (result === 'denied') {
+            if (this.checkpointMode === 'gate') {
+              name = 'Camilla Vik'; item = 'Backstage Pass';
+            } else {
+              name = 'Lars Johansen'; item = 'Lunch Voucher';
+            }
+          } else {
+            name = 'Anna Svensson'; item = this.checkpointMode === 'gate' ? 'Backstage Access' : 'Lunch Voucher';
+          }
+
+          const resultText = result === 'denied' ? 'Denied' : 'Granted';
+          this.lastScan = { name, item, result: resultText, time: timeStr };
+
+          // Add to recent scans
+          this.recentScans.unshift({
+            id: Date.now(),
+            name, item, result: resultText, time: timeFullStr
+          });
+          if (this.recentScans.length > 5) this.recentScans.pop();
+
+          // Auto-return for granted and warning states
+          if (result !== 'denied') {
+            if (this.autoReturnTimer) clearTimeout(this.autoReturnTimer);
+            this.autoReturnTimer = setTimeout(() => {
+              this.resetToIdle();
+            }, this.autoReturnDelay * 1000);
+          }
+        },
+
+        resetToIdle() {
+          if (this.autoReturnTimer) {
+            clearTimeout(this.autoReturnTimer);
+            this.autoReturnTimer = null;
+          }
+          this.state = 'idle';
+        },
+
+        undoLast() {
+          if (this.lastScan) {
+            alert('Undo: Reversed last scan for ' + this.lastScan.name + ' - ' + this.lastScan.item);
+            this.recentScans.shift();
+            this.lastScan = this.recentScans.length > 0 ? this.recentScans[0] : null;
+          }
+        },
+
+        init() {
+          // Simulate occasional online/offline
+          setInterval(() => {
+            // Keep online most of the time
+            if (!this.isOnline && Math.random() > 0.3) {
+              this.isOnline = true;
+            }
+          }, 10000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rules Engine - Crescat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 9999px; }
+    .btn-primary { background: var(--color-primary); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+    .btn-lg { height: 38px; padding: 0 20px; font-size: 15px; }
+    .btn-success { background: var(--color-success); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-warning { background: var(--color-warning); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-warning:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); font-weight: 500; border-radius: 6px; padding: 0 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-default); transition: all 0.15s; cursor: pointer; }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .input-field { background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 12px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: var(--color-primary); }
+    .badge-active { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(151, 61%, 43%); background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); }
+    .badge-info { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: #45A4E4; background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); }
+    .badge-pending { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(44, 88%, 66%); background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); }
+    .badge-warning { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(0, 88%, 66%); background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); }
+    .badge-inactive { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: var(--text-soft); background: hsla(205, 16%, 57%, 0.1); border: 1px solid hsla(205, 16%, 57%, 0.2); }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+    .rule-card { background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; transition: all 0.15s; }
+    .rule-card:hover { border-color: var(--color-primary); }
+    .stat-card { background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; padding: 20px; }
+  </style>
+</head>
+<body class="min-h-screen" x-data="rulesApp()">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="pt-[48px]" style="margin-left: 232px;">
+    <div class="p-6">
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-semibold text-white mb-1">Rules Engine</h1>
+          <p style="color: var(--text-soft); font-size: 13px;">Automation rules for entitlement assignment</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="btn-ghost" @click="showBulkEval = !showBulkEval">
+            <span>&#8635;</span> Re-evaluate All
+          </button>
+          <button class="btn-primary" @click="showCreateRule = true">+ Create Rule</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Active Rules</div>
+          <div class="text-2xl font-bold text-white">12</div>
+          <div class="text-xs mt-1" style="color: var(--color-success);">&#9650; 2 added this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Pending Evaluations</div>
+          <div class="text-2xl font-bold" style="color: var(--color-pending);">3</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">Criteria changes detected</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Last Evaluation</div>
+          <div class="text-2xl font-bold text-white">2 min ago</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">Auto-triggered by shift import</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-medium uppercase tracking-wider mb-2" style="color: var(--text-soft);">Entitlements Created</div>
+          <div class="text-2xl font-bold text-white">1,847</div>
+          <div class="text-xs mt-1" style="color: var(--text-soft);">By rules (excl. manual)</div>
+        </div>
+      </div>
+
+      <!-- Bulk evaluation notice -->
+      <div x-show="showBulkEval" x-transition class="mb-4 rounded-md p-4 flex items-center justify-between" style="background: hsla(44, 88%, 66%, 0.08); border: 1px solid hsla(44, 88%, 66%, 0.2);">
+        <div class="flex items-center gap-3">
+          <span style="color: var(--color-pending); font-size: 18px;">&#9888;</span>
+          <div>
+            <div class="text-sm font-medium" style="color: var(--color-pending);">Re-evaluate all rules?</div>
+            <div class="text-xs" style="color: var(--text-soft);">This will process 12 active rules against 468 participants. Estimated time: ~5 seconds.</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost btn-sm" @click="showBulkEval = false">Cancel</button>
+          <button class="btn-primary btn-sm" style="background: var(--color-pending); color: var(--text-inverted);" @click="showBulkEval = false; showToast('Re-evaluation complete: 12 rules processed')">Confirm Re-evaluate</button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex-1 relative">
+          <input type="text" class="input-field w-full pl-9" placeholder="Search rules..." x-model="searchQuery">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--text-soft); font-size: 13px;">&#128269;</span>
+        </div>
+        <select class="input-field" x-model="filterStatus">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <select class="input-field" x-model="filterItem">
+          <option value="all">All Items</option>
+          <option value="lunch">Lunch Voucher</option>
+          <option value="radio">Two-Way Radio</option>
+          <option value="vip">VIP Pass</option>
+          <option value="media">Media Pass</option>
+          <option value="merch">Merchandise Bag</option>
+        </select>
+      </div>
+
+      <!-- Rules List -->
+      <div class="space-y-3">
+        <template x-for="(rule, index) in filteredRules" :key="rule.id">
+          <div class="rule-card" :class="{ 'border-l-2': true }" :style="rule.active ? 'border-left-color: var(--color-success)' : 'border-left-color: var(--text-soft)'">
+            <!-- Rule Header -->
+            <div class="flex items-center justify-between px-5 py-4 cursor-pointer" @click="toggleRule(rule.id)">
+              <div class="flex items-center gap-4">
+                <span class="text-xs transition-transform" :style="expandedRule === rule.id ? 'transform: rotate(90deg)' : ''" style="color: var(--text-soft);">&#9654;</span>
+                <div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-white font-medium text-sm" x-text="rule.name"></span>
+                    <span :class="rule.active ? 'badge-active' : 'badge-inactive'" x-text="rule.active ? 'Active' : 'Inactive'"></span>
+                    <span class="badge-info" x-text="'Priority ' + rule.priority" style="font-size: 11px;"></span>
+                  </div>
+                  <div class="flex items-center gap-4 mt-1.5 text-xs" style="color: var(--text-soft);">
+                    <span class="flex items-center gap-1">
+                      <span style="color: var(--color-highlight);">&#9830;</span>
+                      Grants: <span class="text-white" x-text="rule.grants"></span>
+                    </span>
+                    <span>&#8226;</span>
+                    <span>Criteria: <span class="text-white" x-text="rule.criteriaLabel"></span></span>
+                    <span>&#8226;</span>
+                    <span>Stacking: <span class="text-white" x-text="rule.stacking"></span></span>
+                    <template x-if="rule.schedule">
+                      <span>
+                        <span>&#8226;</span>
+                        <span>Schedule: <span class="text-white" x-text="rule.schedule"></span></span>
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <div class="text-sm font-medium text-white" x-text="rule.affected + ' participants'"></div>
+                  <div class="text-xs" style="color: var(--text-soft);" x-text="rule.entitlementsCreated + ' entitlements'"></div>
+                </div>
+                <div class="flex items-center gap-1" @click.stop>
+                  <button class="btn-ghost btn-sm" @click="editingRule = rule.id">Edit</button>
+                  <button class="btn-ghost btn-sm" x-text="rule.active ? 'Deactivate' : 'Activate'" @click="rule.active = !rule.active"></button>
+                  <button class="btn-ghost btn-sm" style="color: var(--color-highlight);" @click="evaluateRule(rule.id)">Re-evaluate</button>
+                </div>
+              </div>
+            </div>
+            <!-- Expanded Detail -->
+            <div x-show="expandedRule === rule.id" x-transition style="border-top: 1px solid var(--border-default);">
+              <div class="px-5 py-4">
+                <div class="grid grid-cols-3 gap-6">
+                  <!-- Criteria Detail -->
+                  <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Criteria</h4>
+                    <div class="space-y-2">
+                      <template x-for="(crit, ci) in rule.criteria" :key="ci">
+                        <div>
+                          <div x-show="ci > 0" class="text-xs font-semibold my-1" style="color: var(--color-highlight);">AND</div>
+                          <div class="flex items-center gap-2 px-3 py-2 rounded text-sm" style="background: var(--bg-active);">
+                            <span class="badge-info" style="font-size: 10px;" x-text="crit.type"></span>
+                            <span x-text="crit.value"></span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                  <!-- Matched Participants -->
+                  <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Matched Participants (first 5)</h4>
+                    <div class="space-y-1.5">
+                      <template x-for="p in rule.matchedParticipants" :key="p">
+                        <div class="flex items-center gap-2 text-sm">
+                          <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold" style="background: var(--bg-active); color: var(--text-default);" x-text="p.split(' ').map(n => n[0]).join('')"></div>
+                          <span x-text="p"></span>
+                        </div>
+                      </template>
+                      <div class="text-xs mt-2" style="color: var(--text-soft);" x-text="'and ' + (rule.affected - 5) + ' more...'"></div>
+                    </div>
+                  </div>
+                  <!-- Stats -->
+                  <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--text-soft);">Evaluation Stats</h4>
+                    <div class="space-y-2 text-sm">
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Created Entitlements</span>
+                        <span class="text-white font-medium" x-text="rule.entitlementsCreated"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Manually Overridden</span>
+                        <span class="text-white font-medium" x-text="rule.overridden"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Last Evaluated</span>
+                        <span class="text-white font-medium" x-text="rule.lastEval"></span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span style="color: var(--text-soft);">Created</span>
+                        <span class="text-white font-medium" x-text="rule.created"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Collapsed Rules -->
+        <div x-show="!showAllRules" class="text-center py-4">
+          <button class="btn-ghost" @click="showAllRules = true">
+            Show 4 More Rules &#9660;
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create Rule Modal -->
+  <div x-show="showCreateRule" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showCreateRule = false" x-transition>
+    <div class="w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; max-height: 90vh;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <h3 class="text-white font-semibold text-base">Create New Rule</h3>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showCreateRule = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-5 overflow-y-auto" style="max-height: calc(90vh - 130px);">
+        <!-- Rule Name -->
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Rule Name</label>
+          <input type="text" class="input-field w-full" placeholder="e.g. Crew Meal Allowance" x-model="newRule.name">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Entitlement Item -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Entitlement Item</label>
+            <select class="input-field w-full" x-model="newRule.item">
+              <option value="">Select an item...</option>
+              <optgroup label="Accreditations">
+                <option value="aaa">AAA-Access</option>
+                <option value="backstage">Backstage Pass</option>
+                <option value="vip">VIP Pass</option>
+                <option value="media">Media Pass</option>
+              </optgroup>
+              <optgroup label="Meals">
+                <option value="lunch">Lunch Voucher</option>
+                <option value="dinner">Dinner Voucher</option>
+                <option value="drink">Drink Token</option>
+              </optgroup>
+              <optgroup label="Equipment">
+                <option value="radio">Two-Way Radio</option>
+                <option value="headset">Headset</option>
+                <option value="laptop">Laptop</option>
+              </optgroup>
+              <optgroup label="Perks">
+                <option value="merch">Merchandise Bag</option>
+              </optgroup>
+            </select>
+          </div>
+          <!-- Quantity -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Quantity</label>
+            <div class="flex items-center gap-3">
+              <input type="number" class="input-field flex-1" placeholder="1" min="1" x-model="newRule.quantity">
+              <label class="flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap">
+                <input type="checkbox" class="accent-blue-500" x-model="newRule.perDay">
+                <span>Per day</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stacking Behavior -->
+        <div>
+          <label class="block text-xs font-medium mb-2" style="color: var(--text-soft);">Stacking Behavior</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors" :style="newRule.stacking === 'stack' ? 'background: var(--bg-active); border: 1px solid var(--color-primary)' : 'background: var(--bg-input); border: 1px solid var(--border-default)'" @click="newRule.stacking = 'stack'">
+              <input type="radio" name="stacking" value="stack" x-model="newRule.stacking" class="mt-0.5 accent-blue-500">
+              <div>
+                <div class="text-sm font-medium text-white">Stack</div>
+                <div class="text-xs mt-0.5" style="color: var(--text-soft);">Add quantities from all matching rules together</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors" :style="newRule.stacking === 'replace' ? 'background: var(--bg-active); border: 1px solid var(--color-primary)' : 'background: var(--bg-input); border: 1px solid var(--border-default)'" @click="newRule.stacking = 'replace'">
+              <input type="radio" name="stacking" value="replace" x-model="newRule.stacking" class="mt-0.5 accent-blue-500">
+              <div>
+                <div class="text-sm font-medium text-white">Replace</div>
+                <div class="text-xs mt-0.5" style="color: var(--text-soft);">Highest priority rule wins, others ignored</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors" :style="newRule.stacking === 'highest' ? 'background: var(--bg-active); border: 1px solid var(--color-primary)' : 'background: var(--bg-input); border: 1px solid var(--border-default)'" @click="newRule.stacking = 'highest'">
+              <input type="radio" name="stacking" value="highest" x-model="newRule.stacking" class="mt-0.5 accent-blue-500">
+              <div>
+                <div class="text-sm font-medium text-white">Highest</div>
+                <div class="text-xs mt-0.5" style="color: var(--text-soft);">Keep maximum quantity from all matching rules</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Priority -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Priority</label>
+            <input type="number" class="input-field w-full" placeholder="10" min="1" max="100" x-model="newRule.priority">
+            <div class="text-xs mt-1" style="color: var(--text-soft);">Higher number = higher priority</div>
+          </div>
+          <!-- Schedule -->
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Schedule (optional)</label>
+            <select class="input-field w-full" x-model="newRule.schedule">
+              <option value="">No schedule (always valid)</option>
+              <option value="weekend">Festival Weekend (Jul 14-17)</option>
+              <option value="buildup">Build-up (Jul 10-13)</option>
+              <option value="teardown">Teardown (Jul 18-20)</option>
+              <option value="full">Full Event (Jul 10-20)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Criteria Builder -->
+        <div>
+          <label class="block text-xs font-medium mb-2" style="color: var(--text-soft);">Criteria</label>
+          <div class="space-y-2">
+            <template x-for="(crit, ci) in newRule.criteria" :key="ci">
+              <div>
+                <div x-show="ci > 0" class="flex items-center gap-2 py-1">
+                  <div class="flex-1 h-px" style="background: var(--border-soft);"></div>
+                  <span class="text-xs font-bold px-2" style="color: var(--color-highlight);">AND</span>
+                  <div class="flex-1 h-px" style="background: var(--border-soft);"></div>
+                </div>
+                <div class="flex items-start gap-2 p-3 rounded-md" style="background: var(--bg-input); border: 1px solid var(--border-default);">
+                  <div class="flex-1 space-y-2">
+                    <select class="input-field w-full" x-model="crit.type" @change="crit.value = ''">
+                      <option value="">Select criteria type...</option>
+                      <option value="all_crew">All Crew</option>
+                      <option value="all_responders">All Responders</option>
+                      <option value="all_guests">All Guests</option>
+                      <option value="section">Festival Section</option>
+                      <option value="role">Role</option>
+                      <option value="form">Public Form</option>
+                      <option value="shift_hours">Shift Hours</option>
+                    </select>
+                    <!-- Section dropdown -->
+                    <div x-show="crit.type === 'section'">
+                      <select class="input-field w-full" x-model="crit.value">
+                        <option value="">Select section...</option>
+                        <option>Stage Crew</option>
+                        <option>Security</option>
+                        <option>Hospitality</option>
+                        <option>Production</option>
+                        <option>Bar & Food</option>
+                        <option>Medical</option>
+                        <option>Logistics</option>
+                        <option>Artist Liaison</option>
+                      </select>
+                    </div>
+                    <!-- Role dropdown -->
+                    <div x-show="crit.type === 'role'">
+                      <select class="input-field w-full" x-model="crit.value">
+                        <option value="">Select role...</option>
+                        <option>Team Leader</option>
+                        <option>Coordinator</option>
+                        <option>Volunteer</option>
+                        <option>Staff</option>
+                        <option>Manager</option>
+                      </select>
+                    </div>
+                    <!-- Form dropdown -->
+                    <div x-show="crit.type === 'form'">
+                      <select class="input-field w-full" x-model="crit.value">
+                        <option value="">Select form...</option>
+                        <option>Media Accreditation 2026</option>
+                        <option>Vendor Application 2026</option>
+                        <option>VIP Guest Registration</option>
+                        <option>Press Pass Request</option>
+                      </select>
+                    </div>
+                    <!-- Shift hours range -->
+                    <div x-show="crit.type === 'shift_hours'" class="flex items-center gap-2">
+                      <input type="number" class="input-field flex-1" placeholder="Min hours" min="0" step="0.5" x-model="crit.minHours">
+                      <span style="color: var(--text-soft);">&ndash;</span>
+                      <input type="number" class="input-field flex-1" placeholder="Max hours" min="0" step="0.5" x-model="crit.maxHours">
+                      <span class="text-xs whitespace-nowrap" style="color: var(--text-soft);">hours</span>
+                    </div>
+                  </div>
+                  <button class="w-7 h-7 rounded flex items-center justify-center transition-colors flex-shrink-0 mt-0.5" style="color: var(--text-soft);" @click="newRule.criteria.splice(ci, 1)" onmouseover="this.style.background='hsla(0,88%,66%,0.1)';this.style.color='hsl(0,88%,66%)'" onmouseout="this.style.background='transparent';this.style.color='var(--text-soft)'" x-show="newRule.criteria.length > 1">&#10005;</button>
+                </div>
+              </div>
+            </template>
+          </div>
+          <button class="mt-2 text-sm transition-colors" style="color: var(--color-highlight);" @click="newRule.criteria.push({type: '', value: ''})" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">+ Add Criteria</button>
+        </div>
+      </div>
+      <div class="flex items-center justify-between px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-ghost btn-sm" style="color: var(--color-highlight);" @click="showToast('Preview: Matching participants will appear here')">Preview Matches</button>
+        <div class="flex items-center gap-3">
+          <button class="btn-ghost" @click="showCreateRule = false">Cancel</button>
+          <button class="btn-success" @click="if(!newRule.name.trim() || !newRule.item) { showToast('Name and item are required'); return; }
+  const criteriaLabel = newRule.criteria.map(c => {
+    if(c.type === 'all_crew') return 'All Crew';
+    if(c.type === 'all_responders') return 'All Responders';
+    if(c.type === 'all_guests') return 'All Guests';
+    if(c.type === 'section') return 'Section = ' + (c.value || '?');
+    if(c.type === 'role') return 'Role = ' + (c.value || '?');
+    if(c.type === 'form') return 'Form = ' + (c.value || '?');
+    if(c.type === 'shift_hours') return 'Shift Hours ' + (c.minHours||0) + '-' + (c.maxHours||'&#8734;') + 'h';
+    return c.type;
+  }).join(' AND ');
+  const itemLabels = {aaa:'AAA-Access', backstage:'Backstage Pass', vip:'VIP Pass', media:'Media Pass', lunch:'Lunch Voucher', dinner:'Dinner Voucher', drink:'Drink Token', radio:'Two-Way Radio', headset:'Headset', laptop:'Laptop', merch:'Merchandise Bag'};
+  const grants = (itemLabels[newRule.item]||newRule.item) + ' x ' + newRule.quantity + (newRule.perDay ? '/day' : '');
+  rules.push({
+    id: Date.now(),
+    name: newRule.name,
+    active: true,
+    priority: parseInt(newRule.priority) || 10,
+    grants: grants,
+    criteriaLabel: criteriaLabel,
+    stacking: newRule.stacking.charAt(0).toUpperCase() + newRule.stacking.slice(1),
+    schedule: newRule.schedule || null,
+    affected: 0,
+    entitlementsCreated: 0,
+    overridden: 0,
+    lastEval: 'Never',
+    created: 'Just now',
+    criteria: newRule.criteria.map(c => ({type: c.type, value: c.value || c.type})),
+    matchedParticipants: []
+  });
+  newRule = {name:'', item:'', quantity:1, perDay:false, stacking:'highest', priority:10, schedule:'', criteria:[{type:'', value:''}]};
+  showCreateRule = false;
+  showToast('Rule created successfully')">Create Rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Overlay -->
+  <button class="fixed bottom-6 right-6 z-[90] w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition-transform hover:scale-110" style="background: var(--color-primary);" @click="showHelp = true">?</button>
+
+  <div x-show="showHelp" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showHelp = false" x-transition>
+    <div class="w-full max-w-lg rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style="background: var(--color-primary); color: #fff;">?</span>
+          <h3 class="text-white font-semibold text-base">About This Screen</h3>
+        </div>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showHelp = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4 text-sm leading-relaxed">
+        <p>The <strong class="text-white">Rules Engine</strong> is the automation heart of the entitlement system. Rules automatically assign entitlements to participants based on criteria &mdash; who they are, what section they're in, how many shift hours they have.</p>
+        <div class="rounded-md p-3" style="background: var(--bg-active); border-left: 3px solid var(--color-highlight);">
+          <p class="font-medium text-white mb-1">Workflow Coverage</p>
+          <p style="color: var(--text-soft);">This screen covers the <em>Rule-Based Entitlement Assignment</em> workflow. Each rule specifies WHAT to grant, to WHOM, HOW MUCH, and WHEN.</p>
+        </div>
+        <div>
+          <p class="font-medium text-white mb-2">Stacking Behaviors:</p>
+          <ul class="space-y-1.5" style="color: var(--text-soft);">
+            <li><strong class="text-white">Stack</strong> &mdash; add quantities from all matching rules together</li>
+            <li><strong class="text-white">Replace</strong> &mdash; highest priority rule wins, others are ignored</li>
+            <li><strong class="text-white">Highest</strong> &mdash; keep the maximum quantity from all matching rules</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium text-white mb-2">Key Interactions:</p>
+          <ul class="space-y-1" style="color: var(--text-soft);">
+            <li>&#8226; Click a rule to expand and see matched participants + stats</li>
+            <li>&#8226; Create rules with the criteria builder (multiple AND conditions)</li>
+            <li>&#8226; Re-evaluate individual rules or all rules at once</li>
+            <li>&#8226; Activate / deactivate rules without deleting them</li>
+          </ul>
+        </div>
+        <p style="color: var(--color-highlight); font-weight: 500;">This is the single biggest competitive differentiator &mdash; no other event platform has a true rule engine.</p>
+      </div>
+      <div class="flex justify-end px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-primary" @click="showHelp = false">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div x-show="toast" x-transition class="fixed top-16 right-6 z-[110] px-4 py-2 rounded-md text-sm font-medium" style="background:var(--color-primary); color:white;" x-text="toast"></div>
+
+  <script>
+    function rulesApp() {
+      return {
+        showCreateRule: false,
+        showHelp: false,
+        showBulkEval: false,
+        showAllRules: false,
+        expandedRule: null,
+        editingRule: null,
+        searchQuery: '',
+        filterStatus: 'all',
+        filterItem: 'all',
+        toast: null,
+        showToast(msg) { this.toast = msg; setTimeout(() => this.toast = null, 3000); },
+        newRule: {
+          name: '',
+          item: '',
+          quantity: 1,
+          perDay: false,
+          stacking: 'highest',
+          priority: 10,
+          schedule: '',
+          criteria: [{ type: '', value: '' }],
+        },
+        rules: [
+          {
+            id: 1, name: 'Crew Meal Allowance', active: true, priority: 10,
+            grants: 'Lunch Voucher x 3/day', criteriaLabel: 'All Crew',
+            stacking: 'Highest', schedule: 'Festival Weekend (Jul 14-17)',
+            affected: 234, entitlementsCreated: 702, overridden: 8,
+            lastEval: '2 min ago', created: 'Jun 15, 2026',
+            criteria: [{ type: 'Participant Type', value: 'All Crew' }],
+            matchedParticipants: ['Anna Larsen', 'Erik Johansson', 'Maria Bergstrom', 'Olaf Henriksen', 'Sofia Nilsson'],
+          },
+          {
+            id: 2, name: 'Short Shift Meal', active: true, priority: 20,
+            grants: 'Lunch Voucher x 1/day', criteriaLabel: 'Shift Hours 4.0 - 5.99h',
+            stacking: 'Highest', schedule: null,
+            affected: 45, entitlementsCreated: 45, overridden: 2,
+            lastEval: '2 min ago', created: 'Jun 15, 2026',
+            criteria: [{ type: 'Shift Hours', value: '4.0 - 5.99 hours' }],
+            matchedParticipants: ['Lars Eriksen', 'Karin Dahl', 'Petter Olsen', 'Ingrid Svensson', 'Thomas Berg'],
+          },
+          {
+            id: 3, name: 'Medium Shift Meal', active: true, priority: 30,
+            grants: 'Lunch Voucher x 2/day', criteriaLabel: 'Shift Hours 6.0 - 7.99h',
+            stacking: 'Highest', schedule: null,
+            affected: 89, entitlementsCreated: 178, overridden: 5,
+            lastEval: '2 min ago', created: 'Jun 15, 2026',
+            criteria: [{ type: 'Shift Hours', value: '6.0 - 7.99 hours' }],
+            matchedParticipants: ['Henrik Andersen', 'Eva Lindqvist', 'Magnus Holm', 'Astrid Bakke', 'Jonas Fredriksen'],
+          },
+          {
+            id: 4, name: 'Long Shift Meal', active: true, priority: 40,
+            grants: 'Lunch Voucher x 3/day', criteriaLabel: 'Shift Hours 8.0+',
+            stacking: 'Highest', schedule: null,
+            affected: 62, entitlementsCreated: 186, overridden: 3,
+            lastEval: '2 min ago', created: 'Jun 15, 2026',
+            criteria: [{ type: 'Shift Hours', value: '8.0+ hours' }],
+            matchedParticipants: ['Bjorn Gustafsson', 'Frida Karlsson', 'Oskar Lund', 'Maja Persson', 'Emil Nordin'],
+          },
+          {
+            id: 5, name: 'Stage Crew Radio Assignment', active: true, priority: 50,
+            grants: 'Two-Way Radio x 1', criteriaLabel: 'Festival Section = "Stage Crew" AND Shift Hours > 0',
+            stacking: 'Replace', schedule: null,
+            affected: 28, entitlementsCreated: 28, overridden: 1,
+            lastEval: '5 min ago', created: 'Jun 18, 2026',
+            criteria: [
+              { type: 'Section', value: 'Stage Crew' },
+              { type: 'Shift Hours', value: '> 0 hours' },
+            ],
+            matchedParticipants: ['Karl Stromberg', 'Lena Forsberg', 'Nils Hedlund', 'Sara Ekman', 'Viktor Sandberg'],
+          },
+          {
+            id: 6, name: 'VIP Guest Access', active: true, priority: 10,
+            grants: 'VIP Pass x 1', criteriaLabel: 'All Guests',
+            stacking: 'Highest', schedule: null,
+            affected: 156, entitlementsCreated: 156, overridden: 12,
+            lastEval: '10 min ago', created: 'Jun 12, 2026',
+            criteria: [{ type: 'Participant Type', value: 'All Guests' }],
+            matchedParticipants: ['David Andersson', 'Camilla Pettersson', 'Oscar Magnusson', 'Isabella Wallin', 'Felix Sundqvist'],
+          },
+          {
+            id: 7, name: 'Volunteer Merch Bag', active: true, priority: 10,
+            grants: 'Merchandise Bag x 1', criteriaLabel: 'All Crew',
+            stacking: 'Replace', schedule: null,
+            affected: 234, entitlementsCreated: 234, overridden: 0,
+            lastEval: '10 min ago', created: 'Jun 20, 2026',
+            criteria: [{ type: 'Participant Type', value: 'All Crew' }],
+            matchedParticipants: ['Anna Larsen', 'Erik Johansson', 'Maria Bergstrom', 'Olaf Henriksen', 'Sofia Nilsson'],
+          },
+          {
+            id: 8, name: 'Media Zone Access', active: true, priority: 20,
+            grants: 'Media Pass x 1', criteriaLabel: 'Public Form = "Media Accreditation 2026"',
+            stacking: 'Replace', schedule: null,
+            affected: 34, entitlementsCreated: 34, overridden: 2,
+            lastEval: '15 min ago', created: 'Jun 22, 2026',
+            criteria: [{ type: 'Public Form', value: 'Media Accreditation 2026' }],
+            matchedParticipants: ['Johan Press', 'Linnea Reporter', 'Andreas Foto', 'Hanna Nyheter', 'Mikael Media'],
+          },
+          {
+            id: 9, name: 'Security Radio', active: true, priority: 55,
+            grants: 'Two-Way Radio x 1', criteriaLabel: 'Festival Section = "Security"',
+            stacking: 'Replace', schedule: null,
+            affected: 42, entitlementsCreated: 42, overridden: 0,
+            lastEval: '15 min ago', created: 'Jun 25, 2026',
+            criteria: [{ type: 'Section', value: 'Security' }],
+            matchedParticipants: ['Gunnar Vakt', 'Per Trygg', 'Karin Sakerhet', 'Johan Port', 'Lisa Bevakning'],
+          },
+          {
+            id: 10, name: 'Team Leader Backstage', active: true, priority: 60,
+            grants: 'Backstage Pass x 1', criteriaLabel: 'Role = "Team Leader"',
+            stacking: 'Replace', schedule: null,
+            affected: 18, entitlementsCreated: 18, overridden: 1,
+            lastEval: '20 min ago', created: 'Jun 28, 2026',
+            criteria: [{ type: 'Role', value: 'Team Leader' }],
+            matchedParticipants: ['Marcus Ledare', 'Filippa Chef', 'Anders Boss', 'Elin Forman', 'Daniel Ansvarig'],
+          },
+          {
+            id: 11, name: 'Artist Liaison AAA', active: true, priority: 70,
+            grants: 'AAA-Access x 1', criteriaLabel: 'Festival Section = "Artist Liaison"',
+            stacking: 'Replace', schedule: null,
+            affected: 8, entitlementsCreated: 8, overridden: 0,
+            lastEval: '20 min ago', created: 'Jul 1, 2026',
+            criteria: [{ type: 'Section', value: 'Artist Liaison' }],
+            matchedParticipants: ['Rebecca Artist', 'Martin Kontakt', 'Julia Booking', 'Simon Backstage', 'Amanda Rider'],
+          },
+          {
+            id: 12, name: 'Production High-Vis', active: false, priority: 15,
+            grants: 'High-Vis Vest x 1', criteriaLabel: 'Festival Section = "Production" OR "Logistics"',
+            stacking: 'Replace', schedule: null,
+            affected: 56, entitlementsCreated: 56, overridden: 4,
+            lastEval: '1 hour ago', created: 'Jul 3, 2026',
+            criteria: [
+              { type: 'Section', value: 'Production' },
+              { type: 'Section', value: 'Logistics' },
+            ],
+            matchedParticipants: ['Peter Bygg', 'Sandra Logistik', 'Mikael Teknik', 'Eva Planering', 'Robert Transport'],
+          },
+        ],
+        get filteredRules() {
+          let result = this.rules;
+          if (!this.showAllRules) {
+            result = result.slice(0, 8);
+          }
+          if (this.searchQuery) {
+            const q = this.searchQuery.toLowerCase();
+            result = result.filter(r => r.name.toLowerCase().includes(q) || r.grants.toLowerCase().includes(q) || r.criteriaLabel.toLowerCase().includes(q));
+          }
+          if (this.filterStatus !== 'all') {
+            result = result.filter(r => this.filterStatus === 'active' ? r.active : !r.active);
+          }
+          return result;
+        },
+        toggleRule(id) {
+          this.expandedRule = this.expandedRule === id ? null : id;
+        },
+        evaluateRule(id) {
+          // Simulated re-evaluation
+          const rule = this.rules.find(r => r.id === id);
+          if (rule) rule.lastEval = 'Just now';
+        },
+      };
+    }
+  </script>
+</body>
+</html>

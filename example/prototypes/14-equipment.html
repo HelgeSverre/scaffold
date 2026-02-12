@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Inventory — Crescat Entitlement System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 9999px; }
+
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+
+    .btn-primary { background: var(--color-primary); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-success { background: var(--color-success); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-warning { background: var(--color-warning); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+    .btn-warning:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); font-weight: 500; border-radius: 6px; padding: 0 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-default); transition: all 0.15s; cursor: pointer; font-family: inherit; font-size: 13px; }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .btn-sm { padding: 0 10px; height: 26px; font-size: 12px; }
+
+    .input-field { background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 12px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: var(--color-primary); }
+
+    .badge-active { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(151, 61%, 43%); background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); }
+    .badge-pending { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(44, 88%, 66%); background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); }
+    .badge-warning { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(0, 88%, 66%); background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); }
+    .badge-inactive { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: var(--text-soft); background: hsla(205, 16%, 57%, 0.1); border: 1px solid hsla(205, 16%, 57%, 0.2); }
+    .badge-info { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: #45A4E4; background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); }
+
+    .stat-card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; padding: 20px; }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--bg-sidebar);
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-soft);
+      border-bottom: 1px solid var(--border-default);
+    }
+    .data-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .data-table tbody tr:hover { background: var(--bg-row-hover); }
+    .data-table td {
+      padding: 10px 16px; font-size: 13px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .category-tab {
+      padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; border: none; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .category-tab.active { background: var(--color-primary); color: #fff; }
+    .category-tab:not(.active) { background: transparent; color: var(--text-soft); }
+    .category-tab:not(.active):hover { background: var(--bg-hover); }
+
+    .utilization-bar { height: 6px; background: var(--bg-active); border-radius: 3px; overflow: hidden; }
+    .utilization-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+    .help-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+    }
+    .help-card {
+      background: var(--bg-sidebar); border: 1px solid var(--border-default);
+      border-radius: 6px; padding: 32px; max-width: 600px; width: 90%;
+    }
+
+    .modal-overlay { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="min-h-screen" x-data="equipmentApp()">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="pt-[48px]" style="margin-left: 232px;">
+    <div class="p-6">
+
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-semibold text-white mb-1">Equipment Inventory</h1>
+          <p style="color: var(--text-soft); font-size: 13px;">Track returnable equipment: radios, vehicles, tools, laptops</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button @click="showRegisterModal = true" class="btn-primary">
+            <span class="text-lg leading-none">+</span> Register Equipment
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Total Inventory</div>
+          <div class="text-2xl font-bold text-white" x-text="totalStats.total"></div>
+        </div>
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Checked Out</div>
+          <div class="text-2xl font-bold" style="color: var(--color-highlight);" x-text="totalStats.checkedOut"></div>
+        </div>
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Available</div>
+          <div class="text-2xl font-bold" style="color: var(--color-success);" x-text="totalStats.available"></div>
+        </div>
+        <div class="stat-card" style="background: hsla(0, 88%, 66%, 0.08); border: 1px solid hsla(0, 88%, 66%, 0.15);">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Overdue</div>
+          <div class="text-2xl font-bold" style="color: var(--color-warning);" x-text="totalStats.overdue"></div>
+        </div>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="flex items-center gap-2 mb-4">
+        <button class="category-tab" :class="activeCategory === 'All' ? 'active' : ''" @click="activeCategory = 'All'">
+          All (<span x-text="totalStats.total"></span>)
+        </button>
+        <template x-for="cat in categories" :key="cat">
+          <button class="category-tab" :class="activeCategory === cat ? 'active' : ''" @click="activeCategory = cat">
+            <span x-text="cat"></span> (<span x-text="categoryCount(cat)"></span>)
+          </button>
+        </template>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="mb-4">
+        <div class="relative" style="max-width: 400px;">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--text-soft); font-size: 14px;">&#128269;</span>
+          <input type="text" class="input-field w-full" style="padding-left: 32px;" placeholder="Search equipment by name, category, or serial..." x-model="searchQuery">
+        </div>
+      </div>
+
+      <!-- Equipment Table -->
+      <div style="background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; overflow: hidden;" class="mb-6">
+        <div style="max-height: calc(100vh - 440px); overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;"></th>
+                <th>Item</th>
+                <th>Category</th>
+                <th style="text-align: center;">Total</th>
+                <th style="text-align: center;">Checked Out</th>
+                <th style="text-align: center;">Available</th>
+                <th style="text-align: center;">Overdue</th>
+                <th style="min-width: 140px;">Utilization</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(item, idx) in filteredEquipment" :key="item.id">
+                <tr>
+                  <td colspan="8" style="padding: 0; border: none;">
+                    <!-- Main Row -->
+                    <div @click="expandedRow = expandedRow === item.id ? null : item.id"
+                         class="flex items-center cursor-pointer transition-colors"
+                         :style="(idx % 2 === 0 ? 'background: var(--bg-row);' : 'background: var(--bg-row-alt);') + 'border-bottom: 1px solid var(--border-soft);'"
+                         @mouseenter="$el.style.background='var(--bg-row-hover)'"
+                         @mouseleave="$el.style.background = idx % 2 === 0 ? 'var(--bg-row)' : 'var(--bg-row-alt)'">
+                      <div style="width: 30px; padding: 10px 8px 10px 16px; font-size: 10px; color: var(--text-soft); transition: transform 0.2s;" :style="expandedRow === item.id ? 'transform: rotate(90deg);' : ''">&#9654;</div>
+                      <div style="flex: 2; padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--text-default);" x-text="item.name"></div>
+                      <div style="flex: 1; padding: 10px 16px;">
+                        <span class="badge-info" style="font-size: 11px;" x-text="item.category"></span>
+                      </div>
+                      <div style="width: 80px; padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500;" x-text="item.total"></div>
+                      <div style="width: 100px; padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500; color: var(--color-highlight);" x-text="item.checkedOut"></div>
+                      <div style="width: 80px; padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500; color: var(--color-success);" x-text="item.available"></div>
+                      <div style="width: 80px; padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500;" :style="item.overdue > 0 ? 'color: var(--color-warning);' : 'color: var(--text-soft);'" x-text="item.overdue"></div>
+                      <div style="width: 140px; padding: 10px 16px;">
+                        <div class="flex items-center gap-2">
+                          <div class="utilization-bar flex-1">
+                            <div class="utilization-fill" :style="'width: ' + utilizationPercent(item) + '%; background: ' + utilizationColor(item) + ';'"></div>
+                          </div>
+                          <span class="text-xs font-medium" style="width: 32px; text-align: right;" :style="'color: ' + utilizationColor(item)" x-text="Math.round(utilizationPercent(item)) + '%'"></span>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Expanded Holder Details -->
+                    <div x-show="expandedRow === item.id"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         style="background: var(--bg-hover); border-bottom: 1px solid var(--border-default); padding: 16px 32px;">
+                      <div class="flex items-center justify-between mb-3">
+                        <h4 style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft);">
+                          Current Holders (<span x-text="item.holders.length"></span>)
+                        </h4>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                          <tr>
+                            <th style="text-align: left; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Holder</th>
+                            <th style="text-align: left; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Role</th>
+                            <th style="text-align: left; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Serial</th>
+                            <th style="text-align: left; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Checked Out</th>
+                            <th style="text-align: left; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Due</th>
+                            <th style="text-align: left; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Status</th>
+                            <th style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border-soft);">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <template x-for="holder in item.holders" :key="holder.serial">
+                            <tr>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft); font-weight: 500;" x-text="holder.name"></td>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft); color: var(--text-soft);" x-text="holder.role"></td>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft); font-family: monospace; color: var(--text-soft);" x-text="holder.serial"></td>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft); color: var(--text-soft);" x-text="holder.checkoutTime"></td>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft); color: var(--text-soft);" x-text="holder.dueDate"></td>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft);">
+                                <span :class="holder.status === 'active' ? 'badge-active' : 'badge-warning'" style="font-size: 11px;" x-text="holder.status === 'active' ? 'Active' : 'Overdue'"></span>
+                              </td>
+                              <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border-soft); text-align: right;">
+                                <div class="flex items-center justify-end gap-2">
+                                  <button class="btn-success btn-sm" @click.stop="markReturned(item.id, holder.name)">Mark Returned</button>
+                                  <button x-show="holder.status === 'overdue'" class="btn-ghost btn-sm" @click.stop="sendReminder(holder.name)">Send Reminder</button>
+                                </div>
+                              </td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                      <template x-if="item.holders.length === 0">
+                        <div style="text-align: center; padding: 16px; color: var(--text-soft); font-size: 12px;">No items currently checked out</div>
+                      </template>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <!-- Table Footer -->
+        <div class="flex items-center justify-between px-4 py-3" style="background: var(--bg-sidebar); border-top: 1px solid var(--border-default);">
+          <div style="font-size: 12px; color: var(--text-soft);">
+            Showing <span x-text="filteredEquipment.length"></span> of <span x-text="equipment.length"></span> equipment types
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom 2-Column Section -->
+      <div class="grid gap-6" style="grid-template-columns: 2fr 1fr;">
+
+        <!-- Overdue Items Panel -->
+        <div style="background: hsla(0, 88%, 66%, 0.05); border: 1px solid hsla(0, 88%, 66%, 0.15); border-left: 3px solid var(--color-warning); border-radius: 6px; overflow: hidden;">
+          <div class="px-4 py-3 flex items-center justify-between" style="border-bottom: 1px solid hsla(0, 88%, 66%, 0.1);">
+            <h3 style="font-size: 14px; font-weight: 600; color: var(--color-warning);">Overdue Items</h3>
+            <span class="badge-warning" style="font-size: 11px;" x-text="overdueItems.length + ' items'"></span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid hsla(0, 88%, 66%, 0.1);">Item</th>
+                  <th style="text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid hsla(0, 88%, 66%, 0.1);">Holder</th>
+                  <th style="text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid hsla(0, 88%, 66%, 0.1);">Serial</th>
+                  <th style="text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid hsla(0, 88%, 66%, 0.1);">Due Date</th>
+                  <th style="text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid hsla(0, 88%, 66%, 0.1);">Overdue By</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(od, i) in overdueItems" :key="od.serial">
+                  <tr :style="i % 2 === 1 ? 'background: hsla(0, 88%, 66%, 0.03);' : ''">
+                    <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid hsla(0, 88%, 66%, 0.08); font-weight: 500;" x-text="od.equipmentName"></td>
+                    <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid hsla(0, 88%, 66%, 0.08);" x-text="od.name"></td>
+                    <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid hsla(0, 88%, 66%, 0.08); font-family: monospace; color: var(--text-soft);" x-text="od.serial"></td>
+                    <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid hsla(0, 88%, 66%, 0.08); color: var(--text-soft);" x-text="od.dueDate"></td>
+                    <td style="padding: 8px 12px; font-size: 12px; border-bottom: 1px solid hsla(0, 88%, 66%, 0.08); color: var(--color-warning); font-weight: 500;" x-text="od.overdueBy"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div style="background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; overflow: hidden;">
+          <div class="px-4 py-3" style="border-bottom: 1px solid var(--border-default);">
+            <h3 style="font-size: 14px; font-weight: 600; color: var(--text-default);">Recent Activity</h3>
+          </div>
+          <div class="px-4 py-3" style="max-height: 320px; overflow-y: auto;">
+            <div class="flex flex-col gap-3">
+              <template x-for="(act, i) in activities" :key="i">
+                <div class="flex items-start gap-3">
+                  <div class="flex flex-col items-center" style="padding-top: 4px;">
+                    <div class="w-2 h-2 rounded-full shrink-0"
+                         :style="act.type === 'checkout' ? 'background: var(--color-highlight);' :
+                                 act.type === 'return' ? 'background: var(--color-success);' :
+                                 'background: var(--color-pending);'"></div>
+                    <template x-if="i < activities.length - 1">
+                      <div style="width: 1px; height: 24px; background: var(--border-soft); margin-top: 4px;"></div>
+                    </template>
+                  </div>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 12px; color: var(--text-default); line-height: 1.4;" x-text="act.action"></div>
+                    <div style="font-size: 11px; color: var(--text-soft); margin-top: 2px;" x-text="act.time"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Register Equipment Modal -->
+  <template x-if="showRegisterModal">
+    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showRegisterModal = false">
+      <div class="w-full max-w-lg rounded-lg p-6" style="background: var(--bg-sidebar); border: 1px solid var(--border-default);" @click.stop>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-semibold text-white">Register Equipment</h2>
+          <button @click="showRegisterModal = false" style="color: var(--text-soft); font-size: 20px; cursor: pointer; background: none; border: none;">&#10005;</button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Equipment Name</label>
+            <input type="text" class="input-field w-full" placeholder="e.g., Motorola DP4801e Radio" x-model="registerForm.name">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Category</label>
+            <select class="input-field w-full" x-model="registerForm.category">
+              <option value="">Select category...</option>
+              <option value="Radios">Radios</option>
+              <option value="Vehicles">Vehicles</option>
+              <option value="Tools">Tools</option>
+              <option value="Laptops">Laptops</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Quantity</label>
+            <input type="number" class="input-field w-full" placeholder="e.g., 10" x-model="registerForm.quantity" min="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Serial Number Prefix</label>
+            <input type="text" class="input-field w-full" placeholder="e.g., RAD-" x-model="registerForm.serialPrefix">
+            <p class="text-xs mt-1" style="color: var(--text-soft);">Items will be numbered as PREFIX-001, PREFIX-002, etc.</p>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-6 pt-4" style="border-top: 1px solid var(--border-default);">
+          <button @click="showRegisterModal = false" class="btn-ghost">Cancel</button>
+          <button class="btn-primary" @click="
+            if(!registerForm.name || !registerForm.category || !registerForm.quantity) return;
+            equipment.push({
+              id: Date.now(),
+              name: registerForm.name,
+              category: registerForm.category,
+              total: parseInt(registerForm.quantity),
+              checkedOut: 0,
+              available: parseInt(registerForm.quantity),
+              overdue: 0,
+              holders: []
+            });
+            registerForm = { name: '', category: '', quantity: '', serialPrefix: '' };
+            showRegisterModal = false;
+            showToast('Equipment registered successfully');
+          ">Register</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Help Overlay -->
+  <button @click="showHelp = true" class="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-40 cursor-pointer" style="background: var(--color-primary); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">?</button>
+
+  <div x-show="showHelp" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-1" class="help-overlay" @click.self="showHelp = false">
+    <div class="help-card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-white">Equipment Inventory &mdash; Help</h2>
+        <button @click="showHelp = false" style="color: var(--text-soft); font-size: 20px; cursor: pointer; background: none; border: none;">&#10005;</button>
+      </div>
+      <div style="color: var(--text-default); font-size: 13px; line-height: 1.7;">
+        <p class="mb-3">The <strong>Equipment Inventory</strong> dashboard tracks all returnable equipment issued to festival staff and crew. This includes radios, vehicles, tools, laptops, and other numbered items.</p>
+        <p class="mb-3"><strong>Checking out equipment:</strong> When a crew member receives an item, it is logged with their name, role, serial number, and expected return time. The utilization bar shows what percentage of each item type is currently in use.</p>
+        <p class="mb-3"><strong>Overdue tracking:</strong> Items not returned by their due date are flagged as overdue. Use the "Send Reminder" action to notify holders, or "Mark Returned" when equipment comes back.</p>
+        <p class="mb-3"><strong>Categories:</strong> Filter by equipment type using the category tabs. Use the search bar to find specific items or serial numbers.</p>
+        <p><strong>Utilization colors:</strong> Green (&lt;60%), blue (60-85%), yellow (85-95%), red (&gt;95%) indicate how much of the inventory is checked out.</p>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button @click="showHelp = false" class="btn-primary">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div x-show="toast" x-transition class="fixed top-16 right-6 z-[60] px-4 py-2 rounded-md text-sm font-medium" style="background: var(--color-primary); color: white;" x-text="toast"></div>
+
+  <script>
+    function equipmentApp() {
+      return {
+        searchQuery: '',
+        activeCategory: 'All',
+        expandedRow: null,
+        showRegisterModal: false,
+        showHelp: false,
+        toast: null,
+        registerForm: { name: '', category: '', quantity: '', serialPrefix: '' },
+
+        equipment: [
+          { id: 1, name: 'Motorola DP4801e Radio', category: 'Radios', total: 45, checkedOut: 38, available: 5, overdue: 2, holders: [
+            { name: 'Erik Johansson', role: 'Stage Manager', serial: 'RAD-1042', checkoutTime: 'Jul 14, 06:30', dueDate: 'Jul 14, 22:00', status: 'active' },
+            { name: 'Anna Larsen', role: 'Security Lead', serial: 'RAD-1015', checkoutTime: 'Jul 14, 07:00', dueDate: 'Jul 14, 22:00', status: 'active' },
+            { name: 'Lars Eriksen', role: 'Sound Engineer', serial: 'RAD-1008', checkoutTime: 'Jul 13, 08:00', dueDate: 'Jul 13, 22:00', status: 'overdue' },
+            { name: 'Karin Dahl', role: 'Logistics', serial: 'RAD-1023', checkoutTime: 'Jul 13, 09:00', dueDate: 'Jul 13, 22:00', status: 'overdue' }
+          ]},
+          { id: 2, name: 'Toyota Hilux Crew Cab', category: 'Vehicles', total: 12, checkedOut: 10, available: 2, overdue: 0, holders: [
+            { name: 'Magnus Holm', role: 'Transport Lead', serial: 'VEH-003', checkoutTime: 'Jul 14, 05:00', dueDate: 'Jul 14, 23:00', status: 'active' },
+            { name: 'Bjorn Gustafsson', role: 'Site Manager', serial: 'VEH-007', checkoutTime: 'Jul 14, 06:00', dueDate: 'Jul 14, 20:00', status: 'active' }
+          ]},
+          { id: 3, name: 'DeWalt Power Drill Kit', category: 'Tools', total: 20, checkedOut: 14, available: 4, overdue: 2, holders: [
+            { name: 'Petter Olsen', role: 'Carpenter', serial: 'TL-045', checkoutTime: 'Jul 14, 07:30', dueDate: 'Jul 14, 18:00', status: 'active' },
+            { name: 'Henrik Andersen', role: 'Stage Builder', serial: 'TL-032', checkoutTime: 'Jul 13, 08:00', dueDate: 'Jul 13, 18:00', status: 'overdue' },
+            { name: 'Frida Karlsson', role: 'Electrician', serial: 'TL-051', checkoutTime: 'Jul 13, 07:00', dueDate: 'Jul 13, 17:00', status: 'overdue' }
+          ]},
+          { id: 4, name: 'Lenovo ThinkPad T14s', category: 'Laptops', total: 25, checkedOut: 18, available: 7, overdue: 0, holders: [
+            { name: 'Sofia Nilsson', role: 'Production Coordinator', serial: 'LP-112', checkoutTime: 'Jul 12, 09:00', dueDate: 'Jul 17, 18:00', status: 'active' },
+            { name: 'Ingrid Svensson', role: 'Accreditation Manager', serial: 'LP-108', checkoutTime: 'Jul 10, 08:00', dueDate: 'Jul 20, 18:00', status: 'active' }
+          ]},
+          { id: 5, name: 'Stihl Leaf Blower', category: 'Tools', total: 10, checkedOut: 6, available: 4, overdue: 0, holders: [
+            { name: 'Oskar Lund', role: 'Grounds Crew', serial: 'TL-078', checkoutTime: 'Jul 14, 06:00', dueDate: 'Jul 14, 14:00', status: 'active' }
+          ]},
+          { id: 6, name: 'Peltor Headset (Radio)', category: 'Radios', total: 20, checkedOut: 8, available: 10, overdue: 2, holders: [
+            { name: 'Maja Persson', role: 'FOH Engineer', serial: 'HS-022', checkoutTime: 'Jul 14, 08:00', dueDate: 'Jul 14, 23:00', status: 'active' },
+            { name: 'Emil Nordin', role: 'Monitor Tech', serial: 'HS-015', checkoutTime: 'Jul 13, 10:00', dueDate: 'Jul 13, 22:00', status: 'overdue' },
+            { name: 'Jonas Fredriksen', role: 'RF Tech', serial: 'HS-019', checkoutTime: 'Jul 13, 11:00', dueDate: 'Jul 13, 22:00', status: 'overdue' }
+          ]},
+          { id: 7, name: 'High-Vis Vest (Numbered)', category: 'Other', total: 30, checkedOut: 22, available: 8, overdue: 0, holders: [
+            { name: 'Karl Stromberg', role: 'Traffic Marshal', serial: 'HV-14', checkoutTime: 'Jul 14, 05:30', dueDate: 'Jul 14, 23:00', status: 'active' }
+          ]}
+        ],
+
+        activities: [
+          { time: '14:32', action: 'Erik Johansson checked out Radio RAD-1042', type: 'checkout' },
+          { time: '14:15', action: 'Maja Persson checked out Headset HS-022', type: 'checkout' },
+          { time: '13:45', action: 'Thomas Berg returned Radio RAD-1033', type: 'return' },
+          { time: '12:30', action: 'Oskar Lund checked out Leaf Blower TL-078', type: 'checkout' },
+          { time: '11:00', action: 'Sara Ekman returned Laptop LP-105', type: 'return' },
+          { time: '10:15', action: 'Petter Olsen checked out Drill TL-045', type: 'checkout' },
+          { time: '09:30', action: 'Reminder sent to Lars Eriksen (Radio RAD-1008)', type: 'reminder' },
+          { time: '08:00', action: 'Karl Stromberg checked out Vest HV-14', type: 'checkout' }
+        ],
+
+        get categories() {
+          const cats = [...new Set(this.equipment.map(e => e.category))];
+          return cats.sort();
+        },
+
+        get filteredEquipment() {
+          return this.equipment.filter(item => {
+            if (this.activeCategory !== 'All' && item.category !== this.activeCategory) return false;
+            if (this.searchQuery) {
+              const q = this.searchQuery.toLowerCase();
+              const matchName = item.name.toLowerCase().includes(q);
+              const matchCategory = item.category.toLowerCase().includes(q);
+              const matchSerial = item.holders.some(h => h.serial.toLowerCase().includes(q));
+              if (!matchName && !matchCategory && !matchSerial) return false;
+            }
+            return true;
+          });
+        },
+
+        get totalStats() {
+          return {
+            total: this.equipment.reduce((sum, e) => sum + e.total, 0),
+            checkedOut: this.equipment.reduce((sum, e) => sum + e.checkedOut, 0),
+            available: this.equipment.reduce((sum, e) => sum + e.available, 0),
+            overdue: this.equipment.reduce((sum, e) => sum + e.overdue, 0)
+          };
+        },
+
+        get overdueItems() {
+          const items = [];
+          this.equipment.forEach(eq => {
+            eq.holders.forEach(h => {
+              if (h.status === 'overdue') {
+                items.push({
+                  equipmentName: eq.name,
+                  name: h.name,
+                  serial: h.serial,
+                  dueDate: h.dueDate,
+                  overdueBy: this.calcOverdue(h.dueDate)
+                });
+              }
+            });
+          });
+          return items;
+        },
+
+        calcOverdue(dueDate) {
+          // Parse "Jul 13, 22:00" style dates for display
+          if (dueDate.includes('Jul 13')) return '~24h';
+          if (dueDate.includes('Jul 12')) return '~48h';
+          return '~24h';
+        },
+
+        categoryCount(cat) {
+          return this.equipment
+            .filter(e => e.category === cat)
+            .reduce((sum, e) => sum + e.total, 0);
+        },
+
+        utilizationPercent(item) {
+          if (item.total === 0) return 0;
+          return (item.checkedOut / item.total) * 100;
+        },
+
+        utilizationColor(item) {
+          const pct = this.utilizationPercent(item);
+          if (pct > 95) return 'var(--color-warning)';
+          if (pct > 85) return 'var(--color-pending)';
+          if (pct > 60) return 'var(--color-highlight)';
+          return 'var(--color-success)';
+        },
+
+        markReturned(equipId, holderName) {
+          const eq = this.equipment.find(e => e.id === equipId);
+          if (!eq) return;
+          const holderIdx = eq.holders.findIndex(h => h.name === holderName);
+          if (holderIdx === -1) return;
+          const holder = eq.holders[holderIdx];
+          if (holder.status === 'overdue') {
+            eq.overdue = Math.max(0, eq.overdue - 1);
+          }
+          eq.checkedOut = Math.max(0, eq.checkedOut - 1);
+          eq.available = eq.available + 1;
+          eq.holders.splice(holderIdx, 1);
+          this.showToast(holderName + ' returned equipment');
+        },
+
+        sendReminder(holderName) {
+          this.showToast('Reminder sent to ' + holderName);
+        },
+
+        showToast(msg) {
+          this.toast = msg;
+          setTimeout(() => { this.toast = null; }, 3000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

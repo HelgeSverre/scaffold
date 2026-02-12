@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Log - Crescat Entitlement System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 9999px; }
+
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+
+    .btn-primary { background: var(--color-primary); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-success { background: var(--color-success); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; border: none; font-family: inherit; font-size: 13px; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); font-weight: 500; border-radius: 6px; padding: 0 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-default); transition: all 0.15s; cursor: pointer; font-family: inherit; font-size: 13px; }
+    .btn-ghost:hover { background: var(--bg-hover); }
+
+    .input-field { background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 12px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: var(--color-primary); }
+
+    .badge-success { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(151, 61%, 43%); background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); }
+    .badge-warning { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(0, 88%, 66%); background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); }
+    .badge-pending { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(44, 88%, 66%); background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); }
+    .badge-info { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: #45A4E4; background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); }
+
+    .stat-card { background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; padding: 20px; }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--bg-sidebar);
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-soft);
+      border-bottom: 1px solid var(--border-default);
+    }
+    .data-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .data-table tbody tr:hover { background: var(--bg-row-hover); }
+    .data-table td {
+      padding: 10px 16px; font-size: 13px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .row-granted { border-left: 3px solid var(--color-success); }
+    .row-denied { border-left: 3px solid var(--color-warning); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .scan-new { animation: slideDown 0.3s ease; }
+
+    .help-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+    }
+    .help-card {
+      background: var(--bg-sidebar); border: 1px solid var(--border-default);
+      border-radius: 6px; padding: 32px; max-width: 600px; width: 90%;
+    }
+  </style>
+</head>
+<body class="min-h-screen" x-data="scanLogApp()">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button @click="showHelp = true" class="btn-ghost" style="height: 26px; padding: 0 8px; font-size: 12px;">&#10067; Help</button>
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="pt-[48px]" style="margin-left: 232px;">
+    <div class="p-6">
+
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-semibold text-white mb-1">Scan Log</h1>
+          <p style="color: var(--text-soft); font-size: 13px;">Complete audit trail of every scan across all checkpoints</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- Live Mode Toggle -->
+          <div class="flex items-center gap-2" style="border: 1px solid var(--border-default); border-radius: 6px; padding: 4px 12px;">
+            <span style="font-size: 12px; color: var(--text-soft);">Live Mode</span>
+            <button @click="liveMode = !liveMode" class="relative w-10 h-5 rounded-full transition-colors" :style="liveMode ? 'background: var(--color-success)' : 'background: var(--bg-input); border: 1px solid var(--border-default)'">
+              <span class="absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform" :style="liveMode ? 'transform: translateX(22px)' : 'transform: translateX(2px)'"></span>
+            </button>
+            <span x-show="liveMode" style="color: var(--color-success); font-size: 11px;" class="flex items-center gap-1">
+              <span class="inline-block w-2 h-2 rounded-full animate-pulse" style="background: var(--color-success);"></span> Live
+            </span>
+          </div>
+          <button class="btn-ghost" @click="exportCSV()">&#8681; Export CSV</button>
+          <button class="btn-ghost" @click="showHelp = true">&#10067; Help</button>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Total Scans</div>
+          <div class="text-2xl font-bold text-white">3,456</div>
+          <div style="color: var(--text-soft); font-size: 12px; margin-top: 4px;">Today, Jul 15</div>
+        </div>
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Granted</div>
+          <div class="text-2xl font-bold" style="color: var(--color-success);">3,234</div>
+          <div style="color: var(--color-success); font-size: 12px; margin-top: 4px;">93.6% success rate</div>
+        </div>
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Denied</div>
+          <div class="text-2xl font-bold" style="color: var(--color-warning);">222</div>
+          <div style="color: var(--color-warning); font-size: 12px; margin-top: 4px;">6.4% denial rate</div>
+        </div>
+        <div class="stat-card">
+          <div style="color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Unique Participants</div>
+          <div class="text-2xl font-bold text-white">634</div>
+          <div style="color: var(--text-soft); font-size: 12px; margin-top: 4px;">of 812 registered</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="mb-4 p-4" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;">
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Date Range -->
+          <div class="flex items-center gap-1">
+            <span style="font-size: 12px; color: var(--text-soft); margin-right: 4px;">Date:</span>
+            <button @click="dateRange = 'today'" class="px-3 py-1 text-xs rounded" :style="dateRange === 'today' ? 'background: var(--color-primary); color: #fff;' : 'background: var(--bg-input); color: var(--text-soft); border: 1px solid var(--border-default);'">Today</button>
+            <button @click="dateRange = 'yesterday'" class="px-3 py-1 text-xs rounded" :style="dateRange === 'yesterday' ? 'background: var(--color-primary); color: #fff;' : 'background: var(--bg-input); color: var(--text-soft); border: 1px solid var(--border-default);'">Yesterday</button>
+            <button @click="dateRange = 'custom'" class="px-3 py-1 text-xs rounded" :style="dateRange === 'custom' ? 'background: var(--color-primary); color: #fff;' : 'background: var(--bg-input); color: var(--text-soft); border: 1px solid var(--border-default);'">Custom</button>
+          </div>
+
+          <div style="width: 1px; height: 24px; background: var(--border-default);"></div>
+
+          <!-- Checkpoint Filter -->
+          <select class="input-field" style="font-size: 12px; height: 28px; padding: 0 8px;" x-model="filterCheckpoint">
+            <option value="">All Checkpoints</option>
+            <option value="Main Gate">Main Gate</option>
+            <option value="Backstage Gate A">Backstage Gate A</option>
+            <option value="Backstage Gate B">Backstage Gate B</option>
+            <option value="VIP Entrance">VIP Entrance</option>
+            <option value="Food Truck Alpha">Food Truck Alpha</option>
+            <option value="Food Truck Beta">Food Truck Beta</option>
+            <option value="Equipment Tent">Equipment Tent</option>
+            <option value="Merch Stand">Merch Stand</option>
+            <option value="Parking Gate">Parking Gate</option>
+          </select>
+
+          <!-- Result Filter -->
+          <select class="input-field" style="font-size: 12px; height: 28px; padding: 0 8px;" x-model="filterResult">
+            <option value="">All Results</option>
+            <option value="Granted">Granted</option>
+            <option value="Denied">Denied</option>
+          </select>
+
+          <!-- Scan Type Filter -->
+          <select class="input-field" style="font-size: 12px; height: 28px; padding: 0 8px;" x-model="filterScanType">
+            <option value="">All Types</option>
+            <option value="Access In">Access In</option>
+            <option value="Access Out">Access Out</option>
+            <option value="Dispense">Dispense</option>
+            <option value="Return">Return</option>
+          </select>
+
+          <!-- Participant Search -->
+          <input type="text" class="input-field" style="font-size: 12px; height: 28px; width: 180px;" placeholder="Search participant..." x-model="filterParticipant">
+
+          <!-- Item Filter -->
+          <input type="text" class="input-field" style="font-size: 12px; height: 28px; width: 140px;" placeholder="Filter item..." x-model="filterItem">
+
+          <!-- Clear Filters -->
+          <button x-show="hasFilters" @click="clearFilters()" class="px-3 py-1 text-xs rounded" style="background: var(--bg-input); color: var(--color-warning); border: 1px solid hsla(0, 88%, 66%, 0.3);">
+            &#10005; Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Scan Log Table -->
+      <div style="background: var(--bg-content); border: 1px solid var(--border-default); border-radius: 6px; overflow: hidden;">
+        <div style="max-height: calc(100vh - 380px); overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Time</th>
+                <th>Participant</th>
+                <th>Checkpoint</th>
+                <th>Item</th>
+                <th style="width: 90px;">Scan Type</th>
+                <th style="width: 80px;">Result</th>
+                <th>Reason</th>
+                <th style="width: 100px;">Operator</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(scan, idx) in filteredScans" :key="scan.id">
+                <tr>
+                  <td colspan="8" style="padding: 0; border: none;">
+                    <!-- Main Row -->
+                    <div @click="expandedRow = expandedRow === scan.id ? null : scan.id"
+                         :class="scan.result === 'Granted' ? 'row-granted' : 'row-denied'"
+                         class="flex items-center cursor-pointer transition-colors"
+                         :style="(idx % 2 === 0 ? 'background: var(--bg-row);' : 'background: var(--bg-row-alt);') + 'border-bottom: 1px solid var(--border-soft);'"
+                         :class="{'scan-new': scan.isNew}"
+                         @mouseenter="$el.style.background='var(--bg-row-hover)'"
+                         @mouseleave="$el.style.background = idx % 2 === 0 ? 'var(--bg-row)' : 'var(--bg-row-alt)'">
+                      <div style="width: 80px; padding: 10px 16px; font-size: 12px; font-family: monospace; color: var(--text-soft);" x-text="scan.time"></div>
+                      <div style="flex: 1; padding: 10px 16px; font-size: 13px;" :style="scan.participant === 'Unknown' ? 'color: var(--text-soft); font-style: italic;' : 'color: var(--text-default);'" x-text="scan.participant"></div>
+                      <div style="flex: 1; padding: 10px 16px; font-size: 13px; color: var(--text-soft);" x-text="scan.checkpoint"></div>
+                      <div style="flex: 1; padding: 10px 16px; font-size: 13px;" x-text="scan.item || '—'"></div>
+                      <div style="width: 90px; padding: 10px 16px;">
+                        <span class="badge-info" x-text="scan.scanType" style="font-size: 11px;"></span>
+                      </div>
+                      <div style="width: 80px; padding: 10px 16px;">
+                        <span :class="scan.result === 'Granted' ? 'badge-success' : 'badge-warning'" style="font-size: 11px;">
+                          <span x-text="scan.result === 'Granted' ? '✓' : '✗'"></span>
+                          <span x-text="scan.result"></span>
+                        </span>
+                      </div>
+                      <div style="flex: 1; padding: 10px 16px; font-size: 12px; color: var(--text-soft);" x-text="scan.reason || '—'"></div>
+                      <div style="width: 100px; padding: 10px 16px; font-size: 12px; color: var(--text-soft);" x-text="scan.operator"></div>
+                    </div>
+                    <!-- Expanded Details -->
+                    <div x-show="expandedRow === scan.id" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" style="background: var(--bg-hover); border-bottom: 1px solid var(--border-default); padding: 16px 32px;">
+                      <div class="grid grid-cols-4 gap-4">
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Scan ID</div>
+                          <div style="font-size: 12px; font-family: monospace;" x-text="scan.scanId"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Credential</div>
+                          <div style="font-size: 12px; font-family: monospace;" x-text="scan.credential || 'N/A'"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Device</div>
+                          <div style="font-size: 12px;" x-text="scan.device"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Timestamp (UTC)</div>
+                          <div style="font-size: 12px; font-family: monospace;" x-text="scan.timestampUTC"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Participant ID</div>
+                          <div style="font-size: 12px; font-family: monospace;" x-text="scan.participantId || 'N/A'"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Rule Evaluated</div>
+                          <div style="font-size: 12px;" x-text="scan.ruleEvaluated || 'N/A'"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Entitlement Allocation</div>
+                          <div style="font-size: 12px;" x-text="scan.allocationRef || 'N/A'"></div>
+                        </div>
+                        <div>
+                          <div style="font-size: 11px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 4px;">Sync Status</div>
+                          <div style="font-size: 12px;">
+                            <span class="badge-success">Synced</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <!-- Table Footer -->
+        <div class="flex items-center justify-between px-4 py-3" style="background: var(--bg-sidebar); border-top: 1px solid var(--border-default);">
+          <div style="font-size: 12px; color: var(--text-soft);">
+            Showing <span x-text="filteredScans.length"></span> of <span x-text="scans.length"></span> scans
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn-ghost" style="height: 26px; font-size: 11px;">&#9664; Previous</button>
+            <span style="font-size: 12px; color: var(--text-soft);">Page 1 of 12</span>
+            <button class="btn-ghost" style="height: 26px; font-size: 11px;">Next &#9654;</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Help Overlay -->
+  <div x-show="showHelp" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-1" class="help-overlay" @click.self="showHelp = false">
+    <div class="help-card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-white">&#10067; Scan Log Help</h2>
+        <button @click="showHelp = false" style="color: var(--text-soft); font-size: 20px; cursor: pointer; background: none; border: none;">&#10005;</button>
+      </div>
+      <div style="color: var(--text-default); font-size: 13px; line-height: 1.7;">
+        <p class="mb-3">The <strong>Scan Log</strong> provides a complete audit trail of every scan across all checkpoints. Filter by checkpoint, result, date, or participant to investigate issues.</p>
+        <p class="mb-3">Denied scans show the specific reason (daily limit, wrong zone, expired credential, etc.). This supports operational troubleshooting and post-event reporting.</p>
+        <p class="mb-3">Every scan creates an immutable <strong>CheckpointScan</strong> record. Click any row to expand and view full scan details including credential information, device, and rule evaluation results.</p>
+        <p class="mb-3"><strong>Live Mode:</strong> When enabled, new scans appear at the top of the log in real-time with a subtle animation. Use this during active operations to monitor scan activity as it happens.</p>
+        <p><strong>Export:</strong> Download the current filtered view as a CSV file for external reporting and analysis.</p>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button @click="showHelp = false" class="btn-primary">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function scanLogApp() {
+      return {
+        showHelp: false,
+        liveMode: false,
+        expandedRow: null,
+        dateRange: 'today',
+        filterCheckpoint: '',
+        filterResult: '',
+        filterScanType: '',
+        filterParticipant: '',
+        filterItem: '',
+        liveInterval: null,
+
+        get hasFilters() {
+          return this.filterCheckpoint || this.filterResult || this.filterScanType || this.filterParticipant || this.filterItem;
+        },
+
+        clearFilters() {
+          this.filterCheckpoint = '';
+          this.filterResult = '';
+          this.filterScanType = '';
+          this.filterParticipant = '';
+          this.filterItem = '';
+        },
+
+        get filteredScans() {
+          return this.scans.filter(s => {
+            if (this.filterCheckpoint && s.checkpoint !== this.filterCheckpoint) return false;
+            if (this.filterResult && s.result !== this.filterResult) return false;
+            if (this.filterScanType && s.scanType !== this.filterScanType) return false;
+            if (this.filterParticipant && !s.participant.toLowerCase().includes(this.filterParticipant.toLowerCase())) return false;
+            if (this.filterItem && s.item && !s.item.toLowerCase().includes(this.filterItem.toLowerCase())) return false;
+            return true;
+          });
+        },
+
+        exportCSV() {
+          alert('Exporting ' + this.filteredScans.length + ' scan records as CSV...');
+        },
+
+        init() {
+          this.$watch('liveMode', (val) => {
+            if (val) {
+              this.startLiveMode();
+            } else {
+              this.stopLiveMode();
+            }
+          });
+        },
+
+        startLiveMode() {
+          const names = ['Emma Kristiansen', 'Bjorn Halvorsen', 'Silje Moen', 'Henrik Solberg', 'Camilla Vik', 'Andreas Bakke', 'Nora Hauge', 'Magnus Lie', 'Thea Aas', 'Oscar Dahl'];
+          const checkpoints = ['Main Gate', 'Backstage Gate A', 'Food Truck Alpha', 'Food Truck Beta', 'Equipment Tent', 'VIP Entrance', 'Parking Gate'];
+          const items = ['Lunch Voucher', 'AAA-Access', 'Backstage Pass', 'Dinner Voucher', 'Drink Token', 'Parking Pass', 'VIP Pass'];
+          const types = ['Access In', 'Access Out', 'Dispense'];
+          const operators = ['Auto', 'Ole Staff', 'Petra Staff', 'Maria Staff', 'Jon Staff'];
+
+          this.liveInterval = setInterval(() => {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const granted = Math.random() > 0.15;
+            const name = names[Math.floor(Math.random() * names.length)];
+            const cp = checkpoints[Math.floor(Math.random() * checkpoints.length)];
+            const item = items[Math.floor(Math.random() * items.length)];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const op = operators[Math.floor(Math.random() * operators.length)];
+
+            const newScan = {
+              id: 'LIVE-' + Date.now(),
+              time: h + ':' + m + ':' + s,
+              participant: name,
+              checkpoint: cp,
+              item: item,
+              scanType: type,
+              result: granted ? 'Granted' : 'Denied',
+              reason: granted ? (type === 'Dispense' ? Math.floor(Math.random()*3+1) + ' of 3 remaining' : '') : 'Daily limit reached',
+              operator: op,
+              scanId: 'SCN-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
+              credential: 'QR:' + Math.random().toString(36).substr(2, 8),
+              device: 'Tablet-' + String(Math.floor(Math.random()*20+1)).padStart(2, '0'),
+              timestampUTC: '2026-07-15T' + h + ':' + m + ':' + s + '.000Z',
+              participantId: 'P-' + Math.floor(Math.random()*900+100),
+              ruleEvaluated: 'DailyLimitRule',
+              allocationRef: 'ALLOC-' + Math.floor(Math.random()*9000+1000),
+              isNew: true
+            };
+
+            this.scans.unshift(newScan);
+            setTimeout(() => { newScan.isNew = false; }, 1000);
+          }, 3000);
+        },
+
+        stopLiveMode() {
+          if (this.liveInterval) {
+            clearInterval(this.liveInterval);
+            this.liveInterval = null;
+          }
+        },
+
+        scans: [
+          { id: 1, time: '14:32:15', participant: 'Kari Nordmann', checkpoint: 'Food Truck Alpha', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Granted', reason: '2 of 3 remaining', operator: 'Ole Staff', scanId: 'SCN-A8F2B3C1', credential: 'QR:3f7a...b2c1', device: 'Tablet-07', timestampUTC: '2026-07-15T12:32:15.442Z', participantId: 'P-0842', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-2847' },
+          { id: 2, time: '14:31:58', participant: 'Erik Hansen', checkpoint: 'Backstage Gate A', item: 'AAA-Access', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-B7E3D4A2', credential: 'QR:8d2e...f4a5', device: 'Gate-Scanner-01', timestampUTC: '2026-07-15T12:31:58.118Z', participantId: 'P-0156', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1523' },
+          { id: 3, time: '14:31:45', participant: 'Sofia Andersen', checkpoint: 'VIP Entrance', item: 'VIP Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-C6D4E5B3', credential: 'QR:a1b2...c3d4', device: 'Gate-Scanner-04', timestampUTC: '2026-07-15T12:31:45.901Z', participantId: 'P-0233', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1890' },
+          { id: 4, time: '14:31:22', participant: 'Lars Johansen', checkpoint: 'Food Truck Beta', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Denied', reason: 'Daily limit reached', operator: 'Petra Staff', scanId: 'SCN-D5C5F6C4', credential: 'QR:e5f6...g7h8', device: 'Tablet-03', timestampUTC: '2026-07-15T12:31:22.674Z', participantId: 'P-0478', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-3102' },
+          { id: 5, time: '14:30:55', participant: 'Anna Svensson', checkpoint: 'Main Gate', item: 'AAA-Access', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-E4B6G7D5', credential: 'QR:i9j0...k1l2', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:30:55.229Z', participantId: 'P-0612', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-2456' },
+          { id: 6, time: '14:30:41', participant: 'Olav Dahl', checkpoint: 'Equipment Tent', item: 'Two-Way Radio', scanType: 'Dispense', result: 'Granted', reason: 'Radio #247', operator: 'Maria Staff', scanId: 'SCN-F3A7H8E6', credential: 'QR:m3n4...o5p6', device: 'Tablet-11', timestampUTC: '2026-07-15T12:30:41.887Z', participantId: 'P-0091', ruleEvaluated: 'EquipmentTrackingRule', allocationRef: 'ALLOC-0987' },
+          { id: 7, time: '14:30:12', participant: 'Unknown', checkpoint: 'Backstage Gate B', item: '', scanType: 'Access In', result: 'Denied', reason: 'Unknown credential', operator: 'Auto', scanId: 'SCN-G2B8I9F7', credential: 'QR:INVALID', device: 'Gate-Scanner-03', timestampUTC: '2026-07-15T12:30:12.553Z', participantId: null, ruleEvaluated: 'CredentialValidation', allocationRef: null },
+          { id: 8, time: '14:29:58', participant: 'Thomas Lund', checkpoint: 'Main Gate', item: 'Backstage Pass', scanType: 'Access Out', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-H1C9J0G8', credential: 'QR:q7r8...s9t0', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:29:58.112Z', participantId: 'P-0345', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1678' },
+          { id: 9, time: '14:29:33', participant: 'Ingrid Berg', checkpoint: 'Food Truck Alpha', item: 'Dinner Voucher', scanType: 'Dispense', result: 'Denied', reason: 'Outside schedule (dinner starts 17:00)', operator: 'Ole Staff', scanId: 'SCN-I0D0K1H9', credential: 'QR:u1v2...w3x4', device: 'Tablet-07', timestampUTC: '2026-07-15T12:29:33.776Z', participantId: 'P-0567', ruleEvaluated: 'ScheduleRule', allocationRef: 'ALLOC-2901' },
+          { id: 10, time: '14:29:15', participant: 'Mikael Strand', checkpoint: 'Parking Gate', item: 'Parking Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-J9E1L2I0', credential: 'QR:y5z6...a7b8', device: 'Gate-Scanner-06', timestampUTC: '2026-07-15T12:29:15.334Z', participantId: 'P-0789', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-3456' },
+          { id: 11, time: '14:28:50', participant: 'Kari Nordmann', checkpoint: 'Equipment Tent', item: 'Two-Way Radio', scanType: 'Return', result: 'Granted', reason: 'Radio #189 returned', operator: 'Maria Staff', scanId: 'SCN-K8F2M3J1', credential: 'QR:3f7a...b2c1', device: 'Tablet-11', timestampUTC: '2026-07-15T12:28:50.998Z', participantId: 'P-0842', ruleEvaluated: 'EquipmentReturnRule', allocationRef: 'ALLOC-0654' },
+          { id: 12, time: '14:28:22', participant: 'Frida Nilsen', checkpoint: 'Merch Stand', item: 'Volunteer T-Shirt', scanType: 'Dispense', result: 'Granted', reason: 'Collected', operator: 'Jon Staff', scanId: 'SCN-L7G3N4K2', credential: 'QR:c9d0...e1f2', device: 'Tablet-15', timestampUTC: '2026-07-15T12:28:22.445Z', participantId: 'P-0234', ruleEvaluated: 'OneTimeDispenseRule', allocationRef: 'ALLOC-4012' },
+          { id: 13, time: '14:27:55', participant: 'Henrik Solberg', checkpoint: 'Main Gate', item: 'General Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-M6H4O5L3', credential: 'QR:g3h4...i5j6', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:27:55.112Z', participantId: 'P-0412', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-2234' },
+          { id: 14, time: '14:27:38', participant: 'Silje Moen', checkpoint: 'Food Truck Alpha', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Granted', reason: '1 of 3 remaining', operator: 'Ole Staff', scanId: 'SCN-N5I5P6M4', credential: 'QR:k7l8...m9n0', device: 'Tablet-07', timestampUTC: '2026-07-15T12:27:38.667Z', participantId: 'P-0523', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-3678' },
+          { id: 15, time: '14:27:11', participant: 'Camilla Vik', checkpoint: 'Backstage Gate A', item: 'Backstage Pass', scanType: 'Access In', result: 'Denied', reason: 'No backstage entitlement', operator: 'Auto', scanId: 'SCN-O4J6Q7N5', credential: 'QR:o1p2...q3r4', device: 'Gate-Scanner-01', timestampUTC: '2026-07-15T12:27:11.332Z', participantId: 'P-0678', ruleEvaluated: 'ZoneAccessRule', allocationRef: null },
+          { id: 16, time: '14:26:44', participant: 'Andreas Bakke', checkpoint: 'Food Truck Beta', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Granted', reason: '3 of 3 remaining', operator: 'Petra Staff', scanId: 'SCN-P3K7R8O6', credential: 'QR:s5t6...u7v8', device: 'Tablet-03', timestampUTC: '2026-07-15T12:26:44.889Z', participantId: 'P-0145', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-1456' },
+          { id: 17, time: '14:26:20', participant: 'Nora Hauge', checkpoint: 'VIP Entrance', item: 'VIP Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-Q2L8S9P7', credential: 'QR:w9x0...y1z2', device: 'Gate-Scanner-04', timestampUTC: '2026-07-15T12:26:20.554Z', participantId: 'P-0901', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-4567' },
+          { id: 18, time: '14:25:55', participant: 'Magnus Lie', checkpoint: 'Equipment Tent', item: 'Flashlight', scanType: 'Dispense', result: 'Granted', reason: 'Unit #FL-034', operator: 'Maria Staff', scanId: 'SCN-R1M9T0Q8', credential: 'QR:a3b4...c5d6', device: 'Tablet-11', timestampUTC: '2026-07-15T12:25:55.221Z', participantId: 'P-0367', ruleEvaluated: 'EquipmentTrackingRule', allocationRef: 'ALLOC-0789' },
+          { id: 19, time: '14:25:30', participant: 'Thea Aas', checkpoint: 'Main Gate', item: 'AAA-Access', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-S0N0U1R9', credential: 'QR:e7f8...g9h0', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:25:30.778Z', participantId: 'P-0534', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-2678' },
+          { id: 20, time: '14:25:02', participant: 'Oscar Dahl', checkpoint: 'Food Truck Alpha', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Denied', reason: 'Not allocated', operator: 'Ole Staff', scanId: 'SCN-T9O1V2S0', credential: 'QR:i1j2...k3l4', device: 'Tablet-07', timestampUTC: '2026-07-15T12:25:02.335Z', participantId: 'P-0189', ruleEvaluated: 'AllocationCheck', allocationRef: null },
+          { id: 21, time: '14:24:38', participant: 'Emma Kristiansen', checkpoint: 'Parking Gate', item: 'Parking Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-U8P2W3T1', credential: 'QR:m5n6...o7p8', device: 'Gate-Scanner-06', timestampUTC: '2026-07-15T12:24:38.992Z', participantId: 'P-0756', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-3890' },
+          { id: 22, time: '14:24:15', participant: 'Bjorn Halvorsen', checkpoint: 'Backstage Gate A', item: 'AAA-Access', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-V7Q3X4U2', credential: 'QR:q9r0...s1t2', device: 'Gate-Scanner-01', timestampUTC: '2026-07-15T12:24:15.448Z', participantId: 'P-0023', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1234' },
+          { id: 23, time: '14:23:50', participant: 'Liv Pedersen', checkpoint: 'Food Truck Beta', item: 'Drink Token', scanType: 'Dispense', result: 'Granted', reason: '4 of 5 remaining', operator: 'Petra Staff', scanId: 'SCN-W6R4Y5V3', credential: 'QR:u3v4...w5x6', device: 'Tablet-03', timestampUTC: '2026-07-15T12:23:50.114Z', participantId: 'P-0445', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-2567' },
+          { id: 24, time: '14:23:22', participant: 'Einar Foss', checkpoint: 'Main Gate', item: 'General Pass', scanType: 'Access Out', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-X5S5Z6W4', credential: 'QR:y7z8...a9b0', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:23:22.778Z', participantId: 'P-0612', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1890' },
+          { id: 25, time: '14:22:55', participant: 'Marte Lien', checkpoint: 'Merch Stand', item: 'Festival Lanyard', scanType: 'Dispense', result: 'Granted', reason: 'Collected', operator: 'Jon Staff', scanId: 'SCN-Y4T6A7X5', credential: 'QR:c1d2...e3f4', device: 'Tablet-15', timestampUTC: '2026-07-15T12:22:55.335Z', participantId: 'P-0278', ruleEvaluated: 'OneTimeDispenseRule', allocationRef: 'ALLOC-4123' },
+          { id: 26, time: '14:22:30', participant: 'Jonas Holm', checkpoint: 'VIP Entrance', item: 'VIP Pass', scanType: 'Access In', result: 'Denied', reason: 'Credential expired', operator: 'Auto', scanId: 'SCN-Z3U7B8Y6', credential: 'QR:g5h6...EXPIRED', device: 'Gate-Scanner-04', timestampUTC: '2026-07-15T12:22:30.991Z', participantId: 'P-0834', ruleEvaluated: 'CredentialValidation', allocationRef: 'ALLOC-3012' },
+          { id: 27, time: '14:22:08', participant: 'Astrid Tveit', checkpoint: 'Food Truck Alpha', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Granted', reason: '2 of 3 remaining', operator: 'Ole Staff', scanId: 'SCN-A2V8C9Z7', credential: 'QR:i7j8...k9l0', device: 'Tablet-07', timestampUTC: '2026-07-15T12:22:08.557Z', participantId: 'P-0456', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-2345' },
+          { id: 28, time: '14:21:42', participant: 'Petter Myklebust', checkpoint: 'Equipment Tent', item: 'Safety Vest', scanType: 'Dispense', result: 'Granted', reason: 'Vest #SV-012', operator: 'Maria Staff', scanId: 'SCN-B1W9D0A8', credential: 'QR:m1n2...o3p4', device: 'Tablet-11', timestampUTC: '2026-07-15T12:21:42.223Z', participantId: 'P-0123', ruleEvaluated: 'EquipmentTrackingRule', allocationRef: 'ALLOC-0456' },
+          { id: 29, time: '14:21:18', participant: 'Hilde Brekke', checkpoint: 'Main Gate', item: 'Backstage Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-C0X0E1B9', credential: 'QR:q5r6...s7t8', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:21:18.889Z', participantId: 'P-0567', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1567' },
+          { id: 30, time: '14:20:55', participant: 'Vegard Olsen', checkpoint: 'Food Truck Beta', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Granted', reason: '1 of 3 remaining', operator: 'Petra Staff', scanId: 'SCN-D9Y1F2C0', credential: 'QR:u9v0...w1x2', device: 'Tablet-03', timestampUTC: '2026-07-15T12:20:55.556Z', participantId: 'P-0678', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-3234' },
+          { id: 31, time: '14:20:30', participant: 'Ragnhild Sve', checkpoint: 'Backstage Gate B', item: 'AAA-Access', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-E8Z2G3D1', credential: 'QR:y3z4...a5b6', device: 'Gate-Scanner-03', timestampUTC: '2026-07-15T12:20:30.112Z', participantId: 'P-0045', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1012' },
+          { id: 32, time: '14:20:05', participant: 'Kristoffer Aune', checkpoint: 'Food Truck Alpha', item: 'Drink Token', scanType: 'Dispense', result: 'Denied', reason: 'Not allocated (Guest type)', operator: 'Ole Staff', scanId: 'SCN-F7A3H4E2', credential: 'QR:c7d8...e9f0', device: 'Tablet-07', timestampUTC: '2026-07-15T12:20:05.778Z', participantId: 'P-0901', ruleEvaluated: 'AllocationCheck', allocationRef: null },
+          { id: 33, time: '14:19:40', participant: 'Solveig Fjeld', checkpoint: 'Parking Gate', item: 'Parking Pass', scanType: 'Access Out', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-G6B4I5F3', credential: 'QR:g1h2...i3j4', device: 'Gate-Scanner-06', timestampUTC: '2026-07-15T12:19:40.334Z', participantId: 'P-0234', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-3567' },
+          { id: 34, time: '14:19:15', participant: 'Torstein Berge', checkpoint: 'Equipment Tent', item: 'Two-Way Radio', scanType: 'Return', result: 'Granted', reason: 'Radio #203 returned', operator: 'Maria Staff', scanId: 'SCN-H5C5J6G4', credential: 'QR:k5l6...m7n8', device: 'Tablet-11', timestampUTC: '2026-07-15T12:19:15.991Z', participantId: 'P-0345', ruleEvaluated: 'EquipmentReturnRule', allocationRef: 'ALLOC-0234' },
+          { id: 35, time: '14:18:50', participant: 'Malin Ruud', checkpoint: 'Main Gate', item: 'General Pass', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-I4D6K7H5', credential: 'QR:o9p0...q1r2', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:18:50.445Z', participantId: 'P-0789', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-2890' },
+          { id: 36, time: '14:18:22', participant: 'Ola Nordby', checkpoint: 'Food Truck Beta', item: 'Lunch Voucher', scanType: 'Dispense', result: 'Granted', reason: '3 of 3 remaining', operator: 'Petra Staff', scanId: 'SCN-J3E7L8I6', credential: 'QR:s3t4...u5v6', device: 'Tablet-03', timestampUTC: '2026-07-15T12:18:22.112Z', participantId: 'P-0567', ruleEvaluated: 'DailyLimitRule', allocationRef: 'ALLOC-1789' },
+          { id: 37, time: '14:17:55', participant: 'Karianne Eid', checkpoint: 'VIP Entrance', item: 'VIP Pass', scanType: 'Access Out', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-K2F8M9J7', credential: 'QR:w7x8...y9z0', device: 'Gate-Scanner-04', timestampUTC: '2026-07-15T12:17:55.668Z', participantId: 'P-0123', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-4234' },
+          { id: 38, time: '14:17:30', participant: 'Simen Kvam', checkpoint: 'Backstage Gate A', item: 'Backstage Pass', scanType: 'Access In', result: 'Denied', reason: 'Credential suspended', operator: 'Auto', scanId: 'SCN-L1G9N0K8', credential: 'QR:a1b2...SUSP', device: 'Gate-Scanner-01', timestampUTC: '2026-07-15T12:17:30.224Z', participantId: 'P-0456', ruleEvaluated: 'CredentialValidation', allocationRef: 'ALLOC-2012' },
+          { id: 39, time: '14:17:05', participant: 'Ida Henriksen', checkpoint: 'Merch Stand', item: 'Crew Hoodie', scanType: 'Dispense', result: 'Granted', reason: 'Size L collected', operator: 'Jon Staff', scanId: 'SCN-M0H0O1L9', credential: 'QR:c3d4...e5f6', device: 'Tablet-15', timestampUTC: '2026-07-15T12:17:05.881Z', participantId: 'P-0678', ruleEvaluated: 'OneTimeDispenseRule', allocationRef: 'ALLOC-4567' },
+          { id: 40, time: '14:16:40', participant: 'Erlend Gran', checkpoint: 'Main Gate', item: 'AAA-Access', scanType: 'Access In', result: 'Granted', reason: '', operator: 'Auto', scanId: 'SCN-N9I1P2M0', credential: 'QR:g7h8...i9j0', device: 'Gate-Scanner-02', timestampUTC: '2026-07-15T12:16:40.537Z', participantId: 'P-0012', ruleEvaluated: 'ZoneAccessRule', allocationRef: 'ALLOC-1345' },
+        ]
+      };
+    }
+  </script>
+</body>
+</html>
