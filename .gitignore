@@ -31,4 +31,8 @@ coverage/
 *.db-shm
 bun.lockb
 
+# Playwright
+test-results/
+playwright-report/
+
 # Generated in user projects (db files only)
