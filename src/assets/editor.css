@@ -62,6 +62,11 @@
   color: #38bdf8;
 }
 
+.scaffold-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .scaffold-btn .icon {
   font-size: 14px;
   line-height: 1;
@@ -145,4 +150,312 @@
   font-size: 10px;
   color: #475569;
   margin-left: 2px;
+}
+
+/* ─── AI Bar ───────────────────────────────────────────────────────────────── */
+
+.scaffold-ai-bar {
+  position: fixed;
+  bottom: 70px;
+  right: 20px;
+  width: 420px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  z-index: 2147483646;
+}
+
+.scaffold-ai-input-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.scaffold-ai-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+}
+
+.scaffold-ai-input:focus {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.scaffold-ai-input::placeholder {
+  color: #475569;
+}
+
+.scaffold-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+select.scaffold-ai-input {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.scaffold-ai-status {
+  display: none;
+  padding: 4px 8px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.scaffold-ai-status:not(:empty) {
+  display: block;
+}
+
+/* AI History dropdown */
+.scaffold-ai-history {
+  display: none;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.scaffold-ai-history.visible {
+  display: block;
+}
+
+.scaffold-ai-history-item {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scaffold-ai-history-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.scaffold-ai-history-empty {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.scaffold-ai-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 16px;
+  margin-top: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  color: #38bdf8;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scaffold-ai-generate-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+}
+
+.scaffold-ai-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Modal ────────────────────────────────────────────────────────────────── */
+
+.scaffold-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+}
+
+.scaffold-modal {
+  width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.scaffold-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.scaffold-modal-close {
+  padding: 2px 8px !important;
+  font-size: 18px;
+  border: none !important;
+  background: transparent !important;
+}
+
+.scaffold-modal-body {
+  padding: 16px;
+}
+
+.scaffold-form-group {
+  margin-bottom: 12px;
+}
+
+.scaffold-form-group label {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scaffold-extract-preview {
+  padding: 8px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: ui-monospace, "SF Mono", Monaco, monospace;
+  color: #64748b;
+  overflow: hidden;
+  max-height: 120px;
+  word-break: break-all;
+}
+
+/* ─── Component Palette ────────────────────────────────────────────────────── */
+
+.scaffold-component-palette {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.97);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+  z-index: 2147483646;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scaffold-palette-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+  font-weight: 600;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.scaffold-palette-close {
+  padding: 2px 8px !important;
+  font-size: 16px;
+  border: none !important;
+  background: transparent !important;
+}
+
+.scaffold-palette-search {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.scaffold-palette-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.scaffold-palette-category {
+  padding: 8px 4px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.scaffold-palette-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.scaffold-component-card {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scaffold-component-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.scaffold-component-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+
+.scaffold-component-desc {
+  font-size: 10px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.scaffold-palette-empty {
+  padding: 16px 8px;
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+}
+
+.scaffold-palette-generate {
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
