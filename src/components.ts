@@ -2,11 +2,12 @@ import { join } from "path";
 import { existsSync, readdirSync, readFileSync, mkdirSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import type { ComponentMeta, ComponentProp } from "./types";
+import { scaffoldPath } from "./paths";
 
 // ─── Component Discovery ─────────────────────────────────────────────────────
 
 export function scanComponents(dir: string): ComponentMeta[] {
-  const componentsDir = join(dir, "components");
+  const componentsDir = scaffoldPath(dir, "components");
   if (!existsSync(componentsDir)) return [];
 
   const components: ComponentMeta[] = [];
@@ -26,7 +27,7 @@ export function scanComponents(dir: string): ComponentMeta[] {
           const parsed = parseComponent(filePath);
           components.push({
             ...parsed.meta,
-            path: `components/${category}/${file}`,
+            path: `.scaffold/components/${category}/${file}`,
           });
         } catch {
           // Skip malformed components
@@ -97,7 +98,7 @@ export async function writeComponent(
   name: string,
   content: string
 ): Promise<string> {
-  const categoryDir = join(dir, "components", category);
+  const categoryDir = scaffoldPath(dir, "components", category);
   if (!existsSync(categoryDir)) {
     mkdirSync(categoryDir, { recursive: true });
   }
