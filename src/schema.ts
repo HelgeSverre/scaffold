@@ -19,7 +19,7 @@ export function parseSchema(yamlContent: string): ScaffoldConfig {
     };
   }
 
-  return { name: raw.name, entities };
+  return { name: raw.name, entities, ai: raw.ai };
 }
 
 function normalizeProperty(prop: string | Record<string, any>): PropertyDef {
