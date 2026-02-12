@@ -1,0 +1,269 @@
+name: Crescat Entitlement System Prototype
+
+ai:
+  model: claude-sonnet-4-20250514
+  max_tokens: 16000
+  style_reference: "04-entitlement-items.html"
+  instructions: |
+    This project is a prototype for Crescat's festival management platform.
+    Always use Norwegian names for mock data.
+    The design language is dark, professional, information-dense.
+    Avoid rounded corners larger than 6px.
+    Never use emoji in the UI except in category icons.
+
+entities:
+  # ─── Core ──────────────────────────────────────────────
+
+  Participant:
+    properties:
+      - { name: uuid, type: uuid }
+      - { name: festival_id, type: integer, default: 1 }
+      - { name: participant_type, type: enum, values: [crew, responder, travel_party, guest] }
+      - name
+      - { name: email, type: email, nullable: true }
+      - { name: affiliation, type: string, nullable: true }
+      - { name: role, type: string, nullable: true }
+      - { name: status, type: enum, values: [active, suspended, revoked], default: active }
+    seed:
+      - { name: "Kari Nordmann", email: "kari.nordmann@crew.no", participant_type: crew, affiliation: "Sound Department", role: "Stage Manager", status: active }
+      - { name: "Erik Hansen", email: "erik.h@tourmanagement.com", participant_type: travel_party, affiliation: "Band: Kygo", role: "Tour Manager", status: active }
+      - { name: "Sofia Andersen", email: "sofia.a@redbull.com", participant_type: guest, affiliation: "Sponsor: Red Bull", role: "VIP Guest", status: active }
+      - { name: "Lars Johansen", email: "lars.j@volunteers.no", participant_type: responder, affiliation: "Volunteer Form 2026", role: "Volunteer", status: active }
+      - { name: "Marte Olsen", email: "marte@crew.no", participant_type: crew, affiliation: "Production", role: "Production Manager", status: active }
+      - { name: "Thomas Berge", email: "thomas@security.no", participant_type: crew, affiliation: "Security", role: "Security Lead", status: active }
+      - { name: "Ingrid Dahl", email: "ingrid@catering.no", participant_type: crew, affiliation: "Catering", role: "Catering Coordinator", status: active }
+      - { name: "Anders Vik", email: "anders@stage.no", participant_type: crew, affiliation: "Stage Crew", role: "Rigging Technician", status: active }
+      - { name: "Hanna Berg", email: "hanna@media.no", participant_type: guest, affiliation: "NRK", role: "Journalist", status: active }
+      - { name: "Olav Strand", email: "olav@suspended.no", participant_type: crew, affiliation: "Logistics", role: "Driver", status: suspended }
+
+  # ─── Items & Categories ────────────────────────────────
+
+  EntitlementCategory:
+    properties:
+      - name
+      - { name: description, type: text, nullable: true }
+      - { name: icon, type: string, nullable: true }
+      - { name: sort_order, type: integer, default: 0 }
+    seed:
+      - { name: "Accreditations", icon: "🎫", sort_order: 0, description: "Access passes and zone credentials" }
+      - { name: "Meals", icon: "🍲", sort_order: 1, description: "Food and drink vouchers" }
+      - { name: "Equipment", icon: "🔧", sort_order: 2, description: "Returnable gear and tools" }
+      - { name: "Supplies", icon: "📦", sort_order: 3, description: "One-time consumable supplies" }
+      - { name: "Perks", icon: "⭐", sort_order: 4, description: "Special benefits and extras" }
+
+  EntitlementItem:
+    properties:
+      - { name: category_id, type: relation, entity: EntitlementCategory }
+      - name
+      - { name: item_type, type: enum, values: [access, consumable, returnable, onetime] }
+      - { name: description, type: text, nullable: true }
+      - { name: per_day, type: boolean, default: false }
+      - { name: quantity_per_day, type: integer, nullable: true }
+      - { name: total_inventory, type: integer, nullable: true }
+      - { name: is_active, type: boolean, default: true }
+      - { name: uuid, type: uuid }
+    seed:
+      # Accreditations
+      - { name: "AAA Access", item_type: access, category_id: 1, description: "Full backstage + VIP + production access" }
+      - { name: "Backstage Pass", item_type: access, category_id: 1, description: "Backstage and green room access" }
+      - { name: "VIP Pass", item_type: access, category_id: 1, description: "VIP area access" }
+      - { name: "Media Pass", item_type: access, category_id: 1, description: "Media center and press area" }
+      - { name: "Crew Access", item_type: access, category_id: 1, description: "General crew areas" }
+      # Meals
+      - { name: "Lunch Voucher", item_type: consumable, category_id: 2, per_day: true, quantity_per_day: 3 }
+      - { name: "Dinner Voucher", item_type: consumable, category_id: 2, per_day: true, quantity_per_day: 1 }
+      - { name: "Drink Token", item_type: consumable, category_id: 2, per_day: false, total_inventory: 500 }
+      # Equipment
+      - { name: "Two-Way Radio", item_type: returnable, category_id: 3, total_inventory: 50 }
+      - { name: "Headset", item_type: returnable, category_id: 3, total_inventory: 30 }
+      - { name: "Laptop", item_type: returnable, category_id: 3, total_inventory: 10 }
+      - { name: "High-Vis Vest", item_type: returnable, category_id: 3, total_inventory: 100 }
+      # Supplies
+      - { name: "Crew T-Shirt", item_type: onetime, category_id: 4, total_inventory: 300 }
+      - { name: "Wristband", item_type: onetime, category_id: 4, total_inventory: 2000 }
+      # Perks
+      - { name: "Merchandise Bag", item_type: onetime, category_id: 5, total_inventory: 250 }
+
+  # ─── Rules Engine ──────────────────────────────────────
+
+  EntitlementSchedule:
+    properties:
+      - name
+      - { name: valid_from, type: date, nullable: true }
+      - { name: valid_to, type: date, nullable: true }
+      - { name: valid_days, type: json, nullable: true }
+      - { name: valid_time_from, type: string, nullable: true }
+      - { name: valid_time_to, type: string, nullable: true }
+    seed:
+      - { name: "Festival Weekend", valid_from: "2026-07-14", valid_to: "2026-07-17" }
+      - { name: "Build Week", valid_from: "2026-07-07", valid_to: "2026-07-13" }
+      - { name: "Full Festival Period", valid_from: "2026-07-07", valid_to: "2026-07-19" }
+
+  EntitlementRule:
+    properties:
+      - name
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: quantity, type: integer, nullable: true }
+      - { name: priority, type: integer, default: 0 }
+      - { name: is_active, type: boolean, default: true }
+      - { name: per_day, type: boolean, default: false }
+      - { name: stacking_behavior, type: enum, values: [highest, replace, add], default: highest }
+      - { name: schedule_id, type: relation, entity: EntitlementSchedule, nullable: true }
+      - { name: description, type: text, nullable: true }
+    seed:
+      - { name: "Crew Meal Allowance", entitlement_item_id: 6, quantity: 3, per_day: true, priority: 10, stacking_behavior: highest, schedule_id: 1, description: "All crew get 3 lunch vouchers per day during festival weekend" }
+      - { name: "Short Shift Meal", entitlement_item_id: 6, quantity: 1, per_day: true, priority: 20, stacking_behavior: highest, description: "Reduced meal allowance for short shifts (4-6h)" }
+      - { name: "Crew Dinner", entitlement_item_id: 7, quantity: 1, per_day: true, priority: 10, stacking_behavior: highest, schedule_id: 1, description: "Dinner voucher for crew during festival" }
+      - { name: "Stage Crew Radio", entitlement_item_id: 9, quantity: 1, priority: 50, stacking_behavior: replace, description: "Two-way radio for stage crew on shift" }
+      - { name: "All Crew Basic Access", entitlement_item_id: 5, priority: 0, is_active: true, description: "Basic crew access for all crew members" }
+      - { name: "Sound Dept AAA Access", entitlement_item_id: 1, priority: 10, is_active: true, description: "AAA access for sound department" }
+      - { name: "VIP Guest Access", entitlement_item_id: 3, quantity: 1, priority: 10, stacking_behavior: highest, description: "VIP access for all guests" }
+      - { name: "Media Zone Access", entitlement_item_id: 4, quantity: 1, priority: 20, stacking_behavior: replace, description: "Media pass for accredited journalists" }
+      - { name: "Crew T-Shirt", entitlement_item_id: 13, quantity: 1, priority: 0, description: "One crew t-shirt per crew member" }
+      - { name: "Security High-Vis", entitlement_item_id: 12, quantity: 1, priority: 30, description: "High-vis vest for security team" }
+
+  EntitlementRuleCriteria:
+    properties:
+      - { name: rule_id, type: relation, entity: EntitlementRule }
+      - { name: criteria_type, type: enum, values: [participant_type, section, role, shift_hours, public_form] }
+      - { name: operator, type: enum, values: [equals, contains, greater_than, less_than, between] }
+      - { name: criteria_value, type: string }
+    seed:
+      # Crew Meal Allowance → all crew
+      - { rule_id: 1, criteria_type: participant_type, operator: equals, criteria_value: "crew" }
+      # Short Shift Meal → shift hours between 4-6
+      - { rule_id: 2, criteria_type: shift_hours, operator: between, criteria_value: "4.0,5.99" }
+      # Crew Dinner → all crew
+      - { rule_id: 3, criteria_type: participant_type, operator: equals, criteria_value: "crew" }
+      # Stage Crew Radio → section = Stage Crew & on shift
+      - { rule_id: 4, criteria_type: section, operator: equals, criteria_value: "Stage Crew" }
+      - { rule_id: 4, criteria_type: shift_hours, operator: greater_than, criteria_value: "0" }
+      # All Crew Basic Access → all crew
+      - { rule_id: 5, criteria_type: participant_type, operator: equals, criteria_value: "crew" }
+      # Sound Dept AAA → section = Sound Department
+      - { rule_id: 6, criteria_type: section, operator: equals, criteria_value: "Sound Department" }
+      # VIP Guest Access → type = guest
+      - { rule_id: 7, criteria_type: participant_type, operator: equals, criteria_value: "guest" }
+      # Media Zone Access → form = Media Accreditation
+      - { rule_id: 8, criteria_type: public_form, operator: equals, criteria_value: "Media Accreditation 2026" }
+      # Crew T-Shirt → all crew
+      - { rule_id: 9, criteria_type: participant_type, operator: equals, criteria_value: "crew" }
+      # Security High-Vis → section = Security
+      - { rule_id: 10, criteria_type: section, operator: equals, criteria_value: "Security" }
+
+  # ─── Entitlements (assignments) ────────────────────────
+
+  Entitlement:
+    properties:
+      - { name: participant_id, type: relation, entity: Participant }
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: rule_id, type: relation, entity: EntitlementRule, nullable: true }
+      - { name: quantity, type: integer, nullable: true }
+      - { name: status, type: enum, values: [active, collected, checked_out, revoked, expired], default: active }
+      - { name: source_type, type: enum, values: [rule, manual, override], default: rule }
+      - { name: valid_from, type: date, nullable: true }
+      - { name: valid_to, type: date, nullable: true }
+      - { name: notes, type: text, nullable: true }
+    seed:
+      # Kari Nordmann (crew, Sound Dept) — gets AAA, meals, radio
+      - { participant_id: 1, entitlement_item_id: 1, rule_id: 6, status: active, source_type: rule, valid_from: "2026-07-07", valid_to: "2026-07-19" }
+      - { participant_id: 1, entitlement_item_id: 5, rule_id: 5, status: active, source_type: rule }
+      - { participant_id: 1, entitlement_item_id: 6, rule_id: 1, quantity: 3, status: active, source_type: rule }
+      - { participant_id: 1, entitlement_item_id: 7, rule_id: 3, quantity: 1, status: active, source_type: rule }
+      - { participant_id: 1, entitlement_item_id: 9, rule_id: 4, quantity: 1, status: checked_out, source_type: rule, notes: "Radio #247" }
+      - { participant_id: 1, entitlement_item_id: 13, rule_id: 9, quantity: 1, status: collected, source_type: rule }
+      # Erik Hansen (travel party) — no rule entitlements, manual backstage
+      - { participant_id: 2, entitlement_item_id: 2, status: active, source_type: manual, notes: "Backstage access for Kygo tour" }
+      - { participant_id: 2, entitlement_item_id: 6, quantity: 2, status: active, source_type: manual }
+      # Sofia Andersen (guest) — VIP access
+      - { participant_id: 3, entitlement_item_id: 3, rule_id: 7, status: active, source_type: rule }
+      # Lars Johansen (responder/volunteer) — crew access + meal
+      - { participant_id: 4, entitlement_item_id: 5, status: active, source_type: manual }
+      - { participant_id: 4, entitlement_item_id: 6, quantity: 1, status: active, source_type: manual }
+      # Thomas Berge (security) — crew access + high-vis
+      - { participant_id: 6, entitlement_item_id: 5, rule_id: 5, status: active, source_type: rule }
+      - { participant_id: 6, entitlement_item_id: 12, rule_id: 10, quantity: 1, status: active, source_type: rule }
+      # Hanna Berg (media/guest) — media pass
+      - { participant_id: 9, entitlement_item_id: 4, rule_id: 8, status: active, source_type: rule }
+
+  # ─── Zones & Checkpoints ───────────────────────────────
+
+  Zone:
+    properties:
+      - name
+      - { name: description, type: text, nullable: true }
+      - { name: parent_zone_id, type: relation, entity: Zone, nullable: true }
+      - { name: capacity, type: integer, nullable: true }
+    seed:
+      - { name: "Front of House", description: "Public areas" }
+      - { name: "Backstage", description: "Artist and crew areas" }
+      - { name: "Green Room", parent_zone_id: 2 }
+      - { name: "Production Office", parent_zone_id: 2 }
+      - { name: "VIP Area", capacity: 200 }
+      - { name: "Artist Village", parent_zone_id: 2 }
+      - { name: "Media Center" }
+      - { name: "Equipment Tent" }
+      - { name: "Parking Area" }
+
+  EntitlementItemZone:
+    pivot: true
+    properties:
+      - { name: entitlement_item_id, type: relation, entity: EntitlementItem }
+      - { name: zone_id, type: relation, entity: Zone }
+
+  Checkpoint:
+    properties:
+      - name
+      - { name: checkpoint_type, type: enum, values: [gate, dispenser, scanner] }
+      - { name: zone_id, type: relation, entity: Zone, nullable: true }
+      - { name: is_active, type: boolean, default: true }
+      - { name: config, type: json, nullable: true }
+    seed:
+      - { name: "Main Gate", checkpoint_type: gate, zone_id: 1, config: '{"direction":"both"}' }
+      - { name: "Backstage Gate A", checkpoint_type: gate, zone_id: 2, config: '{"direction":"in"}' }
+      - { name: "VIP Entrance", checkpoint_type: gate, zone_id: 5 }
+      - { name: "Catering Tent", checkpoint_type: dispenser }
+      - { name: "Equipment Desk", checkpoint_type: dispenser, zone_id: 8 }
+      - { name: "Production Office Gate", checkpoint_type: gate, zone_id: 4 }
+
+  # ─── Credentials & Scanning ────────────────────────────
+
+  Credential:
+    properties:
+      - { name: participant_id, type: relation, entity: Participant }
+      - { name: credential_type, type: enum, values: [qr, badge, wristband, nfc], default: qr }
+      - { name: identifier, type: uuid }
+      - { name: status, type: enum, values: [active, suspended, revoked, lost], default: active }
+      - { name: issued_at, type: timestamp, nullable: true }
+    seed:
+      - { participant_id: 1, credential_type: qr, status: active, issued_at: "2026-07-10T08:00:00Z" }
+      - { participant_id: 1, credential_type: badge, status: active, issued_at: "2026-07-10T08:00:00Z" }
+      - { participant_id: 2, credential_type: qr, status: active, issued_at: "2026-07-13T10:00:00Z" }
+      - { participant_id: 3, credential_type: wristband, status: active, issued_at: "2026-07-14T09:00:00Z" }
+      - { participant_id: 6, credential_type: qr, status: active, issued_at: "2026-07-07T06:00:00Z" }
+      - { participant_id: 9, credential_type: badge, status: active, issued_at: "2026-07-14T08:00:00Z" }
+
+  CheckpointScan:
+    properties:
+      - { name: checkpoint_id, type: relation, entity: Checkpoint }
+      - { name: credential_id, type: relation, entity: Credential, nullable: true }
+      - { name: participant_id, type: relation, entity: Participant, nullable: true }
+      - { name: scan_type, type: enum, values: [access_in, access_out, dispense, checkout, checkin, verify] }
+      - { name: result, type: enum, values: [granted, denied, dispensed, recorded, error] }
+      - { name: denial_reason, type: string, nullable: true }
+      - { name: scanned_by, type: string, nullable: true }
+      - { name: scanned_at, type: timestamp }
+      - { name: notes, type: text, nullable: true }
+    seed:
+      # Kari scans in backstage
+      - { checkpoint_id: 2, credential_id: 1, participant_id: 1, scan_type: access_in, result: granted, scanned_by: "Thomas Berge", scanned_at: "2026-07-11T14:32:00Z" }
+      # Kari gets lunch
+      - { checkpoint_id: 4, credential_id: 1, participant_id: 1, scan_type: dispense, result: dispensed, scanned_by: "Ingrid Dahl", scanned_at: "2026-07-11T12:15:00Z" }
+      # Kari checks out radio
+      - { checkpoint_id: 5, credential_id: 1, participant_id: 1, scan_type: checkout, result: dispensed, scanned_by: "Lars Johansen", scanned_at: "2026-07-11T08:15:00Z", notes: "Radio #247" }
+      # Erik enters backstage
+      - { checkpoint_id: 2, credential_id: 3, participant_id: 2, scan_type: access_in, result: granted, scanned_at: "2026-07-14T16:00:00Z" }
+      # Sofia enters VIP
+      - { checkpoint_id: 3, credential_id: 4, participant_id: 3, scan_type: access_in, result: granted, scanned_at: "2026-07-14T18:30:00Z" }
+      # Denied scan — Olav is suspended
+      - { checkpoint_id: 1, participant_id: 10, scan_type: access_in, result: denied, denial_reason: "Participant suspended", scanned_at: "2026-07-11T09:00:00Z" }
