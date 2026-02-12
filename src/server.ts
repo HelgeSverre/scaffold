@@ -9,6 +9,7 @@ import { scanHtmlFiles, serveHtml, generateIndexPage, handleSave } from "./html"
 import { createWSManager } from "./websocket";
 import { startWatcher } from "./watcher";
 import { loadFunctions } from "./functions";
+import { log } from "./log";
 import { registerAIRoutes } from "./ai-routes";
 import getPort from "get-port";
 import type { ScaffoldContext, RouteEntry } from "./types";
@@ -22,8 +23,8 @@ export async function startServer(options?: { dir?: string; port?: number }) {
     ? join(dir, "scaffold.yaml")
     : join(dir, "scaffold.yml");
   if (!existsSync(yamlPath)) {
-    console.error("Error: scaffold.yaml not found in " + dir);
-    console.error("Run `scaffold init` first.");
+    log.error("scaffold.yaml not found in " + dir);
+    log.error("Run `scaffold init` first.");
     process.exit(1);
   }
 
@@ -38,8 +39,8 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   db.exec("PRAGMA foreign_keys=ON");
 
   // Migrate and seed
-  migrate(db, entities);
-  seed(db, entities);
+  const migration = migrate(db, entities);
+  const seeding = seed(db, entities);
 
   // Scan HTML files
   const pages = scanHtmlFiles(dir);
@@ -199,22 +200,29 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   });
 
   // Startup banner
-  const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
-  const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
-  const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
-  const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
-
   const base = `http://localhost:${port}`;
 
-  console.log();
-  console.log(`  ${bold("scaffold")} ${dim("v0.1.0")}`);
-  console.log();
+  log.brand();
   for (const page of pages) {
-    console.log(`  ${green("→")} ${cyan(`${base}/${page.name}`)}`);
+    log.link(`${base}/${page.name}`);
   }
-  console.log();
-  console.log(`  ${dim("API")}  ${base}/api`);
-  console.log();
-  console.log(`  ${dim("Shortcuts")}  ${bold("⌘S")} Save  ${bold("⌘D")} Duplicate  ${bold("Del")} Remove  ${bold("⌘↑↓")} Reorder  ${bold("Esc")} Deselect`);
-  console.log();
+  log.blank();
+
+  const allTables = [...migration.created, ...migration.altered];
+  if (allTables.length > 0) {
+    log.step(`Migrated ${allTables.length} ${allTables.length === 1 ? "entity" : "entities"}`);
+    for (const t of allTables) {
+      log.item(t);
+    }
+  }
+  if (seeding.seeded > 0) {
+    log.step(`Seeded ${seeding.seeded} ${seeding.seeded === 1 ? "record" : "records"}`);
+  }
+
+  const endpointCount = entities.length * 6;
+  log.step(`${endpointCount} API endpoints ready`);
+  log.step(`${pages.length} ${pages.length === 1 ? "page" : "pages"} with live editor`);
+  log.step("Watching for changes\u2026");
+
+  log.done("\u2318S Save  \u2318D Duplicate  Del Remove  \u2318\u2191\u2193 Reorder  Esc Deselect");
 }
