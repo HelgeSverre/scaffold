@@ -31,5 +31,4 @@ coverage/
 *.db-shm
 bun.lockb
 
-# Generated in user projects
-.scaffold/
+# Generated in user projects (db files only)
