@@ -8,7 +8,7 @@ Bun-powered tool: YAML schema -> SQLite CRUD API + HTML prototype server with li
 bun install                    # install deps
 bun link                       # register `scaffold` CLI globally
 bun test                       # run all tests (106 tests, 6 files)
-bun run example/prototypes/index.ts  # start dev server on example prototypes
+bun run example/prototypes/.scaffold/index.ts  # start dev server on example prototypes
 ```
 
 ## Architecture
