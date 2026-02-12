@@ -3,13 +3,14 @@
 import { Command } from "commander";
 import { init } from "./init";
 import { resolve } from "path";
+import { log } from "./log";
 
 const program = new Command();
 
 program
   .name("scaffold")
   .description("Bun-powered tool for running, persisting, and live-editing HTML prototypes")
-  .version("0.1.0");
+  .version("0.1.1");
 
 program
   .command("init [dir]")
@@ -58,12 +59,11 @@ program
     }
 
     try {
-      console.log("Extracting style guide from HTML files...");
+      log.step("Extracting style guide from HTML files\u2026");
       const result = await extractStyle(targetDir, aiConfig);
-      console.log("Style guide written to .scaffold/prompt.md");
-      console.log(`(${result.split("\n").length} lines)`);
+      log.step("Style guide written to .scaffold/prompt.md", `(${result.split("\n").length} lines)`);
     } catch (err: any) {
-      console.error("Error:", err.message);
+      log.error(err.message);
       process.exit(1);
     }
   });
