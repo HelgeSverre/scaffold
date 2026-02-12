@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from "fs";
 import { join, resolve } from "path";
 import type { ScaffoldContext } from "./types";
+import { log } from "./log";
 
 export async function loadFunctions(functionsDir: string, ctx: ScaffoldContext) {
   if (!existsSync(functionsDir)) return;
@@ -15,7 +16,7 @@ export async function loadFunctions(functionsDir: string, ctx: ScaffoldContext) 
         mod.default(ctx);
       }
     } catch (err) {
-      console.error(`Error loading function ${file}:`, err);
+      log.error(`Error loading function ${file}: ${err}`);
     }
   }
 }

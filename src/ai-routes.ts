@@ -6,6 +6,7 @@ import { buildAIContext, buildSystemPrompt, streamAI, claudeCode, isClaudeCodeAv
 import { editScopedPrompt, editFullPagePrompt, createPagePrompt, generateComponentPrompt, extractComponentPrompt } from "./ai-prompts";
 import { replaceElementByXpath, stripCodeFences, validateHtmlStructure } from "./html-utils";
 import { scanComponents, parseComponent, writeComponent } from "./components";
+import { scaffoldPath } from "./paths";
 
 // ─── SSE Helper ───────────────────────────────────────────────────────────────
 
@@ -229,7 +230,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
   // ─── GET /_/ai/components/:category/:name ───────────────────────────────────
 
   router.add("GET", "_/ai/components/:category/:name", async (_req: Request, params: Record<string, string>) => {
-    const compPath = join(dir, "components", params.category, `${params.name}.html`);
+    const compPath = scaffoldPath(dir, "components", params.category, `${params.name}.html`);
     if (!existsSync(compPath)) {
       return new Response(JSON.stringify({ error: "Component not found" }), {
         status: 404,
@@ -271,7 +272,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
       // Write component file
       await writeComponent(dir, category, name, result);
 
-      emit("done", { name, category, path: `components/${category}/${name}.html` });
+      emit("done", { name, category, path: `.scaffold/components/${category}/${name}.html` });
     });
   });
 
@@ -304,7 +305,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     const name = suggestedName.replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
     await writeComponent(dir, category, name, content);
 
-    return new Response(JSON.stringify({ name, category, path: `components/${category}/${name}.html` }), {
+    return new Response(JSON.stringify({ name, category, path: `.scaffold/components/${category}/${name}.html` }), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   });
@@ -319,7 +320,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     };
 
     const [cat, name] = component.split("/");
-    const compPath = join(dir, "components", cat, `${name}.html`);
+    const compPath = scaffoldPath(dir, "components", cat, `${name}.html`);
 
     if (!existsSync(compPath)) {
       return new Response(JSON.stringify({ error: "Component not found" }), {
@@ -355,7 +356,7 @@ Instruction: ${instruction}`;
       result = stripCodeFences(result).trim();
       await Bun.write(compPath, result);
 
-      emit("done", { name, category: cat, path: `components/${cat}/${name}.html` });
+      emit("done", { name, category: cat, path: `.scaffold/components/${cat}/${name}.html` });
     });
   });
 }
