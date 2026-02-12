@@ -1,0 +1,5 @@
+name: E2E Test Fixture
+entities:
+  Item:
+    properties:
+      - name
