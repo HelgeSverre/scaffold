@@ -20,11 +20,17 @@ program
 program
   .command("dev [dir]")
   .description("Start development server")
-  .action(async (dir: string = ".") => {
+  .option("-p, --port <number>", "Port to run on")
+  .action(async (dir: string = ".", opts: { port?: string }) => {
     const indexPath = `${dir}/index.ts`;
+    const env = { ...process.env };
+    if (opts.port) {
+      env.PORT = opts.port;
+    }
     const proc = Bun.spawn(["bun", "run", indexPath], {
       cwd: process.cwd(),
       stdio: ["inherit", "inherit", "inherit"],
+      env,
     });
     await proc.exited;
     process.exit(proc.exitCode ?? 0);
