@@ -9,6 +9,7 @@ import { scanHtmlFiles, serveHtml, generateIndexPage, handleSave } from "./html"
 import { createWSManager } from "./websocket";
 import { startWatcher } from "./watcher";
 import { loadFunctions } from "./functions";
+import { registerAIRoutes } from "./ai-routes";
 import getPort from "get-port";
 import type { ScaffoldContext, RouteEntry } from "./types";
 
@@ -16,15 +17,17 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   const dir = resolve(options?.dir || ".");
   const port = options?.port || Number(process.env.PORT) || await getPort({ port: 5555 });
 
-  // Parse schema
-  const ymlPath = join(dir, "scaffold.yml");
-  if (!existsSync(ymlPath)) {
-    console.error("Error: scaffold.yml not found in " + dir);
+  // Parse schema (prefer .yaml, fall back to .yml)
+  const yamlPath = existsSync(join(dir, "scaffold.yaml"))
+    ? join(dir, "scaffold.yaml")
+    : join(dir, "scaffold.yml");
+  if (!existsSync(yamlPath)) {
+    console.error("Error: scaffold.yaml not found in " + dir);
     console.error("Run `scaffold init` first.");
     process.exit(1);
   }
 
-  const yamlContent = readFileSync(ymlPath, "utf-8");
+  const yamlContent = readFileSync(yamlPath, "utf-8");
   const config = parseSchema(yamlContent);
   const entities = deriveEntityMeta(config);
 
@@ -64,11 +67,17 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   };
   await loadFunctions(join(dir, "functions"), ctx);
 
+  // Register AI routes
+  const aiEnabled = !!process.env.ANTHROPIC_API_KEY;
+  if (aiEnabled) {
+    registerAIRoutes({ router, dir, pages, config, yamlContent, wsManager, recentlySaved });
+  }
+
   // Start file watcher
   startWatcher(dir, (page, msg) => wsManager.broadcast(page, msg), recentlySaved);
 
-  // Build page lookup
-  const pageMap = new Map(pages.map((p) => [p.name, p.file]));
+  // Page lookup (function to support dynamic page additions)
+  const findPage = (name: string) => pages.find((p) => p.name === name);
 
   const server = Bun.serve({
     port,
@@ -106,6 +115,30 @@ export async function startServer(options?: { dir?: string; port?: number }) {
         return new Response("Not found", { status: 404 });
       }
 
+      // AI routes
+      if (pathname.startsWith("/_/ai/")) {
+        if (req.method === "OPTIONS") {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+              "Access-Control-Allow-Headers": "Content-Type",
+            },
+          });
+        }
+
+        const match = router.match(req.method, pathname.slice(1));
+        if (match) {
+          return match.handler(req, match.params);
+        }
+
+        return new Response(JSON.stringify({ error: "Not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        });
+      }
+
       // API routes
       if (pathname.startsWith("/api/") || pathname === "/api") {
         // CORS preflight for any /api path
@@ -133,19 +166,20 @@ export async function startServer(options?: { dir?: string; port?: number }) {
 
       // Index page
       if (pathname === "/") {
-        return generateIndexPage(pages, port);
+        return generateIndexPage(pages, port, aiEnabled);
       }
 
       // HTML pages — redirect .html extension to clean URL
       let pageName = pathname.slice(1);
       if (pageName.endsWith(".html")) {
         const clean = pageName.slice(0, -5);
-        if (pageMap.has(clean)) {
+        if (findPage(clean)) {
           return Response.redirect(`/${clean}${url.search}`, 302);
         }
       }
-      if (pageMap.has(pageName)) {
-        return serveHtml(pageMap.get(pageName)!, pageName, port);
+      const page = findPage(pageName);
+      if (page) {
+        return serveHtml(page.file, pageName, port, aiEnabled, pages);
       }
 
       return new Response("Not found", { status: 404 });
@@ -165,21 +199,22 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   });
 
   // Startup banner
-  const maxPageLen = Math.max(...pages.map((p) => p.name.length), 10);
-  const urlBase = `http://localhost:${port}`;
-  const innerWidth = Math.max(maxPageLen + urlBase.length + 2, 45);
+  const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+  const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+  const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
+  const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 
-  const pad = (s: string) => s + " ".repeat(Math.max(0, innerWidth - s.length));
+  const base = `http://localhost:${port}`;
 
-  console.log(`\u250C${"─".repeat(innerWidth + 2)}\u2510`);
-  console.log(`\u2502 ${pad(`Scaffold v0.1.0`)} \u2502`);
-  console.log(`\u2502 ${pad("")} \u2502`);
-  console.log(`\u2502 ${pad("Pages:")} \u2502`);
+  console.log();
+  console.log(`  ${bold("scaffold")} ${dim("v0.1.0")}`);
+  console.log();
   for (const page of pages) {
-    console.log(`\u2502 ${pad(`  ${urlBase}/${page.name}`)} \u2502`);
+    console.log(`  ${green("→")} ${cyan(`${base}/${page.name}`)}`);
   }
-  console.log(`\u2502 ${pad("")} \u2502`);
-  console.log(`\u2502 ${pad(`API:     ${urlBase}/api`)} \u2502`);
-  console.log(`\u2502 ${pad(`WS:      ws://localhost:${port}/_/ws`)} \u2502`);
-  console.log(`\u2514${"─".repeat(innerWidth + 2)}\u2518`);
+  console.log();
+  console.log(`  ${dim("API")}  ${base}/api`);
+  console.log();
+  console.log(`  ${dim("Shortcuts")}  ${bold("⌘S")} Save  ${bold("⌘D")} Duplicate  ${bold("Del")} Remove  ${bold("⌘↑↓")} Reorder  ${bold("Esc")} Deselect`);
+  console.log();
 }
