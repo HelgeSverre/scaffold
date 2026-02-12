@@ -1,6 +1,18 @@
-# Scaffold
+<p align="center">
+  <img src="assets/logo.svg" alt="scaffold." width="400">
+</p>
 
-A Bun-powered tool for running, persisting, and live-editing HTML prototypes. Define a YAML schema, get a SQLite-backed CRUD API, serve your HTML files with a live-editor overlay, and hot-reload across all connected browsers.
+<p align="center">
+  <em>Prototype-first development server — YAML schema, SQLite CRUD, live HTML editing.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.0-14B8A6?style=flat&labelColor=0F172A" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-14B8A6?style=flat&labelColor=0F172A" alt="License">
+  <img src="https://img.shields.io/badge/runtime-Bun-14B8A6?style=flat&labelColor=0F172A" alt="Runtime">
+  <img src="https://img.shields.io/badge/tests-67%20passed-14B8A6?style=flat&labelColor=0F172A" alt="Tests">
+  <a href="https://scaffold.to"><img src="https://img.shields.io/badge/scaffold.to-14B8A6?style=flat&labelColor=0F172A" alt="Website"></a>
+</p>
 
 ## Install
 
