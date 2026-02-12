@@ -1,6 +1,8 @@
 import { resolve, join } from "path";
 import { existsSync, mkdirSync, readdirSync } from "fs";
 import { extractStyle, getMinimalPromptMd } from "./ai";
+import { log } from "./log";
+import { scaffoldPath } from "./paths";
 
 const STARTER_YAML = `# Scaffold Schema
 # Define your data entities here.
@@ -40,19 +42,19 @@ export async function init(dir: string) {
   const yamlPath = join(targetDir, "scaffold.yaml");
   const ymlPath = join(targetDir, "scaffold.yml");
   if (existsSync(yamlPath) || existsSync(ymlPath)) {
-    console.warn("scaffold.yaml already exists — skipping init (delete it to re-initialize)");
+    log.warn("scaffold.yaml already exists — skipping init (delete it to re-initialize)");
     return;
   }
 
   // Write scaffold.yaml
   await Bun.write(yamlPath, STARTER_YAML);
-  console.log("  Created scaffold.yaml");
+  log.step("Created scaffold.yaml");
 
   // Write index.ts
   const indexPath = join(targetDir, "index.ts");
   if (!existsSync(indexPath)) {
     await Bun.write(indexPath, STARTER_INDEX);
-    console.log("  Created index.ts");
+    log.step("Created index.ts");
   }
 
   // Create functions directory
@@ -60,52 +62,41 @@ export async function init(dir: string) {
   if (!existsSync(functionsDir)) {
     mkdirSync(functionsDir, { recursive: true });
     await Bun.write(join(functionsDir, ".gitkeep"), "");
-    console.log("  Created functions/");
+    log.step("Created functions/");
   }
 
   // Create .scaffold directory with editor assets
-  const scaffoldDir = join(targetDir, ".scaffold");
+  const scaffoldDir = scaffoldPath(targetDir);
   if (!existsSync(scaffoldDir)) {
     mkdirSync(scaffoldDir, { recursive: true });
   }
 
-  // Copy editor assets from package's src/assets/
-  const assetsSource = join(import.meta.dir, "assets");
-  const editorJsSrc = join(assetsSource, "editor.js");
-  const editorCssSrc = join(assetsSource, "editor.css");
-
-  if (existsSync(editorJsSrc)) {
-    await Bun.write(join(scaffoldDir, "editor.js"), Bun.file(editorJsSrc));
-  }
-  if (existsSync(editorCssSrc)) {
-    await Bun.write(join(scaffoldDir, "editor.css"), Bun.file(editorCssSrc));
-  }
-  console.log("  Created .scaffold/");
+  log.step("Created .scaffold/");
 
   // Generate .scaffold/prompt.md
-  const promptMdPath = join(scaffoldDir, "prompt.md");
+  const promptMdPath = scaffoldPath(targetDir, "prompt.md");
   if (!existsSync(promptMdPath)) {
     const htmlFiles = readdirSync(targetDir).filter((f) => f.endsWith(".html") && !f.startsWith("."));
     const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
     if (htmlFiles.length > 0 && hasApiKey) {
       try {
-        console.log("  Analyzing HTML files for style guide...");
+        log.step("Analyzing HTML files for style guide\u2026");
         await extractStyle(targetDir);
-        console.log("  Created .scaffold/prompt.md (AI-generated style guide)");
+        log.step("Created .scaffold/prompt.md", "(AI-generated style guide)");
       } catch (err: any) {
         // Fall back to minimal if extraction fails
         await Bun.write(promptMdPath, getMinimalPromptMd());
-        console.log("  Created .scaffold/prompt.md (minimal template)");
+        log.step("Created .scaffold/prompt.md", "(minimal template)");
       }
     } else {
       await Bun.write(promptMdPath, getMinimalPromptMd());
-      console.log("  Created .scaffold/prompt.md (minimal template)");
+      log.step("Created .scaffold/prompt.md", "(minimal template)");
     }
   }
 
-  console.log(`\nScaffold initialized in ${targetDir}`);
-  console.log("Next steps:");
-  console.log("  1. Edit scaffold.yaml to define your data entities");
-  console.log("  2. Run: bun run index.ts");
+  log.blank();
+  log.info("Next steps", "");
+  log.info("  1.", "Edit scaffold.yaml to define your data entities");
+  log.info("  2.", "Run: bun run index.ts");
 }
