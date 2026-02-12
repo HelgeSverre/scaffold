@@ -1,0 +1,33 @@
+```yaml
+---
+name: tab-navigation-with-badges
+description: Tab navigation bar with badge counters for different sections
+category: navigation
+props:
+  - name: tabs
+    type: array
+    description: Array of tab objects with label, key, count, and active state
+    default:
+      - { label: "Entitlements", key: "entitlements", count: 6, active: true }
+      - { label: "Credentials", key: "credentials", count: 2, active: false }
+      - { label: "Scan History", key: "scans", count: 24, active: false }
+      - { label: "Activity Log", key: "activity", count: null, active: false }
+alpine:
+  description: Requires activeTab property to track current tab selection and handle tab switching
+  data: "{ activeTab: 'entitlements' }"
+---
+```
+<div class="mb-0" style="border-bottom:1px solid var(--border-default);" data-scaffold-selected="">
+            <button @click="activeTab = 'entitlements'" :class="activeTab === 'entitlements' ? 'active' : ''" class="tab-btn active" contenteditable="true" data-scaffold-editable="">
+              Entitlements <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);" contenteditable="true" data-scaffold-editable="">6</span>
+            </button>
+            <button @click="activeTab = 'credentials'" :class="activeTab === 'credentials' ? 'active' : ''" class="tab-btn" contenteditable="true" data-scaffold-editable="">
+              Credentials <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);" contenteditable="true" data-scaffold-editable="">2</span>
+            </button>
+            <button @click="activeTab = 'scans'" :class="activeTab === 'scans' ? 'active' : ''" class="tab-btn" contenteditable="true" data-scaffold-editable="">
+              Scan History <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);" contenteditable="true" data-scaffold-editable="">24</span>
+            </button>
+            <button @click="activeTab = 'activity'" :class="activeTab === 'activity' ? 'active' : ''" class="tab-btn" contenteditable="true" data-scaffold-editable="">
+              Activity Log
+            </button>
+          </div>
