@@ -138,6 +138,7 @@
     });
 
     aiInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         if (aiInput.value.trim()) submitAIEdit(aiInput.value.trim());
@@ -1148,7 +1149,9 @@
 
     // Delete — remove selected element
     if (e.key === "Delete" || e.key === "Backspace") {
-      // Only if not editing text inside the element
+      // Don't delete when typing in any input/textarea/contenteditable
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
       if (document.activeElement === selectedElement && selectedElement.isContentEditable) return;
       e.preventDefault();
       const el = selectedElement;
