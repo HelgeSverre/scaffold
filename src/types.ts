@@ -15,9 +15,49 @@ export interface EntityDef {
   seed?: Record<string, any>[];
 }
 
+export interface AIConfig {
+  model?: string;
+  max_tokens?: number;
+  style_reference?: string;
+  prefer_claude_code?: boolean;
+  instructions?: string;
+}
+
+export interface PageSummary {
+  filename: string;
+  title: string;
+  lineCount: number;
+}
+
+export interface AIContext {
+  scaffoldYml: string;
+  projectPages: PageSummary[];
+  promptMd: string;
+  currentPageHtml?: string;
+  selectedHtml?: string;
+  basePageHtml?: string;
+  components?: ComponentMeta[];
+}
+
+export interface ComponentMeta {
+  name: string;
+  description: string;
+  category: string;
+  path: string;
+  props?: ComponentProp[];
+  alpine?: string;
+}
+
+export interface ComponentProp {
+  name: string;
+  description?: string;
+  default?: string;
+}
+
 export interface ScaffoldConfig {
   name?: string;
   entities: Record<string, EntityDef>;
+  ai?: AIConfig;
 }
 
 export interface EntityMeta {
