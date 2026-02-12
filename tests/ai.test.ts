@@ -188,7 +188,7 @@ describe("scanComponents", () => {
   });
 
   test("scans components from directory structure", () => {
-    const compDir = join(tempDir, "components", "data-display");
+    const compDir = join(tempDir, ".scaffold", "components", "data-display");
     mkdirSync(compDir, { recursive: true });
 
     writeFileSync(
@@ -205,12 +205,12 @@ category: data-display
     expect(components).toHaveLength(1);
     expect(components[0].name).toBe("Stat Card");
     expect(components[0].category).toBe("data-display");
-    expect(components[0].path).toBe("components/data-display/stat-card.html");
+    expect(components[0].path).toBe(".scaffold/components/data-display/stat-card.html");
   });
 
   test("scans multiple categories", () => {
-    const dataDir = join(tempDir, "components", "data-display");
-    const formsDir = join(tempDir, "components", "forms");
+    const dataDir = join(tempDir, ".scaffold", "components", "data-display");
+    const formsDir = join(tempDir, ".scaffold", "components", "forms");
     mkdirSync(dataDir, { recursive: true });
     mkdirSync(formsDir, { recursive: true });
 
@@ -235,14 +235,14 @@ describe("writeComponent", () => {
   test("writes component file", async () => {
     await writeComponent(tempDir, "layout", "header", "---\nname: Header\n---\n<header>Hi</header>");
 
-    const content = readFileSync(join(tempDir, "components", "layout", "header.html"), "utf-8");
+    const content = readFileSync(join(tempDir, ".scaffold", "components", "layout", "header.html"), "utf-8");
     expect(content).toContain("<header>Hi</header>");
   });
 
   test("creates category directory if needed", async () => {
     await writeComponent(tempDir, "new-category", "widget", "<div>Widget</div>");
 
-    const content = readFileSync(join(tempDir, "components", "new-category", "widget.html"), "utf-8");
+    const content = readFileSync(join(tempDir, ".scaffold", "components", "new-category", "widget.html"), "utf-8");
     expect(content).toBe("<div>Widget</div>");
   });
 });
