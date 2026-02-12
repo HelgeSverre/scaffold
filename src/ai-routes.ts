@@ -7,6 +7,7 @@ import { editScopedPrompt, editFullPagePrompt, createPagePrompt, generateCompone
 import { replaceElementByXpath, stripCodeFences, validateHtmlStructure } from "./html-utils";
 import { scanComponents, parseComponent, writeComponent } from "./components";
 import { scaffoldPath } from "./paths";
+import { log } from "./log";
 
 // ─── SSE Helper ───────────────────────────────────────────────────────────────
 
@@ -22,7 +23,9 @@ function createSSEStream(
       try {
         await work(emit);
       } catch (err: any) {
-        emit("error", { message: String(err?.message || err) });
+        const msg = String(err?.message || err);
+        log.error(`AI: ${msg}`);
+        emit("error", { message: msg });
       } finally {
         controller.close();
       }
@@ -75,6 +78,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     const currentPageHtml = readFileSync(filePath, "utf-8");
 
     return createSSEStream(async (emit) => {
+      log.ai("Edit", page);
       emit("status", { message: "Analyzing page structure..." });
 
       // Build context
@@ -129,6 +133,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
       wsManager.broadcast(page, { type: "reload", page });
 
       const linesChanged = finalHtml.split("\n").length;
+      log.ai("Edit done", `${page} — ${linesChanged} lines`);
       emit("done", { page, linesChanged });
     });
   });
@@ -161,6 +166,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     }
 
     return createSSEStream(async (emit) => {
+      log.ai("Create", safeName + ".html");
       emit("status", { message: `Generating ${safeName}.html...` });
 
       // Load base page HTML if specified
@@ -199,7 +205,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
         // Try Claude Code fallback if available
         if (config.ai?.prefer_claude_code && isClaudeCodeAvailable()) {
           emit("status", { message: "Retrying with Claude Code CLI..." });
-          const ccPrompt = `Create a file called ${safeName}.html in the current directory. ${prompt}\n\nStyle reference: look at the existing .html files in this directory and match their design system exactly.\nData model: read scaffold.yaml for the data schema.`;
+          const ccPrompt = `Create a file called ${safeName}.html in the current directory. ${prompt}\n\nStyle reference: look at the existing .html files in this directory and match their design system exactly.\nData model: read .scaffold/scaffold.yaml for the data schema.`;
           result = await claudeCode(ccPrompt, dir);
           result = stripCodeFences(result).trim();
         }
@@ -214,6 +220,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
       wsManager.broadcast("__index__", { type: "reload", page: "__index__" });
 
       const lines = result.split("\n").length;
+      log.ai("Create done", `${safeName}.html — ${lines} lines`);
       emit("done", { filename: `${safeName}.html`, url: `/${safeName}`, lines });
     });
   });
@@ -255,6 +262,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     };
 
     return createSSEStream(async (emit) => {
+      log.ai("Generate component", `${category}/${name}`);
       emit("status", { message: `Generating ${name} component...` });
 
       const aiCtx = buildAIContext(dir, yamlContent);
@@ -272,6 +280,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
       // Write component file
       await writeComponent(dir, category, name, result);
 
+      log.ai("Generate done", `${category}/${name}`);
       emit("done", { name, category, path: `.scaffold/components/${category}/${name}.html` });
     });
   });
@@ -285,6 +294,8 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
       suggestedName: string;
       category: string;
     };
+
+    log.ai("Extract component", suggestedName);
 
     const aiCtx = buildAIContext(dir, yamlContent);
     const systemPrompt = buildSystemPrompt(aiCtx, config.ai);
@@ -305,6 +316,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     const name = suggestedName.replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
     await writeComponent(dir, category, name, content);
 
+    log.ai("Extract done", `${category}/${name}`);
     return new Response(JSON.stringify({ name, category, path: `.scaffold/components/${category}/${name}.html` }), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
@@ -332,6 +344,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
     const parsed = parseComponent(compPath);
 
     return createSSEStream(async (emit) => {
+      log.ai("Edit component", component);
       emit("status", { message: `Editing ${name} component...` });
 
       const aiCtx = buildAIContext(dir, yamlContent);
@@ -356,6 +369,7 @@ Instruction: ${instruction}`;
       result = stripCodeFences(result).trim();
       await Bun.write(compPath, result);
 
+      log.ai("Edit component done", component);
       emit("done", { name, category: cat, path: `.scaffold/components/${cat}/${name}.html` });
     });
   });

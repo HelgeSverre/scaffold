@@ -22,6 +22,8 @@ export const log = {
     console.warn(`  ${amber("⚠")} ${msg}`),
   error: (msg: string) =>
     console.error(`  ${red("✗")} ${msg}`),
+  ai: (msg: string, detail?: string) =>
+    console.log(`  ${teal("⟡")} ${msg}${detail ? ` ${slate(detail)}` : ""}`),
   item:  (msg: string) =>
     console.log(`     - ${slate(msg)}`),
   blank: () => console.log(),

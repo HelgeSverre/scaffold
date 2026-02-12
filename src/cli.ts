@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { init } from "./init";
 import { resolve } from "path";
 import { log } from "./log";
+import { scaffoldPath } from "./paths";
 
 const program = new Command();
 
@@ -24,7 +25,7 @@ program
   .description("Start development server")
   .option("-p, --port <number>", "Port to run on")
   .action(async (dir: string = ".", opts: { port?: string }) => {
-    const indexPath = `${dir}/index.ts`;
+    const indexPath = scaffoldPath(dir, "index.ts");
     const env = { ...process.env };
     if (opts.port) {
       env.PORT = opts.port;
@@ -44,12 +45,11 @@ program
   .action(async (dir: string = ".") => {
     const { extractStyle } = await import("./ai");
     const { existsSync, readFileSync } = await import("fs");
-    const { join } = await import("path");
 
     const targetDir = resolve(dir);
-    const yamlPath = existsSync(join(targetDir, "scaffold.yaml"))
-      ? join(targetDir, "scaffold.yaml")
-      : join(targetDir, "scaffold.yml");
+    const yamlPath = existsSync(scaffoldPath(targetDir, "scaffold.yaml"))
+      ? scaffoldPath(targetDir, "scaffold.yaml")
+      : scaffoldPath(targetDir, "scaffold.yml");
 
     let aiConfig;
     if (existsSync(yamlPath)) {

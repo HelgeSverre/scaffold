@@ -24,9 +24,10 @@ entities:
 `;
 
 const STARTER_INDEX = `import { startServer } from "scaffold";
+import { join } from "path";
 
 startServer({
-  dir: import.meta.dir,
+  dir: join(import.meta.dir, ".."),
   port: Number(process.env.PORT) || 5555,
 });
 `;
@@ -38,40 +39,38 @@ export async function init(dir: string) {
     mkdirSync(targetDir, { recursive: true });
   }
 
-  // Guard: don't overwrite existing scaffold.yaml/.yml
-  const yamlPath = join(targetDir, "scaffold.yaml");
-  const ymlPath = join(targetDir, "scaffold.yml");
-  if (existsSync(yamlPath) || existsSync(ymlPath)) {
-    log.warn("scaffold.yaml already exists — skipping init (delete it to re-initialize)");
-    return;
-  }
-
-  // Write scaffold.yaml
-  await Bun.write(yamlPath, STARTER_YAML);
-  log.step("Created scaffold.yaml");
-
-  // Write index.ts
-  const indexPath = join(targetDir, "index.ts");
-  if (!existsSync(indexPath)) {
-    await Bun.write(indexPath, STARTER_INDEX);
-    log.step("Created index.ts");
-  }
-
-  // Create functions directory
-  const functionsDir = join(targetDir, "functions");
-  if (!existsSync(functionsDir)) {
-    mkdirSync(functionsDir, { recursive: true });
-    await Bun.write(join(functionsDir, ".gitkeep"), "");
-    log.step("Created functions/");
-  }
-
-  // Create .scaffold directory with editor assets
+  // Create .scaffold directory
   const scaffoldDir = scaffoldPath(targetDir);
   if (!existsSync(scaffoldDir)) {
     mkdirSync(scaffoldDir, { recursive: true });
   }
 
-  log.step("Created .scaffold/");
+  // Guard: don't overwrite existing scaffold.yaml/.yml
+  const yamlPath = scaffoldPath(targetDir, "scaffold.yaml");
+  const ymlPath = scaffoldPath(targetDir, "scaffold.yml");
+  if (existsSync(yamlPath) || existsSync(ymlPath)) {
+    log.warn(".scaffold/scaffold.yaml already exists — skipping init (delete it to re-initialize)");
+    return;
+  }
+
+  // Write scaffold.yaml
+  await Bun.write(yamlPath, STARTER_YAML);
+  log.step("Created .scaffold/scaffold.yaml");
+
+  // Write index.ts
+  const indexPath = scaffoldPath(targetDir, "index.ts");
+  if (!existsSync(indexPath)) {
+    await Bun.write(indexPath, STARTER_INDEX);
+    log.step("Created .scaffold/index.ts");
+  }
+
+  // Create functions directory
+  const functionsDir = scaffoldPath(targetDir, "functions");
+  if (!existsSync(functionsDir)) {
+    mkdirSync(functionsDir, { recursive: true });
+    await Bun.write(join(functionsDir, ".gitkeep"), "");
+    log.step("Created .scaffold/functions/");
+  }
 
   // Generate .scaffold/prompt.md
   const promptMdPath = scaffoldPath(targetDir, "prompt.md");
@@ -97,6 +96,6 @@ export async function init(dir: string) {
 
   log.blank();
   log.info("Next steps", "");
-  log.info("  1.", "Edit scaffold.yaml to define your data entities");
-  log.info("  2.", "Run: bun run index.ts");
+  log.info("  1.", "Edit .scaffold/scaffold.yaml to define your data entities");
+  log.info("  2.", "Run: scaffold dev");
 }

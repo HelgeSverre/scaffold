@@ -11,6 +11,8 @@ import { startWatcher } from "./watcher";
 import { loadFunctions } from "./functions";
 import { log } from "./log";
 import { registerAIRoutes } from "./ai-routes";
+import { scanComponents } from "./components";
+import { scaffoldPath } from "./paths";
 import getPort from "get-port";
 import type { ScaffoldContext, RouteEntry } from "./types";
 
@@ -19,11 +21,11 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   const port = options?.port || Number(process.env.PORT) || await getPort({ port: 5555 });
 
   // Parse schema (prefer .yaml, fall back to .yml)
-  const yamlPath = existsSync(join(dir, "scaffold.yaml"))
-    ? join(dir, "scaffold.yaml")
-    : join(dir, "scaffold.yml");
+  const yamlPath = existsSync(scaffoldPath(dir, "scaffold.yaml"))
+    ? scaffoldPath(dir, "scaffold.yaml")
+    : scaffoldPath(dir, "scaffold.yml");
   if (!existsSync(yamlPath)) {
-    log.error("scaffold.yaml not found in " + dir);
+    log.error(".scaffold/scaffold.yaml not found in " + dir);
     log.error("Run `scaffold init` first.");
     process.exit(1);
   }
@@ -33,7 +35,7 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   const entities = deriveEntityMeta(config);
 
   // Open/create database
-  const dbPath = join(dir, "scaffold.db");
+  const dbPath = scaffoldPath(dir, "scaffold.db");
   const db = new Database(dbPath);
   db.exec("PRAGMA journal_mode=WAL");
   db.exec("PRAGMA foreign_keys=ON");
@@ -66,7 +68,7 @@ export async function startServer(options?: { dir?: string; port?: number }) {
     broadcast: (page, message) => wsManager.broadcast(page, message),
     config,
   };
-  await loadFunctions(join(dir, "functions"), ctx);
+  await loadFunctions(scaffoldPath(dir, "functions"), ctx);
 
   // Register AI routes
   const aiEnabled = !!process.env.ANTHROPIC_API_KEY;
@@ -222,6 +224,16 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   const endpointCount = entities.length * 6;
   log.step(`${endpointCount} API endpoints ready`);
   log.step(`${pages.length} ${pages.length === 1 ? "page" : "pages"} with live editor`);
+  if (aiEnabled) {
+    const model = config.ai?.model || "claude-sonnet-4-20250514";
+    const components = scanComponents(dir);
+    log.step(`AI enabled`, model);
+    if (components.length > 0) {
+      log.item(`${components.length} component${components.length === 1 ? "" : "s"}`);
+    }
+  } else {
+    log.step(`AI disabled`, "set ANTHROPIC_API_KEY to enable");
+  }
   log.step("Watching for changes\u2026");
 
   log.done("\u2318S Save  \u2318D Duplicate  Del Remove  \u2318\u2191\u2193 Reorder  Esc Deselect");
