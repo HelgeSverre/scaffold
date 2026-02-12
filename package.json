@@ -1,0 +1,16 @@
+{
+  "name": "scaffold",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "scaffold": "src/cli.ts"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

@@ -24,3 +24,12 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Scaffold runtime
+*.db
+*.db-wal
+*.db-shm
+bun.lockb
+
+# Generated in user projects
+.scaffold/
