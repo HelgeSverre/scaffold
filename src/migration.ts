@@ -35,16 +35,22 @@ function getExistingColumns(db: Database, table: string): Set<string> {
   return new Set(rows.map((r) => r.name));
 }
 
-export function migrate(db: Database, entities: EntityMeta[]) {
+export function migrate(db: Database, entities: EntityMeta[]): { created: string[]; altered: string[] } {
   const existingTables = getExistingTables(db);
+  const created: string[] = [];
+  const altered: string[] = [];
 
   for (const entity of entities) {
     if (existingTables.has(entity.tableName)) {
       addMissingColumns(db, entity);
+      altered.push(entity.tableName);
     } else {
       createTable(db, entity);
+      created.push(entity.tableName);
     }
   }
+
+  return { created, altered };
 }
 
 function createTable(db: Database, entity: EntityMeta) {
@@ -103,7 +109,9 @@ function addMissingColumns(db: Database, entity: EntityMeta) {
   }
 }
 
-export function seed(db: Database, entities: EntityMeta[]) {
+export function seed(db: Database, entities: EntityMeta[]): { seeded: number } {
+  let seeded = 0;
+
   for (const entity of entities) {
     if (!entity.seed || entity.seed.length === 0) continue;
 
@@ -112,8 +120,11 @@ export function seed(db: Database, entities: EntityMeta[]) {
 
     for (const row of entity.seed) {
       insertSeedRow(db, entity, row);
+      seeded++;
     }
   }
+
+  return { seeded };
 }
 
 function insertSeedRow(db: Database, entity: EntityMeta, row: Record<string, any>) {
