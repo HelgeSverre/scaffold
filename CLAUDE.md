@@ -9,6 +9,7 @@ bun install                    # install deps
 bun link                       # register `scaffold` CLI globally
 bun test                       # run all tests (106 tests, 6 files)
 bun run example/prototypes/.scaffold/index.ts  # start dev server on example prototypes
+cd docs/website && vercel --prod               # deploy website to scaffold.to
 ```
 
 ## Architecture
