@@ -146,21 +146,21 @@ export function generateIndexPage(pages: PageInfo[], port: number, aiEnabled?: b
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; max-width: 640px; }
-    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #38bdf8; }
-    h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #38bdf8; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #14B8A6; }
+    h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #14B8A6; }
     ul { list-style: none; }
     li { margin-bottom: 0.5rem; }
     .link { color: #94a3b8; text-decoration: none; font-size: 1.1rem; padding: 0.25rem 0; display: inline-block; }
-    .link:hover { color: #38bdf8; }
+    .link:hover { color: #14B8A6; }
     .meta { color: #475569; font-size: 0.875rem; margin-top: 2rem; }
     .create-section { margin-top: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; }
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem; }
     .input { width: 100%; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #e2e8f0; font-size: 0.9rem; font-family: inherit; }
-    .input:focus { outline: none; border-color: #38bdf8; }
+    .input:focus { outline: none; border-color: #14B8A6; }
     .textarea { resize: vertical; min-height: 80px; }
-    .generate-btn { padding: 0.5rem 1.25rem; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); border-radius: 6px; color: #38bdf8; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
-    .generate-btn:hover { background: rgba(56,189,248,0.25); }
+    .generate-btn { padding: 0.5rem 1.25rem; background: rgba(20,184,166,0.15); border: 1px solid rgba(20,184,166,0.3); border-radius: 6px; color: #14B8A6; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
+    .generate-btn:hover { background: rgba(20,184,166,0.25); }
     .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .status { margin-top: 0.75rem; font-size: 0.8rem; color: #94a3b8; }
   </style>

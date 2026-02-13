@@ -5,7 +5,7 @@ import type { PageInfo } from "./html";
 import { buildAIContext, buildSystemPrompt, streamAI, claudeCode, isClaudeCodeAvailable } from "./ai";
 import { editScopedPrompt, editFullPagePrompt, createPagePrompt, generateComponentPrompt, extractComponentPrompt } from "./ai-prompts";
 import { stripCodeFences, validateHtmlStructure } from "./html-utils";
-import { scanComponents, parseComponent, writeComponent } from "./components";
+import { scanComponents, parseComponent, writeComponent, sanitizeComponentName } from "./components";
 import { scaffoldPath } from "./paths";
 import { log } from "./log";
 
@@ -226,7 +226,8 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
   // ─── GET /_/ai/components/:category/:name ───────────────────────────────────
 
   router.add("GET", "_/ai/components/:category/:name", async (_req: Request, params: Record<string, string>) => {
-    const compPath = scaffoldPath(dir, "components", params.category, `${params.name}.html`);
+    const safeName = sanitizeComponentName(params.name);
+    const compPath = scaffoldPath(dir, "components", params.category, `${safeName}.html`);
     if (!existsSync(compPath)) {
       return new Response(JSON.stringify({ error: "Component not found" }), {
         status: 404,
@@ -302,7 +303,7 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
       ? `${frontmatter}\n${html}`
       : `---\nname: ${suggestedName}\ndescription: Extracted component\ncategory: ${category}\n---\n${html}`;
 
-    const name = suggestedName.replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
+    const name = sanitizeComponentName(suggestedName);
     await writeComponent(dir, category, name, content);
 
     log.ai("Extract done", `${category}/${name}`);

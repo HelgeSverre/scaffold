@@ -9,7 +9,7 @@ export function createRouter() {
   }
 
   function match(method: string, pathname: string): { handler: RouteEntry["handler"]; params: Record<string, string> } | null {
-    const pathSegments = pathname.split("/").filter(Boolean);
+    const pathSegments = pathname.split("/").filter(Boolean).map(s => decodeURIComponent(s));
 
     for (const route of routes) {
       if (route.method !== method && route.method !== "*") continue;

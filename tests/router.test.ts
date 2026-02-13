@@ -55,4 +55,21 @@ describe("router", () => {
     expect(router.match("GET", "/api/users/42")).toBeNull();
     expect(router.match("GET", "/api")).toBeNull();
   });
+
+  test("decodes percent-encoded path segments in params", () => {
+    const router = createRouter();
+    router.add("GET", "/api/components/:category/:name", () => new Response("ok"));
+
+    const result = router.match("GET", "/api/components/uncategorized/stat%20card");
+    expect(result).not.toBeNull();
+    expect(result!.params).toEqual({ category: "uncategorized", name: "stat card" });
+  });
+
+  test("decodes percent-encoded path segments in static matching", () => {
+    const router = createRouter();
+    router.add("GET", "/api/hello world", () => new Response("ok"));
+
+    const result = router.match("GET", "/api/hello%20world");
+    expect(result).not.toBeNull();
+  });
 });
