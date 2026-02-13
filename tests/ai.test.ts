@@ -127,6 +127,59 @@ describe("replaceElementByXpath", () => {
   });
 });
 
+describe("replaceElementByXpath with id selectors", () => {
+  const html = `<!DOCTYPE html>
+<html>
+<body>
+  <h1>Title</h1>
+  <div id="wrapper">
+    <p id="first-child">First child</p>
+    <p id="target" class="some-class">Some text</p>
+    <p id="last-child">Last child</p>
+  </div>
+  <div id="other">Other content</div>
+</body>
+</html>`;
+
+  test("replaces element by id-only xpath (p#target)", () => {
+    const result = replaceElementByXpath(html, "p#target", "<p id=\"target\">Replaced</p>");
+    expect(result).not.toBeNull();
+    expect(result).toContain("<p id=\"target\">Replaced</p>");
+    expect(result).not.toContain("Some text");
+    // Siblings preserved
+    expect(result).toContain("First child");
+    expect(result).toContain("Last child");
+    expect(result).toContain("Other content");
+  });
+
+  test("replaces div by id (div#wrapper)", () => {
+    const result = replaceElementByXpath(html, "div#wrapper", '<div id="wrapper">New content</div>');
+    expect(result).not.toBeNull();
+    expect(result).toContain("New content");
+    expect(result).not.toContain("First child");
+    // Sibling outside wrapper preserved
+    expect(result).toContain("Other content");
+  });
+
+  test("returns null for non-matching id (p#nonexistent)", () => {
+    const result = replaceElementByXpath(html, "p#nonexistent", "<p>New</p>");
+    expect(result).toBeNull();
+  });
+
+  test("handles mixed id ancestor + class leaf (div#wrapper > p.some-class)", () => {
+    const result = replaceElementByXpath(
+      html,
+      "div#wrapper > p.some-class",
+      '<p class="some-class">Updated via mixed xpath</p>'
+    );
+    expect(result).not.toBeNull();
+    expect(result).toContain("Updated via mixed xpath");
+    expect(result).not.toContain("Some text");
+    expect(result).toContain("First child");
+    expect(result).toContain("Last child");
+  });
+});
+
 // ─── Component Tests ──────────────────────────────────────────────────────────
 
 import { scanComponents, parseComponentContent, writeComponent } from "../src/components";
