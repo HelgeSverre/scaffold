@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.1-14B8A6?style=flat&labelColor=0F172A" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.1.2-14B8A6?style=flat&labelColor=0F172A" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-14B8A6?style=flat&labelColor=0F172A" alt="License">
   <img src="https://img.shields.io/badge/runtime-Bun-14B8A6?style=flat&labelColor=0F172A" alt="Runtime">
-  <img src="https://img.shields.io/badge/tests-106%20unit%20·%2017%20e2e-14B8A6?style=flat&labelColor=0F172A" alt="Tests">
-  <a href="https://scaffold.to"><img src="https://img.shields.io/badge/scaffold.to-14B8A6?style=flat&labelColor=0F172A" alt="Website"></a>
+  <img src="https://img.shields.io/badge/TypeScript-14B8A6?style=flat&labelColor=0F172A" alt="TypeScript">
+  <a href="https://scaffold.to"><img src="https://img.shields.io/badge/web-scaffold.to-14B8A6?style=flat&labelColor=0F172A" alt="Website"></a>
 </p>
 
 ## Install
