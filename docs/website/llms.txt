@@ -106,21 +106,21 @@ Every entity gets these REST endpoints at `/api/{route-path}`:
 
 | Method  | Path                    | Description                      |
 |---------|-------------------------|----------------------------------|
-| GET     | `/api/task`            | List (paginated, filterable, sortable) |
-| GET     | `/api/task/:id`        | Get single record                |
-| POST    | `/api/task`            | Create (JSON body)               |
-| PUT     | `/api/task/:id`        | Full update (JSON body)          |
-| PATCH   | `/api/task/:id`        | Partial update (JSON body)       |
-| DELETE  | `/api/task/:id`        | Delete                           |
-| OPTIONS | `/api/task`            | CORS preflight                   |
-| OPTIONS | `/api/task/:id`        | CORS preflight                   |
+| GET     | `/api/tasks`           | List (paginated, filterable, sortable) |
+| GET     | `/api/tasks/:id`       | Get single record                |
+| POST    | `/api/tasks`           | Create (JSON body)               |
+| PUT     | `/api/tasks/:id`       | Full update (JSON body)          |
+| PATCH   | `/api/tasks/:id`       | Partial update (JSON body)       |
+| DELETE  | `/api/tasks/:id`       | Delete                           |
+| OPTIONS | `/api/tasks`           | CORS preflight                   |
+| OPTIONS | `/api/tasks/:id`       | CORS preflight                   |
 
 ## Query Parameters
 
 All query parameters are on the GET list endpoint.
 
 ```
-GET /api/product?page=2&per_page=10&sort=-created_at&status=active&name_like=%radio%&with=category
+GET /api/products?page=2&per_page=10&sort=-created_at&status=active&name_like=%radio%&with=category
 ```
 
 | Param              | Description                                         |
