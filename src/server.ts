@@ -236,5 +236,14 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   }
   log.step("Watching for changes\u2026");
 
-  log.done("\u2318S Save  \u2318D Duplicate  Del Remove  \u2318\u2191\u2193 Reorder  Esc Deselect");
+  log.blank();
+  log.shortcut("⌘S", "Save");
+  log.shortcut("⌘D", "Duplicate");
+  log.shortcut("Del", "Remove");
+  log.shortcut("⌘↑↓", "Reorder");
+  log.shortcut("⌥↑", "Select parent");
+  log.shortcut("⌥↓", "Select child");
+  log.shortcut("⌥←→", "Select sibling");
+  log.shortcut("Esc", "Deselect");
+  log.blank();
 }
