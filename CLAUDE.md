@@ -43,7 +43,7 @@ src/
 - **Runtime:** Bun only. Use `bun:sqlite`, `Bun.serve()`, `Bun.write()`, `Bun.file()`
 - **Dependencies:** Minimal — `yaml`, `commander`, `@anthropic-ai/sdk`. No Express, no ORM
 - **Types:** All shared types in `src/types.ts`. Import from there, not inline
-- **Entity naming:** PascalCase in YAML -> snake_case + `s` for table names, lowercase + `s` for route paths
+- **Entity naming:** PascalCase in YAML → snake_case for table names, kebab-case for route paths
 - **Testing:** `bun:test` with in-memory SQLite (`:memory:`). Tests live in `tests/`
 - **Assets:** `editor.js` is a single vanilla JS IIFE — no build step, no framework
 - **Shadow DOM:** Editor UI lives inside closed shadow root. Selection styles inject into main document
