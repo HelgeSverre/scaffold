@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>scaffold. UI Mockup — On-Brand Editor Components</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ─── Brand Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Base */
+  --base:        #0F172A;
+  --surface:     #1E293B;
+
+  /* Primary (Teal) */
+  --primary:       #14B8A6;
+  --primary-light: #2DD4BF;
+  --primary-dark:  #0D9488;
+
+  /* Text */
+  --text-light:  #E2E8F0;
+  --text-muted:  #94A3B8;
+  --text-dark:   #0F172A;
+  --text-subtle: #64748B;
+  --text-hint:   #475569;
+
+  /* Semantic */
+  --success:     #10B981;
+  --warning:     #F59E0B;
+  --error:       #EF4444;
+
+  /* Derived / alpha */
+  --primary-a12:  rgba(20, 184, 166, 0.12);
+  --primary-a20:  rgba(20, 184, 166, 0.20);
+  --primary-a25:  rgba(20, 184, 166, 0.25);
+  --primary-a30:  rgba(20, 184, 166, 0.30);
+  --primary-a40:  rgba(20, 184, 166, 0.40);
+
+  --white-a04:  rgba(255, 255, 255, 0.04);
+  --white-a06:  rgba(255, 255, 255, 0.06);
+  --white-a08:  rgba(255, 255, 255, 0.08);
+  --white-a10:  rgba(255, 255, 255, 0.10);
+  --white-a12:  rgba(255, 255, 255, 0.12);
+
+  --base-92: rgba(15, 23, 42, 0.92);
+  --base-95: rgba(15, 23, 42, 0.95);
+  --base-97: rgba(15, 23, 42, 0.97);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Monaco, monospace;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* ─── Page Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-light);
+  background: var(--base);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Page Layout ──────────────────────────────────────────────────────────── */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 32px 200px;
+}
+
+.page-header {
+  margin-bottom: 48px;
+}
+
+.wordmark {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: -0.5px;
+}
+.wordmark .period { color: var(--primary); }
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.section {
+  margin-bottom: 56px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+.section-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.demo-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.demo-card {
+  background: var(--surface);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  flex: 1;
+  min-width: 340px;
+}
+
+.demo-card-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-subtle);
+  margin-bottom: 16px;
+}
+
+/* ─── Color Swatches ───────────────────────────────────────────────────────── */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.swatch {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--white-a10);
+}
+.swatch-color {
+  height: 48px;
+}
+.swatch-info {
+  padding: 8px;
+  background: var(--surface);
+}
+.swatch-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+.swatch-hex {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-subtle);
+}
+
+/* ─── Typography Samples ───────────────────────────────────────────────────── */
+.type-sample {
+  margin-bottom: 12px;
+}
+.type-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-subtle);
+  margin-bottom: 2px;
+}
+
+/* ─── Scaffold Toolbar ─────────────────────────────────────────────────────── */
+.scaffold-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--base-92);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  user-select: none;
+  cursor: grab;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+/* ─── Buttons (shared) ─────────────────────────────────────────────────────── */
+.scaffold-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--white-a12);
+  border-radius: var(--radius-md);
+  background: var(--white-a06);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.scaffold-btn:hover {
+  background: var(--white-a12);
+  color: var(--text-light);
+}
+
+.scaffold-btn.active {
+  background: var(--primary-a20);
+  border-color: var(--primary-a40);
+  color: var(--primary);
+}
+
+.scaffold-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scaffold-btn:focus-visible {
+  border-color: var(--primary-a40);
+  box-shadow: 0 0 0 2px var(--primary-a12);
+  outline: none;
+}
+
+/* ─── Divider ──────────────────────────────────────────────────────────────── */
+.scaffold-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--white-a10);
+  margin: 0 2px;
+}
+
+/* ─── Viewers Badge ────────────────────────────────────────────────────────── */
+.scaffold-viewers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+.scaffold-viewers .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* ─── Keyboard Shortcut Hint ───────────────────────────────────────────────── */
+.scaffold-shortcut {
+  font-size: 10px;
+  color: var(--text-hint);
+  margin-left: 2px;
+  font-family: var(--font-mono);
+}
+
+/* ─── AI Bar ───────────────────────────────────────────────────────────────── */
+.scaffold-ai-bar {
+  width: 420px;
+  background: var(--base-95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.scaffold-ai-input-row {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.scaffold-ai-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--white-a06);
+  border: 1px solid var(--white-a12);
+  border-radius: var(--radius-sm);
+  color: var(--text-light);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  outline: none;
+  width: 100%;
+}
+
+.scaffold-ai-input:focus {
+  border-color: var(--primary-a40);
+  box-shadow: 0 0 0 2px var(--primary-a12);
+}
+
+.scaffold-ai-input::placeholder {
+  color: var(--text-hint);
+}
+
+.scaffold-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+select.scaffold-ai-input {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.scaffold-ai-status {
+  padding: 4px 8px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.scaffold-ai-status .spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--primary-a25);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── AI History ───────────────────────────────────────────────────────────── */
+.scaffold-ai-history {
+  margin-top: 4px;
+  border-top: 1px solid var(--white-a08);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.scaffold-ai-history-item {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scaffold-ai-history-item:hover {
+  background: var(--white-a06);
+  color: var(--text-light);
+}
+
+.scaffold-ai-history-empty {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-hint);
+}
+
+/* ─── Generate / Action Button ─────────────────────────────────────────────── */
+.scaffold-ai-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 16px;
+  margin-top: 4px;
+  background: var(--primary-a12);
+  border: 1px solid var(--primary-a25);
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scaffold-ai-generate-btn:hover {
+  background: var(--primary-a20);
+  border-color: var(--primary-a40);
+  color: var(--primary-light);
+}
+
+.scaffold-ai-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scaffold-ai-generate-btn:focus-visible {
+  border-color: var(--primary-a40);
+  box-shadow: 0 0 0 2px var(--primary-a12);
+  outline: none;
+}
+
+/* ─── Tooltip ──────────────────────────────────────────────────────────────── */
+.scaffold-tooltip {
+  display: inline-block;
+  padding: 3px 8px;
+  background: var(--base-95);
+  border: 1px solid var(--primary-a30);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+/* ─── Toast ────────────────────────────────────────────────────────────────── */
+.scaffold-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--base-95);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.scaffold-toast.success {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--success);
+}
+
+.scaffold-toast.error {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--error);
+}
+
+/* ─── Modal ────────────────────────────────────────────────────────────────── */
+.scaffold-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.scaffold-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scaffold-modal {
+  width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--base);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-sans);
+}
+
+.scaffold-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--white-a08);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.scaffold-modal-close {
+  padding: 2px 8px !important;
+  font-size: 18px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  cursor: pointer;
+}
+.scaffold-modal-close:hover {
+  color: var(--text-light) !important;
+}
+
+.scaffold-modal-body {
+  padding: 16px;
+}
+
+.scaffold-form-group {
+  margin-bottom: 12px;
+}
+
+.scaffold-form-group label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-subtle);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.scaffold-extract-preview {
+  padding: 8px;
+  margin-bottom: 12px;
+  background: var(--white-a04);
+  border: 1px solid var(--white-a08);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-subtle);
+  overflow: hidden;
+  max-height: 120px;
+  word-break: break-all;
+}
+
+/* ─── Component Palette ────────────────────────────────────────────────────── */
+.scaffold-component-palette {
+  width: 320px;
+  height: 600px;
+  background: var(--base-97);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-lg);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+.scaffold-palette-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--white-a08);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.scaffold-palette-close {
+  padding: 2px 8px !important;
+  font-size: 16px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  cursor: pointer;
+}
+.scaffold-palette-close:hover {
+  color: var(--text-light) !important;
+}
+
+.scaffold-palette-search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--white-a06);
+  flex-shrink: 0;
+}
+
+.scaffold-palette-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.scaffold-palette-category {
+  padding: 8px 4px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-subtle);
+  font-weight: 600;
+}
+
+.scaffold-palette-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.scaffold-component-card {
+  padding: 10px;
+  background: var(--white-a04);
+  border: 1px solid var(--white-a08);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scaffold-component-card:hover {
+  background: var(--white-a08);
+  border-color: var(--primary-a30);
+}
+
+.scaffold-component-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 2px;
+}
+
+.scaffold-component-desc {
+  font-size: 10px;
+  color: var(--text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.scaffold-palette-generate {
+  padding: 12px;
+  border-top: 1px solid var(--white-a08);
+  flex-shrink: 0;
+}
+
+/* ─── Selection Indicator ──────────────────────────────────────────────────── */
+.selection-demo {
+  position: relative;
+  padding: 16px;
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-md);
+  outline-offset: 2px;
+}
+
+.selection-demo-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ─── Hover Indicator ──────────────────────────────────────────────────────── */
+.hover-demo {
+  position: relative;
+  padding: 16px;
+  border: 2px solid var(--primary-a30);
+  border-radius: var(--radius-md);
+}
+
+.hover-demo-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ─── Insertion Indicator ──────────────────────────────────────────────────── */
+.insertion-indicator {
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--primary-a40);
+  margin: 8px 0;
+}
+
+/* ─── Before/After Comparison ──────────────────────────────────────────────── */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.comparison-panel {
+  background: var(--surface);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.comparison-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--white-a08);
+}
+
+.comparison-panel-title.old { color: var(--text-subtle); }
+.comparison-panel-title.new { color: var(--primary); }
+
+/* Old sky-blue accent for comparison */
+.old-btn-active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+.old-tooltip {
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+.old-generate-btn {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+.old-modal-header { color: #38bdf8; }
+.old-selection {
+  border-color: #38bdf8;
+}
+.old-insertion {
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+.old-viewer-dot { background: #22c55e; }
+
+/* ─── Live Preview Area ────────────────────────────────────────────────────── */
+.live-preview {
+  position: relative;
+  background: #f8fafc;
+  border-radius: var(--radius-lg);
+  min-height: 400px;
+  padding: 32px;
+  overflow: hidden;
+  color: var(--text-dark);
+}
+
+.live-preview h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.live-preview p {
+  color: #475569;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.live-preview .card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.live-preview .sample-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.live-preview .sample-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.live-preview .sample-card p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.live-preview .selected-card {
+  outline: 2px dashed var(--primary);
+  outline-offset: 2px;
+}
+
+/* Fixed preview toolbar */
+.preview-toolbar {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+}
+
+.preview-ai-bar {
+  position: absolute;
+  bottom: 60px;
+  right: 16px;
+}
+
+.preview-tooltip {
+  position: absolute;
+}
+
+/* ─── Kitchen Sink ─────────────────────────────────────────────────────────── */
+.kitchen-sink {
+  position: relative;
+  background: #f8fafc;
+  border-radius: var(--radius-lg);
+  min-height: 560px;
+  overflow: hidden;
+  color: var(--text-dark);
+  font-family: var(--font-sans);
+}
+
+.ks-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ks-topbar-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ks-topbar-brand span { color: var(--primary); }
+
+.ks-topbar-nav {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.ks-topbar-nav span { cursor: pointer; }
+.ks-topbar-nav span:hover { color: #1e293b; }
+
+.ks-body {
+  display: flex;
+  min-height: 500px;
+}
+
+.ks-sidebar {
+  width: 200px;
+  background: white;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px 0;
+  flex-shrink: 0;
+}
+
+.ks-sidebar-item {
+  display: block;
+  padding: 8px 24px;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.ks-sidebar-item:hover { background: #f1f5f9; color: #1e293b; }
+.ks-sidebar-item.active { color: var(--primary-dark); background: rgba(20, 184, 166, 0.06); font-weight: 500; }
+
+.ks-main {
+  flex: 1;
+  padding: 24px 32px;
+  position: relative;
+}
+
+.ks-main h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.ks-main .ks-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.ks-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ks-stat-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: default;
+  transition: outline 0.1s, outline-offset 0.1s;
+}
+
+.ks-stat-card h4 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.ks-stat-card .ks-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ks-stat-card .ks-stat-trend {
+  font-size: 12px;
+  color: var(--success);
+  margin-top: 2px;
+}
+
+.ks-table {
+  width: 100%;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.ks-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ks-table td {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ks-table tr {
+  cursor: default;
+  transition: outline 0.1s, outline-offset 0.1s;
+}
+
+.ks-table tbody tr:last-child td { border-bottom: none; }
+
+.ks-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ks-status-badge.active { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.ks-status-badge.pending { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.ks-status-badge.inactive { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+/* Hover indicator in kitchen sink */
+.ks-hover-outline {
+  outline: 2px solid var(--primary-a30);
+  outline-offset: 2px;
+}
+
+.ks-selected-outline {
+  outline: 2px dashed var(--primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Kitchen sink toolbar */
+.ks-toolbar-wrap {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+}
+
+.ks-ai-bar-wrap {
+  position: absolute;
+  bottom: 60px;
+  right: 16px;
+  z-index: 100;
+  display: none;
+}
+
+.ks-ai-bar-wrap.visible {
+  display: block;
+}
+
+/* Kitchen sink tooltip */
+.ks-tooltip-wrap {
+  position: absolute;
+  z-index: 100;
+  display: none;
+  pointer-events: none;
+}
+
+.ks-tooltip-wrap.visible {
+  display: block;
+}
+
+/* Kitchen sink toast */
+.ks-toast-container {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ks-toast-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--base-95);
+  border: 1px solid var(--white-a10);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-light);
+  animation: ks-toast-in 0.2s ease;
+}
+
+.ks-toast-msg.success {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--success);
+}
+
+.ks-toast-msg.fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes ks-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Kitchen sink palette overlay */
+.ks-palette-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--base-97);
+  border-left: 1px solid var(--white-a10);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+}
+
+.ks-palette-overlay.visible {
+  transform: translateX(0);
+}
+
+.ks-palette-overlay .scaffold-palette-header {
+  flex-shrink: 0;
+}
+
+.ks-palette-overlay .scaffold-palette-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+/* Kitchen sink modal overlay */
+.ks-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.ks-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ─── Inline Demo Helpers ──────────────────────────────────────────────────── */
+.inline-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demo-spacer {
+  height: 16px;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.code-sample {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 12px;
+  background: var(--white-a04);
+  border: 1px solid var(--white-a08);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  overflow-x: auto;
+}
+
+.code-sample .token-key { color: var(--primary); }
+.code-sample .token-val { color: var(--primary-light); }
+.code-sample .token-comment { color: var(--text-hint); }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ─── Header ────────────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <div class="wordmark">scaffold<span class="period">.</span></div>
+    <p class="page-subtitle">On-brand editor UI mockup — all components revised to match BRAND.md</p>
+  </header>
+
+  <!-- ─── 1. Color Palette ──────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Color Palette</h2>
+    <p class="section-desc">Brand tokens used across all editor UI. The primary accent shifts from sky-blue (#38bdf8) to teal (#14B8A6).</p>
+
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #0F172A"></div>
+        <div class="swatch-info"><div class="swatch-name">Base</div><div class="swatch-hex">#0F172A</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #1E293B"></div>
+        <div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-hex">#1E293B</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #14B8A6"></div>
+        <div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-hex">#14B8A6</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #2DD4BF"></div>
+        <div class="swatch-info"><div class="swatch-name">Primary Light</div><div class="swatch-hex">#2DD4BF</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #0D9488"></div>
+        <div class="swatch-info"><div class="swatch-name">Primary Dark</div><div class="swatch-hex">#0D9488</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #E2E8F0"></div>
+        <div class="swatch-info"><div class="swatch-name">Text Light</div><div class="swatch-hex">#E2E8F0</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #94A3B8"></div>
+        <div class="swatch-info"><div class="swatch-name">Text Muted</div><div class="swatch-hex">#94A3B8</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #10B981"></div>
+        <div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-hex">#10B981</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #F59E0B"></div>
+        <div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-hex">#F59E0B</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #EF4444"></div>
+        <div class="swatch-info"><div class="swatch-name">Error</div><div class="swatch-hex">#EF4444</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 2. Typography ─────────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Typography</h2>
+    <p class="section-desc">Inter for UI text, JetBrains Mono for code and element tags.</p>
+
+    <div class="demo-row">
+      <div class="demo-card">
+        <div class="demo-card-label">Inter (UI)</div>
+        <div class="type-sample">
+          <div class="type-label">14px / 600 — Headings</div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-light)">Components</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">13px / 400 — Body</div>
+          <div style="font-size: 13px; color: var(--text-light)">Ask AI to edit this element...</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">12px / 400 — Buttons</div>
+          <div style="font-size: 12px; color: var(--text-muted)">Edit  Save  Undo  Extract</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">11px / 500 — Labels</div>
+          <div style="font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-subtle)">Page name</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">11px / 400 — Status</div>
+          <div style="font-size: 11px; color: var(--text-muted)">Generating hero section...</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">10px / 600 — Category</div>
+          <div style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-subtle)">data-display</div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">JetBrains Mono (Code)</div>
+        <div class="type-sample">
+          <div class="type-label">11px / 400 — Element tooltip</div>
+          <div style="font-size: 11px; font-family: var(--font-mono); color: var(--primary)">div.hero-section</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">11px / 400 — Extract preview</div>
+          <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-subtle)">&lt;div class="card p-4 rounded-lg"&gt;...&lt;/div&gt;</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">10px / 400 — Shortcuts</div>
+          <div style="font-size: 10px; font-family: var(--font-mono); color: var(--text-hint)">&#8984;K</div>
+        </div>
+        <div class="code-sample">
+          <span class="token-comment">/* Brand tokens */</span><br>
+          <span class="token-key">--primary</span>: <span class="token-val">#14B8A6</span>;<br>
+          <span class="token-key">--primary-light</span>: <span class="token-val">#2DD4BF</span>;<br>
+          <span class="token-key">--primary-dark</span>: <span class="token-val">#0D9488</span>;
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 3. Toolbar ────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Toolbar</h2>
+    <p class="section-desc">Floating, draggable toolbar. Text-only labels with title attributes.</p>
+
+    <div class="comparison">
+      <div class="comparison-panel">
+        <div class="comparison-panel-title old">Before (emoji icons)</div>
+        <div class="scaffold-toolbar" style="position: static; cursor: default; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+          <button class="scaffold-btn old-btn-active"><span class="icon">&#9998;</span> Edit</button>
+          <button class="scaffold-btn"><span class="icon">&#128190;</span> Save</button>
+          <button class="scaffold-btn"><span class="icon">&#8634;</span> Undo</button>
+          <button class="scaffold-btn"><span class="icon">+</span></button>
+          <button class="scaffold-btn old-btn-active"><span class="icon">&#9645;</span></button>
+          <button class="scaffold-btn"><span class="icon">&#8689;</span> Extract</button>
+          <div class="scaffold-divider"></div>
+          <div class="scaffold-viewers"><span class="dot" style="background: #22c55e"></span> <span>2</span></div>
+        </div>
+      </div>
+      <div class="comparison-panel">
+        <div class="comparison-panel-title new">After (text labels)</div>
+        <div class="scaffold-toolbar" style="position: static; cursor: default">
+          <button class="scaffold-btn active" title="Toggle edit mode">Edit</button>
+          <button class="scaffold-btn" title="Save changes to disk">Save</button>
+          <button class="scaffold-btn" title="Revert unsaved changes">Undo</button>
+          <button class="scaffold-btn" title="Create a new prototype page">New</button>
+          <button class="scaffold-btn active" title="Browse and insert components">Components</button>
+          <button class="scaffold-btn" title="Extract selection as reusable component">Extract</button>
+          <div class="scaffold-divider"></div>
+          <div class="scaffold-viewers"><span class="dot"></span> <span>2</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 4. Button States ──────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Button States</h2>
+    <p class="section-desc">Default, hover (simulated on the right), active, and disabled.</p>
+
+    <div class="demo-row">
+      <div class="demo-card">
+        <div class="demo-card-label">States</div>
+        <div class="inline-flex" style="gap: 12px;">
+          <div style="text-align: center">
+            <button class="scaffold-btn" title="Toggle edit mode">Edit</button>
+            <div style="font-size: 10px; color: var(--text-subtle); margin-top: 4px">default</div>
+          </div>
+          <div style="text-align: center">
+            <button class="scaffold-btn" title="Toggle edit mode" style="background: var(--white-a12); color: var(--text-light)">Edit</button>
+            <div style="font-size: 10px; color: var(--text-subtle); margin-top: 4px">hover</div>
+          </div>
+          <div style="text-align: center">
+            <button class="scaffold-btn active" title="Toggle edit mode">Edit</button>
+            <div style="font-size: 10px; color: var(--text-subtle); margin-top: 4px">active</div>
+          </div>
+          <div style="text-align: center">
+            <button class="scaffold-btn" title="Toggle edit mode" disabled>Edit</button>
+            <div style="font-size: 10px; color: var(--text-subtle); margin-top: 4px">disabled</div>
+          </div>
+        </div>
+        <div class="demo-spacer"></div>
+        <div class="demo-card-label">Generate / Action Button</div>
+        <div style="max-width: 300px;">
+          <button class="scaffold-ai-generate-btn" title="Generate with AI">Generate with AI</button>
+          <div class="demo-spacer"></div>
+          <button class="scaffold-ai-generate-btn" title="Generate with AI" style="background: var(--primary-a20); border-color: var(--primary-a40); color: var(--primary-light)">Generate with AI (hover)</button>
+          <div class="demo-spacer"></div>
+          <button class="scaffold-ai-generate-btn" title="Generate with AI" disabled>Generate with AI (disabled)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 5. AI Bar ─────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">AI Bar</h2>
+    <p class="section-desc">Floating prompt input. Shows context-aware placeholder when an element is selected.</p>
+
+    <div class="demo-row">
+      <div class="demo-card">
+        <div class="demo-card-label">Default state</div>
+        <div class="scaffold-ai-bar" style="position: static; width: 100%">
+          <div class="scaffold-ai-input-row">
+            <input type="text" class="scaffold-ai-input" placeholder="Ask AI..." readonly />
+            <button class="scaffold-btn" title="Send prompt to AI">Send</button>
+            <button class="scaffold-btn" title="Show recent prompts">History</button>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">Element selected</div>
+        <div class="scaffold-ai-bar" style="position: static; width: 100%">
+          <div class="scaffold-ai-input-row">
+            <input type="text" class="scaffold-ai-input" placeholder="Edit div.hero-section..." readonly />
+            <button class="scaffold-btn" title="Send prompt to AI">Send</button>
+            <button class="scaffold-btn" title="Show recent prompts">History</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-spacer"></div>
+    <div class="demo-row">
+      <div class="demo-card">
+        <div class="demo-card-label">Working state</div>
+        <div class="scaffold-ai-bar" style="position: static; width: 100%">
+          <div class="scaffold-ai-input-row">
+            <input type="text" class="scaffold-ai-input" value="Make the hero section taller with a gradient background" disabled style="opacity: 0.6" />
+            <button class="scaffold-btn" title="Send prompt to AI" disabled>Send</button>
+            <button class="scaffold-btn" title="Show recent prompts">History</button>
+          </div>
+          <div class="scaffold-ai-status">
+            <span class="spinner"></span> Generating hero section...
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">With history open</div>
+        <div class="scaffold-ai-bar" style="position: static; width: 100%">
+          <div class="scaffold-ai-input-row">
+            <input type="text" class="scaffold-ai-input" placeholder="Ask AI..." readonly />
+            <button class="scaffold-btn" title="Send prompt to AI">Send</button>
+            <button class="scaffold-btn active" title="Show recent prompts">History</button>
+          </div>
+          <div class="scaffold-ai-history" style="display: block">
+            <div class="scaffold-ai-history-item">Make the hero section taller</div>
+            <div class="scaffold-ai-history-item">Add a pricing table with 3 tiers</div>
+            <div class="scaffold-ai-history-item">Change the navbar to be sticky</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 6. Tooltip & Toast & Indicators ───────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Tooltips, Toasts & Indicators</h2>
+    <p class="section-desc">Small informational elements.</p>
+
+    <div class="demo-row">
+      <div class="demo-card">
+        <div class="demo-card-label">Element Tooltip</div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+          <span class="scaffold-tooltip">div.hero-section</span>
+          <span class="scaffold-tooltip">button.cta-primary</span>
+          <span class="scaffold-tooltip">section.features</span>
+        </div>
+
+        <div class="demo-card-label" style="margin-top: 16px;">Toast Notifications</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span class="scaffold-toast">Edit mode ON</span>
+          <span class="scaffold-toast success">Saved</span>
+          <span class="scaffold-toast error">Save failed: network error</span>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">Hover Indicator</div>
+        <div class="hover-demo">
+          <div class="hover-demo-label">Hovered element gets a subtle teal solid outline (2px, <code style="font-family: var(--font-mono); font-size: 11px; color: var(--primary)">var(--primary-a30)</code>)</div>
+        </div>
+
+        <div class="demo-card-label" style="margin-top: 16px;">Selection Indicator</div>
+        <div class="selection-demo">
+          <div class="selection-demo-label">Selected element gets a teal dashed outline (2px, full opacity)</div>
+        </div>
+
+        <div class="demo-card-label" style="margin-top: 16px;">Insertion Indicator</div>
+        <div style="padding: 8px; background: var(--white-a04); border-radius: var(--radius-sm); color: var(--text-subtle); font-size: 12px;">
+          &lt;div class="card"&gt;...&lt;/div&gt;
+        </div>
+        <div class="insertion-indicator"></div>
+        <div style="padding: 8px; background: var(--white-a04); border-radius: var(--radius-sm); color: var(--text-subtle); font-size: 12px;">
+          &lt;div class="card"&gt;...&lt;/div&gt;
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 7. Component Palette ──────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Component Palette</h2>
+    <p class="section-desc">Right-edge sidebar for browsing and inserting components.</p>
+
+    <div class="demo-row">
+      <div class="scaffold-component-palette">
+        <div class="scaffold-palette-header">
+          <span>Components</span>
+          <button class="scaffold-btn scaffold-palette-close" title="Close component palette">&times;</button>
+        </div>
+        <div class="scaffold-palette-search">
+          <input type="text" class="scaffold-ai-input" placeholder="Search components..." readonly />
+        </div>
+        <div class="scaffold-palette-list">
+          <div class="scaffold-palette-category">data-display</div>
+          <div class="scaffold-palette-grid">
+            <div class="scaffold-component-card" title="Insert Stats Card component">
+              <div class="scaffold-component-name">Stats Card</div>
+              <div class="scaffold-component-desc">Metric display with label, value, and trend indicator</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Data Table component">
+              <div class="scaffold-component-name">Data Table</div>
+              <div class="scaffold-component-desc">Responsive table with sortable headers</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Chart Panel component">
+              <div class="scaffold-component-name">Chart Panel</div>
+              <div class="scaffold-component-desc">Container for chart visualizations</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert KPI Grid component">
+              <div class="scaffold-component-name">KPI Grid</div>
+              <div class="scaffold-component-desc">Grid of key performance indicator cards</div>
+            </div>
+          </div>
+          <div class="scaffold-palette-category">navigation</div>
+          <div class="scaffold-palette-grid">
+            <div class="scaffold-component-card" title="Insert Sidebar Nav component">
+              <div class="scaffold-component-name">Sidebar Nav</div>
+              <div class="scaffold-component-desc">Collapsible sidebar navigation menu</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Breadcrumb component">
+              <div class="scaffold-component-name">Breadcrumb</div>
+              <div class="scaffold-component-desc">Path breadcrumb with chevron separators</div>
+            </div>
+          </div>
+          <div class="scaffold-palette-category">forms</div>
+          <div class="scaffold-palette-grid">
+            <div class="scaffold-component-card" title="Insert Login Form component">
+              <div class="scaffold-component-name">Login Form</div>
+              <div class="scaffold-component-desc">Email + password with validation</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Search Bar component">
+              <div class="scaffold-component-name">Search Bar</div>
+              <div class="scaffold-component-desc">Input with icon and autocomplete</div>
+            </div>
+          </div>
+        </div>
+        <div class="scaffold-palette-generate">
+          <div class="scaffold-form-group">
+            <label>Generate Component</label>
+            <input type="text" class="scaffold-ai-input" placeholder="Component name" readonly />
+          </div>
+          <div class="scaffold-form-group">
+            <textarea class="scaffold-ai-input scaffold-textarea" rows="2" placeholder="Describe the component..." readonly></textarea>
+          </div>
+          <div class="scaffold-form-group">
+            <input type="text" class="scaffold-ai-input" placeholder="Category (e.g. data-display)" readonly />
+          </div>
+          <button class="scaffold-ai-generate-btn" title="Generate a new component with AI">Generate</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-width: 340px;">
+        <div class="demo-card">
+          <div class="demo-card-label">Component Card States</div>
+          <div style="display: flex; flex-direction: column; gap: 8px; max-width: 280px;">
+            <div class="scaffold-component-card" title="Insert Stats Card component">
+              <div class="scaffold-component-name">Stats Card</div>
+              <div class="scaffold-component-desc">Default state — subtle background</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Stats Card component" style="background: var(--white-a08); border-color: var(--primary-a30)">
+              <div class="scaffold-component-name">Stats Card</div>
+              <div class="scaffold-component-desc">Hover state — teal border glow</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 8. Modals ─────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Modals</h2>
+    <p class="section-desc">New Page and Extract Component dialogs.</p>
+
+    <div class="demo-row">
+      <div class="demo-card" style="padding: 0; overflow: hidden;">
+        <div class="scaffold-modal" style="position: static; max-width: 100%; box-shadow: none; border-radius: var(--radius-lg);">
+          <div class="scaffold-modal-header">
+            <span>Create New Prototype</span>
+            <button class="scaffold-modal-close" title="Close dialog">&times;</button>
+          </div>
+          <div class="scaffold-modal-body">
+            <div class="scaffold-form-group">
+              <label>Page name</label>
+              <input type="text" class="scaffold-ai-input" placeholder="my-new-page" readonly />
+            </div>
+            <div class="scaffold-form-group">
+              <label>Description</label>
+              <textarea class="scaffold-ai-input scaffold-textarea" rows="3" placeholder="Describe the page..." readonly></textarea>
+            </div>
+            <div class="scaffold-form-group">
+              <label>Use existing page as starting point</label>
+              <select class="scaffold-ai-input" title="Select a template page">
+                <option>None</option>
+                <option selected>vendor-details (current)</option>
+                <option>dashboard</option>
+              </select>
+            </div>
+            <button class="scaffold-ai-generate-btn" title="Generate page with AI">Generate with AI</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-card" style="padding: 0; overflow: hidden;">
+        <div class="scaffold-modal" style="position: static; max-width: 100%; box-shadow: none; border-radius: var(--radius-lg);">
+          <div class="scaffold-modal-header">
+            <span>Extract Component</span>
+            <button class="scaffold-modal-close" title="Close dialog">&times;</button>
+          </div>
+          <div class="scaffold-modal-body">
+            <div class="scaffold-form-group">
+              <label>Component name</label>
+              <input type="text" class="scaffold-ai-input" value="hero-section" readonly />
+            </div>
+            <div class="scaffold-form-group">
+              <label>Category</label>
+              <input type="text" class="scaffold-ai-input" placeholder="e.g. data-display, forms, layout" readonly />
+            </div>
+            <div class="scaffold-extract-preview"><code>&lt;section class="hero-section py-20 bg-gradient-to-br from-slate-900 to-slate-800"&gt;&lt;div class="max-w-4xl mx-auto text-center"&gt;&lt;h1&gt;Welcome...</code></div>
+            <button class="scaffold-ai-generate-btn" title="Extract this element as a component">Extract</button>
+            <div class="scaffold-ai-status">
+              <span class="spinner"></span> Extracting with AI...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 9. Live Preview ───────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Live Preview — In Context</h2>
+    <p class="section-desc">How the toolbar, AI bar, and tooltip look overlaid on an actual prototype page.</p>
+
+    <div class="live-preview">
+      <h2>Vendor Management</h2>
+      <p>Track and manage your vendor relationships, contracts, and performance metrics in one place.</p>
+
+      <div class="card-grid">
+        <div class="sample-card">
+          <h3>Active Vendors</h3>
+          <p>24 vendors currently active</p>
+        </div>
+        <div class="sample-card selected-card">
+          <h3>Pending Reviews</h3>
+          <p>7 reviews due this week</p>
+        </div>
+        <div class="sample-card">
+          <h3>Expiring Contracts</h3>
+          <p>3 contracts expire in 30 days</p>
+        </div>
+      </div>
+
+      <!-- Tooltip positioned above selected card -->
+      <div style="position: absolute; top: 108px; left: calc(33.33% + 48px);">
+        <span class="scaffold-tooltip">div.sample-card</span>
+      </div>
+
+      <!-- AI Bar -->
+      <div class="preview-ai-bar">
+        <div class="scaffold-ai-bar" style="position: static; width: 380px;">
+          <div class="scaffold-ai-input-row">
+            <input type="text" class="scaffold-ai-input" placeholder="Edit div.sample-card..." readonly />
+            <button class="scaffold-btn" title="Send prompt to AI">Send</button>
+            <button class="scaffold-btn" title="Show recent prompts">History</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="preview-toolbar">
+        <div class="scaffold-toolbar" style="position: static; cursor: default; font-size: 12px;">
+          <button class="scaffold-btn active" title="Toggle edit mode" style="font-size: 11px; padding: 4px 8px">Edit</button>
+          <button class="scaffold-btn" title="Save changes to disk" style="font-size: 11px; padding: 4px 8px">Save</button>
+          <button class="scaffold-btn" title="Revert unsaved changes" style="font-size: 11px; padding: 4px 8px">Undo</button>
+          <button class="scaffold-btn" title="Create a new prototype page" style="font-size: 11px; padding: 4px 8px">New</button>
+          <button class="scaffold-btn" title="Browse and insert components" style="font-size: 11px; padding: 4px 8px">Components</button>
+          <button class="scaffold-btn" title="Extract selection as reusable component" style="font-size: 11px; padding: 4px 8px">Extract</button>
+          <div class="scaffold-divider"></div>
+          <div class="scaffold-viewers"><span class="dot"></span> <span>2</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 10. Token Diff Summary ────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Token Changes</h2>
+    <p class="section-desc">Summary of every value that changes when applying brand tokens to editor.css and editor.js.</p>
+
+    <div class="demo-card" style="max-width: 100%;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono);">
+        <thead>
+          <tr style="text-align: left; border-bottom: 1px solid var(--white-a10);">
+            <th style="padding: 8px 12px; color: var(--text-subtle); font-weight: 500;">Property</th>
+            <th style="padding: 8px 12px; color: var(--text-subtle); font-weight: 500;">Before</th>
+            <th style="padding: 8px 12px; color: var(--text-subtle); font-weight: 500;">After</th>
+            <th style="padding: 8px 12px; color: var(--text-subtle); font-weight: 500;">Where</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Primary accent</td>
+            <td style="padding: 8px 12px; color: #38bdf8;">#38bdf8</td>
+            <td style="padding: 8px 12px; color: var(--primary);">#14B8A6</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">btn.active, tooltip, modal header, palette header, generate btn, selection, insertion</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Focus ring</td>
+            <td style="padding: 8px 12px; color: #38bdf8;">rgba(56,189,248,0.4)</td>
+            <td style="padding: 8px 12px; color: var(--primary);">rgba(20,184,166,0.4)</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">input:focus, btn.active border</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Generate bg</td>
+            <td style="padding: 8px 12px; color: #38bdf8;">rgba(56,189,248,0.12)</td>
+            <td style="padding: 8px 12px; color: var(--primary);">rgba(20,184,166,0.12)</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">generate/action buttons</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Viewer dot</td>
+            <td style="padding: 8px 12px; color: #22c55e;">#22c55e</td>
+            <td style="padding: 8px 12px; color: var(--success);">#10B981</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">viewer count indicator</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Toast success</td>
+            <td style="padding: 8px 12px; color: #22c55e;">rgba(34,197,94,0.4) / #22c55e</td>
+            <td style="padding: 8px 12px; color: var(--success);">rgba(16,185,129,0.4) / #10B981</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">toast.success border + text</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Font family</td>
+            <td style="padding: 8px 12px; color: var(--text-muted); font-family: -apple-system, sans-serif;">-apple-system, ...</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">'Inter', system-ui, ...</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">:host font-family</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--white-a08);">
+            <td style="padding: 8px 12px; color: var(--text-light);">Mono font</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">ui-monospace, SF Mono, ...</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">'JetBrains Mono', ui-monospace, ...</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">tooltip, extract preview</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 12px; color: var(--text-light);">Input focus</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">border-color only</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">border-color + box-shadow ring</td>
+            <td style="padding: 8px 12px; color: var(--text-muted);">all .scaffold-ai-input:focus</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── 11. Kitchen Sink — Interactive Prototype ──────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Kitchen Sink — Interactive Prototype</h2>
+    <p class="section-desc">A working mockup with hover highlighting, click-to-select, toolbar interactions, toast notifications, and palette slide-in. Try hovering elements, clicking them, and using the toolbar buttons.</p>
+
+    <div class="kitchen-sink" id="ks">
+      <!-- Toast container -->
+      <div class="ks-toast-container" id="ks-toasts"></div>
+
+      <!-- Tooltip (follows hovered element) -->
+      <div class="ks-tooltip-wrap" id="ks-tooltip">
+        <span class="scaffold-tooltip" id="ks-tooltip-text">div</span>
+      </div>
+
+      <!-- Top bar -->
+      <div class="ks-topbar">
+        <div class="ks-topbar-brand">Acme<span>.</span> Dashboard</div>
+        <div class="ks-topbar-nav">
+          <span>Overview</span>
+          <span>Analytics</span>
+          <span>Settings</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="ks-body">
+        <div class="ks-sidebar">
+          <div class="ks-sidebar-item active">Dashboard</div>
+          <div class="ks-sidebar-item">Users</div>
+          <div class="ks-sidebar-item">Products</div>
+          <div class="ks-sidebar-item">Orders</div>
+          <div class="ks-sidebar-item">Reports</div>
+        </div>
+        <div class="ks-main" id="ks-main">
+          <h2>Dashboard</h2>
+          <p class="ks-subtitle">Overview of key metrics for this month.</p>
+
+          <div class="ks-stats">
+            <div class="ks-stat-card" data-tag="div.ks-stat-card">
+              <h4>Revenue</h4>
+              <div class="ks-stat-value">$48,200</div>
+              <div class="ks-stat-trend">+12.5%</div>
+            </div>
+            <div class="ks-stat-card" data-tag="div.ks-stat-card">
+              <h4>Users</h4>
+              <div class="ks-stat-value">1,429</div>
+              <div class="ks-stat-trend">+8.1%</div>
+            </div>
+            <div class="ks-stat-card" data-tag="div.ks-stat-card">
+              <h4>Orders</h4>
+              <div class="ks-stat-value">312</div>
+              <div class="ks-stat-trend">+3.2%</div>
+            </div>
+          </div>
+
+          <table class="ks-table">
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Status</th><th>Revenue</th></tr>
+            </thead>
+            <tbody>
+              <tr data-tag="tr">
+                <td>Alice Johnson</td><td>Account Manager</td>
+                <td><span class="ks-status-badge active">Active</span></td>
+                <td>$12,400</td>
+              </tr>
+              <tr data-tag="tr">
+                <td>Bob Martinez</td><td>Sales Lead</td>
+                <td><span class="ks-status-badge active">Active</span></td>
+                <td>$9,800</td>
+              </tr>
+              <tr data-tag="tr">
+                <td>Carol Smith</td><td>Support</td>
+                <td><span class="ks-status-badge pending">Pending</span></td>
+                <td>$4,200</td>
+              </tr>
+              <tr data-tag="tr">
+                <td>Dan Lee</td><td>Developer</td>
+                <td><span class="ks-status-badge inactive">Inactive</span></td>
+                <td>$0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI Bar (visible when edit mode on) -->
+      <div class="ks-ai-bar-wrap" id="ks-ai-bar">
+        <div class="scaffold-ai-bar" style="position: static; width: 380px;">
+          <div class="scaffold-ai-input-row">
+            <input type="text" class="scaffold-ai-input" id="ks-ai-input" placeholder="Ask AI..." />
+            <button class="scaffold-btn" title="Send prompt to AI" id="ks-ai-send">Send</button>
+            <button class="scaffold-btn" title="Show recent prompts">History</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="ks-toolbar-wrap">
+        <div class="scaffold-toolbar" style="position: static; cursor: default; font-size: 12px;">
+          <button class="scaffold-btn" title="Toggle edit mode" id="ks-edit-btn" style="font-size: 11px; padding: 4px 8px">Edit</button>
+          <button class="scaffold-btn" title="Save changes to disk" id="ks-save-btn" style="font-size: 11px; padding: 4px 8px">Save</button>
+          <button class="scaffold-btn" title="Revert unsaved changes" id="ks-undo-btn" style="font-size: 11px; padding: 4px 8px">Undo</button>
+          <button class="scaffold-btn" title="Create a new prototype page" id="ks-new-btn" style="font-size: 11px; padding: 4px 8px">New</button>
+          <button class="scaffold-btn" title="Browse and insert components" id="ks-comp-btn" style="font-size: 11px; padding: 4px 8px">Components</button>
+          <button class="scaffold-btn" title="Extract selection as reusable component" style="font-size: 11px; padding: 4px 8px">Extract</button>
+          <div class="scaffold-divider"></div>
+          <div class="scaffold-viewers"><span class="dot"></span> <span>2</span></div>
+        </div>
+      </div>
+
+      <!-- Component Palette (slides in from right) -->
+      <div class="ks-palette-overlay" id="ks-palette">
+        <div class="scaffold-palette-header">
+          <span>Components</span>
+          <button class="scaffold-btn scaffold-palette-close" title="Close component palette" id="ks-palette-close">&times;</button>
+        </div>
+        <div class="scaffold-palette-list">
+          <div class="scaffold-palette-category">data-display</div>
+          <div class="scaffold-palette-grid">
+            <div class="scaffold-component-card" title="Insert Stats Card component">
+              <div class="scaffold-component-name">Stats Card</div>
+              <div class="scaffold-component-desc">Metric with trend</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Data Table component">
+              <div class="scaffold-component-name">Data Table</div>
+              <div class="scaffold-component-desc">Sortable table</div>
+            </div>
+          </div>
+          <div class="scaffold-palette-category">navigation</div>
+          <div class="scaffold-palette-grid">
+            <div class="scaffold-component-card" title="Insert Sidebar Nav component">
+              <div class="scaffold-component-name">Sidebar Nav</div>
+              <div class="scaffold-component-desc">Collapsible menu</div>
+            </div>
+            <div class="scaffold-component-card" title="Insert Breadcrumb component">
+              <div class="scaffold-component-name">Breadcrumb</div>
+              <div class="scaffold-component-desc">Path navigation</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal overlay (for New Page) -->
+      <div class="ks-modal-overlay" id="ks-modal">
+        <div class="scaffold-modal" style="position: static; width: 400px;">
+          <div class="scaffold-modal-header">
+            <span>Create New Prototype</span>
+            <button class="scaffold-modal-close" title="Close dialog" id="ks-modal-close">&times;</button>
+          </div>
+          <div class="scaffold-modal-body">
+            <div class="scaffold-form-group">
+              <label>Page name</label>
+              <input type="text" class="scaffold-ai-input" placeholder="my-new-page" />
+            </div>
+            <div class="scaffold-form-group">
+              <label>Description</label>
+              <textarea class="scaffold-ai-input scaffold-textarea" rows="2" placeholder="Describe the page..."></textarea>
+            </div>
+            <button class="scaffold-ai-generate-btn" title="Generate page with AI">Generate with AI</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ─── Kitchen Sink Script ──────────────────────────────────────────────────── -->
+<script>
+(function () {
+  const ks = document.getElementById('ks');
+  const main = document.getElementById('ks-main');
+  const editBtn = document.getElementById('ks-edit-btn');
+  const saveBtn = document.getElementById('ks-save-btn');
+  const undoBtn = document.getElementById('ks-undo-btn');
+  const newBtn = document.getElementById('ks-new-btn');
+  const compBtn = document.getElementById('ks-comp-btn');
+  const aiBar = document.getElementById('ks-ai-bar');
+  const aiInput = document.getElementById('ks-ai-input');
+  const aiSend = document.getElementById('ks-ai-send');
+  const tooltip = document.getElementById('ks-tooltip');
+  const tooltipText = document.getElementById('ks-tooltip-text');
+  const toasts = document.getElementById('ks-toasts');
+  const palette = document.getElementById('ks-palette');
+  const paletteClose = document.getElementById('ks-palette-close');
+  const modal = document.getElementById('ks-modal');
+  const modalClose = document.getElementById('ks-modal-close');
+
+  let editMode = false;
+  let selectedEl = null;
+  let hoveredEl = null;
+
+  // Hoverable targets inside ks-main
+  const hoverSelector = '.ks-stat-card, .ks-table tbody tr, .ks-main h2, .ks-main .ks-subtitle, .ks-table';
+
+  function showToast(msg, type) {
+    const el = document.createElement('div');
+    el.className = 'ks-toast-msg' + (type ? ' ' + type : '');
+    el.textContent = msg;
+    toasts.appendChild(el);
+    setTimeout(() => { el.classList.add('fade-out'); }, 1800);
+    setTimeout(() => { el.remove(); }, 2200);
+  }
+
+  function getTag(el) {
+    if (el.dataset && el.dataset.tag) return el.dataset.tag;
+    const tag = el.tagName.toLowerCase();
+    const cls = el.className ? el.className.split(/\s+/).filter(c => !c.startsWith('ks-') || c === 'ks-stat-card' || c === 'ks-table' || c === 'ks-subtitle')[0] : '';
+    return cls ? tag + '.' + cls : tag;
+  }
+
+  function clearHover() {
+    if (hoveredEl) {
+      hoveredEl.classList.remove('ks-hover-outline');
+      hoveredEl = null;
+    }
+    tooltip.classList.remove('visible');
+  }
+
+  function clearSelection() {
+    if (selectedEl) {
+      selectedEl.classList.remove('ks-selected-outline');
+      selectedEl = null;
+    }
+    aiInput.placeholder = 'Ask AI...';
+  }
+
+  // Edit toggle
+  editBtn.addEventListener('click', () => {
+    editMode = !editMode;
+    editBtn.classList.toggle('active', editMode);
+    aiBar.classList.toggle('visible', editMode);
+    if (!editMode) {
+      clearHover();
+      clearSelection();
+    }
+    showToast(editMode ? 'Edit mode ON' : 'Edit mode OFF');
+  });
+
+  // Save
+  saveBtn.addEventListener('click', () => {
+    showToast('Saved', 'success');
+  });
+
+  // Undo
+  undoBtn.addEventListener('click', () => {
+    clearSelection();
+    showToast('Changes reverted');
+  });
+
+  // New page modal
+  newBtn.addEventListener('click', () => {
+    modal.classList.add('open');
+  });
+  modalClose.addEventListener('click', () => {
+    modal.classList.remove('open');
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('open');
+  });
+
+  // Components palette
+  compBtn.addEventListener('click', () => {
+    const isOpen = palette.classList.contains('visible');
+    palette.classList.toggle('visible', !isOpen);
+    compBtn.classList.toggle('active', !isOpen);
+  });
+  paletteClose.addEventListener('click', () => {
+    palette.classList.remove('visible');
+    compBtn.classList.remove('active');
+  });
+
+  // AI send
+  aiSend.addEventListener('click', () => {
+    if (aiInput.value.trim()) {
+      showToast('Sent: ' + aiInput.value.trim().slice(0, 40) + (aiInput.value.length > 40 ? '...' : ''));
+      aiInput.value = '';
+    }
+  });
+
+  // Hover & click on elements
+  main.addEventListener('mouseover', (e) => {
+    if (!editMode) return;
+    const target = e.target.closest(hoverSelector);
+    if (!target || target === selectedEl) {
+      if (!target) clearHover();
+      return;
+    }
+    clearHover();
+    hoveredEl = target;
+    hoveredEl.classList.add('ks-hover-outline');
+
+    // Position tooltip
+    const ksRect = ks.getBoundingClientRect();
+    const elRect = target.getBoundingClientRect();
+    tooltipText.textContent = getTag(target);
+    tooltip.style.left = (elRect.left - ksRect.left) + 'px';
+    tooltip.style.top = (elRect.top - ksRect.top - 28) + 'px';
+    tooltip.classList.add('visible');
+  });
+
+  main.addEventListener('mouseleave', () => {
+    clearHover();
+  });
+
+  main.addEventListener('click', (e) => {
+    if (!editMode) return;
+    const target = e.target.closest(hoverSelector);
+    if (!target) return;
+
+    clearSelection();
+    clearHover();
+
+    selectedEl = target;
+    selectedEl.classList.add('ks-selected-outline');
+    const tag = getTag(target);
+    aiInput.placeholder = 'Edit ' + tag + '...';
+
+    // Show tooltip on selected
+    const ksRect = ks.getBoundingClientRect();
+    const elRect = target.getBoundingClientRect();
+    tooltipText.textContent = tag;
+    tooltip.style.left = (elRect.left - ksRect.left) + 'px';
+    tooltip.style.top = (elRect.top - ksRect.top - 28) + 'px';
+    tooltip.classList.add('visible');
+  });
+})();
+</script>
+
+</body>
+</html>
