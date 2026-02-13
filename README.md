@@ -17,11 +17,18 @@
 ## Install
 
 ```bash
-bun install
-bun link
+bun add --global github:HelgeSverre/scaffold
 ```
 
 This registers the `scaffold` command globally.
+
+**From source** (for contributors):
+
+```bash
+git clone https://github.com/HelgeSverre/scaffold.git
+cd scaffold
+bun install && bun link
+```
 
 ## Quick Start
 
