@@ -109,14 +109,11 @@ test.describe("Editor keyboard handling", () => {
 });
 
 test.describe("Selection traversal", () => {
-  test("Shift+Up from #target selects #wrapper", async ({ page }) => {
+  test("Alt+Up from #target selects #wrapper", async ({ page }) => {
     await enterEditMode(page);
     await selectElement(page, "#target");
 
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement)?.blur?.();
-    });
-    await page.keyboard.press("Shift+ArrowUp");
+    await page.keyboard.press("Alt+ArrowUp");
 
     await expect(page.locator("#wrapper")).toHaveAttribute(
       "data-scaffold-selected",
@@ -127,37 +124,31 @@ test.describe("Selection traversal", () => {
     );
   });
 
-  test("Shift+Up from top-level element stays (no valid parent)", async ({
+  test("Alt+Up from top-level element stays (no valid parent)", async ({
     page,
   }) => {
     await enterEditMode(page);
-    // Navigate to #wrapper by selecting a child and pressing Shift+Up
+    // Navigate to #wrapper by selecting a child and pressing Alt+Up
     await selectElement(page, "#target");
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement)?.blur?.();
-    });
-    await page.keyboard.press("Shift+ArrowUp");
+    await page.keyboard.press("Alt+ArrowUp");
     await expect(page.locator("#wrapper")).toHaveAttribute(
       "data-scaffold-selected",
       ""
     );
 
-    // Now press Shift+Up again — should stay on #wrapper (body not valid)
-    await page.keyboard.press("Shift+ArrowUp");
+    // Now press Alt+Up again — should stay on #wrapper (body not valid)
+    await page.keyboard.press("Alt+ArrowUp");
     await expect(page.locator("#wrapper")).toHaveAttribute(
       "data-scaffold-selected",
       ""
     );
   });
 
-  test("Shift+Right from #first-child selects #target", async ({ page }) => {
+  test("Alt+Right from #first-child selects #target", async ({ page }) => {
     await enterEditMode(page);
     await selectElement(page, "#first-child");
 
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement)?.blur?.();
-    });
-    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Alt+ArrowRight");
 
     await expect(page.locator("#target")).toHaveAttribute(
       "data-scaffold-selected",
@@ -168,14 +159,11 @@ test.describe("Selection traversal", () => {
     );
   });
 
-  test("Shift+Left from #target selects #first-child", async ({ page }) => {
+  test("Alt+Left from #target selects #first-child", async ({ page }) => {
     await enterEditMode(page);
     await selectElement(page, "#target");
 
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement)?.blur?.();
-    });
-    await page.keyboard.press("Shift+ArrowLeft");
+    await page.keyboard.press("Alt+ArrowLeft");
 
     await expect(page.locator("#first-child")).toHaveAttribute(
       "data-scaffold-selected",
@@ -186,16 +174,13 @@ test.describe("Selection traversal", () => {
     );
   });
 
-  test("Shift+Right from #last-child stays (no next sibling)", async ({
+  test("Alt+Right from #last-child stays (no next sibling)", async ({
     page,
   }) => {
     await enterEditMode(page);
     await selectElement(page, "#last-child");
 
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement)?.blur?.();
-    });
-    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Alt+ArrowRight");
 
     await expect(page.locator("#last-child")).toHaveAttribute(
       "data-scaffold-selected",
@@ -203,18 +188,102 @@ test.describe("Selection traversal", () => {
     );
   });
 
-  test("Shift+Left from #first-child stays (no prev sibling)", async ({
+  test("Alt+Left from #first-child stays (no prev sibling)", async ({
     page,
   }) => {
     await enterEditMode(page);
     await selectElement(page, "#first-child");
 
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement)?.blur?.();
-    });
-    await page.keyboard.press("Shift+ArrowLeft");
+    await page.keyboard.press("Alt+ArrowLeft");
 
     await expect(page.locator("#first-child")).toHaveAttribute(
+      "data-scaffold-selected",
+      ""
+    );
+  });
+
+  test("Shift+Arrow does not traverse when contenteditable has focus", async ({
+    page,
+  }) => {
+    await enterEditMode(page);
+    await selectElement(page, "#target");
+    // #target is contenteditable and focused from the click — do NOT blur
+    await page.keyboard.press("Shift+ArrowUp");
+    // Bug: selection stays on #target because the handler bailed out
+    await expect(page.locator("#target")).toHaveAttribute(
+      "data-scaffold-selected",
+      ""
+    );
+    await expect(page.locator("#wrapper")).not.toHaveAttribute(
+      "data-scaffold-selected"
+    );
+  });
+
+  test("Alt+Up traverses even when contenteditable element has focus", async ({
+    page,
+  }) => {
+    await enterEditMode(page);
+    await selectElement(page, "#target");
+    // #target is contenteditable and focused — do NOT blur
+    await page.keyboard.press("Alt+ArrowUp");
+
+    await expect(page.locator("#wrapper")).toHaveAttribute(
+      "data-scaffold-selected",
+      ""
+    );
+    await expect(page.locator("#target")).not.toHaveAttribute(
+      "data-scaffold-selected"
+    );
+  });
+
+  test("Alt+Down from #wrapper selects #first-child", async ({ page }) => {
+    await enterEditMode(page);
+    // Navigate to #wrapper via Alt+Up from a child
+    await selectElement(page, "#target");
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect(page.locator("#wrapper")).toHaveAttribute(
+      "data-scaffold-selected",
+      ""
+    );
+
+    await page.keyboard.press("Alt+ArrowDown");
+
+    await expect(page.locator("#first-child")).toHaveAttribute(
+      "data-scaffold-selected",
+      ""
+    );
+  });
+
+  test("Alt+Arrow traversal blurs the previously focused element", async ({
+    page,
+  }) => {
+    await enterEditMode(page);
+    await selectElement(page, "#target");
+    // Manually focus #target to simulate user clicking into contenteditable text
+    await page.evaluate(() => {
+      (document.getElementById("target") as HTMLElement).focus();
+    });
+    const focusedBefore = await page.evaluate(
+      () => document.activeElement?.id
+    );
+    expect(focusedBefore).toBe("target");
+
+    await page.keyboard.press("Alt+ArrowUp");
+
+    // After traversal, #target should no longer be focused
+    const focusedAfter = await page.evaluate(
+      () => document.activeElement?.id
+    );
+    expect(focusedAfter).not.toBe("target");
+  });
+
+  test("Alt+Down from leaf element stays (no children)", async ({ page }) => {
+    await enterEditMode(page);
+    await selectElement(page, "#target");
+
+    await page.keyboard.press("Alt+ArrowDown");
+
+    await expect(page.locator("#target")).toHaveAttribute(
       "data-scaffold-selected",
       ""
     );
