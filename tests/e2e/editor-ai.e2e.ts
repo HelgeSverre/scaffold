@@ -87,14 +87,11 @@ test.describe("AI Edit", () => {
     await aiSubmit.click();
 
     const aiStatus = shadow(page, '[data-testid="ai-status"]');
-    await expect(aiStatus).toContainText("Done! Reloading...", {
+    await expect(aiStatus).toContainText("Done!", {
       timeout: 45_000,
     });
 
-    // Reload to see saved changes
-    await page.goto("/index");
-
-    // Target was modified
+    // Target was modified (DOM swapped client-side, no reload needed)
     const targetText = await page.locator("#target").textContent();
     expect(targetText).toContain("MODIFIED BY AI");
 
@@ -124,14 +121,11 @@ test.describe("AI Edit", () => {
 
     // Wait for AI to finish (up to 45s)
     const aiStatus = shadow(page, '[data-testid="ai-status"]');
-    await expect(aiStatus).toContainText("Done! Reloading...", {
+    await expect(aiStatus).toContainText("Done!", {
       timeout: 45_000,
     });
 
-    // Page does NOT auto-reload in edit mode, navigate explicitly
-    await page.goto("/index");
-
-    // Assert target has green style
+    // Assert target has green style (DOM swapped client-side, no reload needed)
     const style = await page.locator("#target").getAttribute("style");
     expect(style).toMatch(/green|#0+8000|rgb\(0,\s*128,\s*0\)/i);
   });
@@ -171,12 +165,9 @@ test.describe("AI Edit - Complex Page", () => {
     await aiSubmit.click();
 
     const aiStatus = shadow(page, '[data-testid="ai-status"]');
-    await expect(aiStatus).toContainText("Done! Reloading...", { timeout: 45_000 });
+    await expect(aiStatus).toContainText("Done!", { timeout: 45_000 });
 
-    // Reload to see saved changes
-    await page.goto("/06-zones");
-
-    // Assert: Total Zones card has yellow background
+    // Assert: Total Zones card has yellow background (DOM swapped client-side)
     const targetCard = page.locator('div.rounded-md.p-4', { hasText: 'Total Zones' }).first();
     const style = await targetCard.getAttribute("style");
     expect(style).toMatch(/yellow|#ff0|rgb\(255,\s*255,\s*0\)/i);

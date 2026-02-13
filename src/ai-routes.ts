@@ -4,7 +4,7 @@ import type { AIConfig, ComponentMeta } from "./types";
 import type { PageInfo } from "./html";
 import { buildAIContext, buildSystemPrompt, streamAI, claudeCode, isClaudeCodeAvailable } from "./ai";
 import { editScopedPrompt, editFullPagePrompt, createPagePrompt, generateComponentPrompt, extractComponentPrompt } from "./ai-prompts";
-import { replaceElementByXpath, stripCodeFences, validateHtmlStructure } from "./html-utils";
+import { stripCodeFences, validateHtmlStructure } from "./html-utils";
 import { scanComponents, parseComponent, writeComponent } from "./components";
 import { scaffoldPath } from "./paths";
 import { log } from "./log";
@@ -109,32 +109,21 @@ export function registerAIRoutes(ctx: AIRoutesContext) {
 
       result = stripCodeFences(result).trim();
 
-      // Apply the edit
-      let finalHtml: string;
       if (selection) {
-        // Try scoped replacement
-        const replaced = replaceElementByXpath(currentPageHtml, selection.xpath, result);
-        if (replaced !== null) {
-          finalHtml = replaced;
-        } else {
-          // Fall back to full-page if replacement fails
-          finalHtml = validateHtmlStructure(result) ? result : currentPageHtml;
-        }
+        // Scoped edit: return HTML to client for DOM swap + client-side save
+        log.ai("Edit done", `${page} — scoped edit, ${result.split("\n").length} lines`);
+        emit("done", { html: result });
       } else {
-        finalHtml = result;
+        // Full-page edit: write to disk and broadcast reload
+        recentlySaved.add(page);
+        setTimeout(() => recentlySaved.delete(page), 500);
+        await Bun.write(filePath, result);
+        wsManager.broadcast(page, { type: "reload", page });
+
+        const linesChanged = result.split("\n").length;
+        log.ai("Edit done", `${page} — ${linesChanged} lines`);
+        emit("done", { page, linesChanged });
       }
-
-      // Write to disk
-      recentlySaved.add(page);
-      setTimeout(() => recentlySaved.delete(page), 500);
-      await Bun.write(filePath, finalHtml);
-
-      // Broadcast reload
-      wsManager.broadcast(page, { type: "reload", page });
-
-      const linesChanged = finalHtml.split("\n").length;
-      log.ai("Edit done", `${page} — ${linesChanged} lines`);
-      emit("done", { page, linesChanged });
     });
   });
 

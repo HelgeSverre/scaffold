@@ -723,18 +723,38 @@
         body: JSON.stringify(body),
       });
 
+      let clientSwapHtml = null;
       await readSSEStream(res, (event, data) => {
         if (event === "status" && data.message) {
           aiStatus.textContent = data.message;
         }
         if (event === "done") {
-          aiStatus.textContent = "Done! Reloading...";
-          // Page will reload via WS broadcast
+          if (data.html) {
+            clientSwapHtml = data.html;
+            aiStatus.textContent = "Applying...";
+          } else {
+            aiStatus.textContent = "Done! Reloading...";
+            // Full-page edit: page will reload via WS broadcast
+          }
         }
         if (event === "error") {
           aiStatus.textContent = "Error: " + (data.message || "Unknown error");
         }
       });
+
+      // Scoped edit: swap element client-side and save
+      if (clientSwapHtml && selectedElement) {
+        const temp = document.createElement("div");
+        temp.innerHTML = clientSwapHtml;
+        const newEl = temp.firstElementChild;
+        if (newEl) {
+          selectedElement.replaceWith(newEl);
+          deselectElement();
+        }
+        aiStatus.textContent = "Saving...";
+        await save();
+        aiStatus.textContent = "Done!";
+      }
     } catch (err) {
       aiStatus.textContent = "Error: " + err.message;
     } finally {
