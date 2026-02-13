@@ -63,7 +63,7 @@ export async function startServer(options?: { dir?: string; port?: number }) {
   const ctx: ScaffoldContext = {
     db,
     route: (method, path, handler) => {
-      router.add(method, path, (req) => handler(req));
+      router.add(method, path, (req, params) => handler(req, params));
     },
     broadcast: (page, message) => wsManager.broadcast(page, message),
     config,

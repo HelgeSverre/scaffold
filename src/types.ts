@@ -79,7 +79,7 @@ export interface RouteEntry {
 
 export interface ScaffoldContext {
   db: Database;
-  route: (method: string, path: string, handler: (req: Request) => Response | Promise<Response>) => void;
+  route: (method: string, path: string, handler: (req: Request, params: Record<string, string>) => Response | Promise<Response>) => void;
   broadcast: (page: string, message: object) => void;
   config: ScaffoldConfig;
 }
