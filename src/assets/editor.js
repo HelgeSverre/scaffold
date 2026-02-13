@@ -511,6 +511,7 @@
       if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
       elementDragging = true;
       selectedElement.setAttribute("data-scaffold-dragging", "");
+      document.documentElement.style.userSelect = "none";
       hideTooltip();
 
       dragIndicator = document.createElement("div");
@@ -590,6 +591,7 @@
       dragIndicator.remove();
       dragIndicator = null;
     }
+    document.documentElement.style.userSelect = "";
     elementDragging = false;
     dragMouseDown = false;
     dragStartX = 0;
