@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zones - Crescat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: hsl(204, 77%, 12%);
+      --bg-sidebar: hsl(205, 64%, 14%);
+      --bg-content: hsl(204, 77%, 12%);
+      --bg-hover: hsl(205, 57%, 16%);
+      --bg-active: hsl(205, 47%, 19%);
+      --bg-input: hsl(205, 68%, 14%);
+      --bg-row: hsl(204, 77%, 12%);
+      --bg-row-alt: hsl(205, 64%, 14%);
+      --bg-row-hover: hsl(205, 57%, 16%);
+      --text-default: hsl(205, 42%, 84%);
+      --text-soft: hsl(205, 16%, 57%);
+      --text-inverted: hsl(204, 77%, 12%);
+      --text-link: hsl(203, 90%, 48%);
+      --border-default: hsl(203, 44%, 20%);
+      --border-soft: hsl(204, 52%, 17%);
+      --color-success: hsl(151, 61%, 43%);
+      --color-primary: hsl(205, 69%, 33%);
+      --color-pending: hsl(44, 88%, 66%);
+      --color-warning: hsl(0, 88%, 66%);
+      --color-highlight: #45A4E4;
+    }
+    body { background: var(--bg-main); color: var(--text-default); font-family: 'Inter', sans-serif; font-size: 14px; }
+    * { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 9999px; }
+    .btn-primary { background: var(--color-primary); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+    .btn-lg { height: 38px; padding: 0 20px; font-size: 15px; }
+    .btn-success { background: var(--color-success); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-success:hover { filter: brightness(1.15); }
+    .btn-warning { background: var(--color-warning); color: #fff; font-weight: 500; text-transform: capitalize; border-radius: 6px; padding: 0 16px; height: 30px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; cursor: pointer; }
+    .btn-warning:hover { filter: brightness(1.15); }
+    .btn-ghost { background: transparent; color: var(--text-default); font-weight: 500; border-radius: 6px; padding: 0 12px; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-default); transition: all 0.15s; cursor: pointer; }
+    .btn-ghost:hover { background: var(--bg-hover); }
+    .input-field { background: var(--bg-input); border: 1px solid var(--border-default); color: var(--text-default); border-radius: 6px; padding: 6px 12px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: var(--color-primary); }
+    .badge-active { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(151, 61%, 43%); background: hsla(151, 61%, 43%, 0.1); border: 1px solid hsla(151, 61%, 43%, 0.2); }
+    .badge-info { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: #45A4E4; background: rgba(69, 164, 228, 0.1); border: 1px solid rgba(69, 164, 228, 0.2); }
+    .badge-pending { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(44, 88%, 66%); background: hsla(44, 88%, 66%, 0.1); border: 1px solid hsla(44, 88%, 66%, 0.2); }
+    .badge-warning { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; color: hsl(0, 88%, 66%); background: hsla(0, 88%, 66%, 0.1); border: 1px solid hsla(0, 88%, 66%, 0.2); }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 16px; border-radius: 6px;
+      color: var(--text-soft); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .sidebar-link:hover { background: var(--bg-hover); color: var(--text-default); }
+    .sidebar-link.active { background: var(--bg-active); color: var(--text-default); }
+    .zone-node { transition: all 0.12s; }
+    .zone-node:hover { background: var(--bg-hover); }
+    .zone-node.selected { background: var(--bg-active); }
+    .capacity-bar { height: 6px; border-radius: 9999px; background: var(--bg-active); overflow: hidden; }
+    .capacity-fill { height: 100%; border-radius: 9999px; transition: width 0.3s ease; }
+  </style>
+</head>
+<body class="min-h-screen" x-data="zonesApp()">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4" style="height: 48px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-default);">
+    <div class="flex items-center gap-4">
+      <img src="https://crescat.io/assets/logo/logo-white.svg" alt="Crescat" style="height: 12px;">
+      <span style="color: var(--text-soft);">|</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Midgard Festival 2026</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span style="color: var(--text-soft); font-size: 13px;">Admin</span>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style="background: var(--color-primary); color: #fff;">JD</div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="fixed top-12 left-0 bottom-0 overflow-y-auto py-4 px-3" style="width:232px; background:var(--bg-sidebar); border-right:1px solid var(--border-default);">
+    <div class="mb-4 px-3">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-soft);">Main</p>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a href="01-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="02-participants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Participants
+      </a>
+      <a href="04-entitlement-items.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Entitlement Items
+      </a>
+      <a href="05-rules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Rules Engine
+      </a>
+      <a href="06-zones.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        Zones
+      </a>
+      <a href="07-checkpoints.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Checkpoints
+      </a>
+      <a href="08-allocations.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Allocations
+      </a>
+      <a href="09-credentials.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Credentials
+      </a>
+      <a href="10-scan-log.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Scan Log
+      </a>
+      <a href="13-schedules.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedules
+      </a>
+      <a href="14-equipment.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Equipment
+      </a>
+      <a href="catering.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Catering
+      </a>
+      <a href="lost-found.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Lost &amp; Found
+      </a>
+      <a href="crowd-flow.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><polyline points="22 4 22 10 16 10"/></svg>
+        Crowd Flow
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">On-Site</p>
+
+      <a href="11-scanner.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3"/><path d="M20 7V4h-3"/><path d="M4 17v3h3"/><path d="M20 17v3h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scanner
+      </a>
+      <a href="12-accreditation-office.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accreditation Office
+      </a>
+
+      <div class="my-3 mx-3" style="border-top:1px solid var(--border-soft);"></div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style="color:var(--text-soft);">Self-Service</p>
+
+      <a href="volunteer-onboarding.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Volunteer Portal
+      </a>
+      <a href="15-portal.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        Self-Service Portal
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="pt-[48px]" style="margin-left: 232px;">
+    <div class="p-6">
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-semibold text-white mb-1">Zones</h1>
+          <p style="color: var(--text-soft); font-size: 13px;">Manage the zone hierarchy and monitor real-time occupancy</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 text-xs" style="color: var(--text-soft);">
+            <span class="inline-block w-2.5 h-2.5 rounded-full" style="background: var(--color-success);"></span> Live occupancy
+          </div>
+          <button class="btn-primary" @click="showAddZone = true">+ Add Zone</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="rounded-md p-4" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;">
+          <div class="text-xs font-medium uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Zones</div>
+          <div class="text-2xl font-bold text-white">10</div>
+          <div class="text-xs" style="color: var(--text-soft);">3 with child zones</div>
+        </div>
+        <div class="rounded-md p-4" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;">
+          <div class="text-xs font-medium uppercase tracking-wider mb-1" style="color: var(--text-soft);">Total Capacity</div>
+          <div class="text-2xl font-bold text-white">5,905</div>
+          <div class="text-xs" style="color: var(--text-soft);">Across gated zones</div>
+        </div>
+        <div class="rounded-md p-4" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;">
+          <div class="text-xs font-medium uppercase tracking-wider mb-1" style="color: var(--text-soft);">Current Occupancy</div>
+          <div class="text-2xl font-bold text-white">5,094</div>
+          <div class="text-xs" style="color: var(--color-pending);">86% average fill</div>
+        </div>
+        <div class="rounded-md p-4" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;">
+          <div class="text-xs font-medium uppercase tracking-wider mb-1" style="color: var(--text-soft);">Alerts</div>
+          <div class="text-2xl font-bold" style="color: var(--color-warning);">1</div>
+          <div class="text-xs" style="color: var(--color-warning);">Main Stage at 90%</div>
+        </div>
+      </div>
+
+      <!-- Two Panel Layout -->
+      <div class="flex gap-4" style="min-height: calc(100vh - 280px);">
+
+        <!-- Zone Tree Panel -->
+        <div class="flex-shrink-0" style="width: 480px;">
+          <div class="rounded-md" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;">
+            <div class="flex items-center justify-between px-4 py-3" style="border-bottom: 1px solid var(--border-default);">
+              <span class="text-white font-medium text-sm">Zone Hierarchy</span>
+              <div class="flex items-center gap-2">
+                <button class="text-xs px-2 py-1 rounded transition-colors" style="color: var(--text-soft);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'" @click="expandAll = !expandAll" x-text="expandAll ? 'Collapse All' : 'Expand All'"></button>
+              </div>
+            </div>
+            <div class="py-2">
+              <!-- Root Zone -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" :class="{ 'selected': selectedZone === 'root' }" @click="selectedZone = 'root'">
+                <div class="flex items-center gap-2">
+                  <span style="font-size: 15px;">&#128205;</span>
+                  <span class="text-white font-semibold text-sm">Festival Site</span>
+                  <span class="text-xs" style="color: var(--text-soft);">(Midgard Festival 2026)</span>
+                </div>
+              </div>
+
+              <!-- Main Stage Area -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'main-stage' }" @click="selectedZone = 'main-stage'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm text-white font-medium">Main Stage Area</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 text-xs" style="color: var(--text-soft);">
+            <span class="inline-block w-2.5 h-2.5 rounded-full" style="background: var(--color-error);"></span> Live occupancy
+          </div>
+          <button class="btn-primary" @click="showAddZone = true">+ Add Zone</button>
+        </div>
+                </div>
+                <div class="mt-1.5" style="margin-left: 42px;">
+                  <div class="capacity-bar w-full">
+                    <div class="capacity-fill" style="width: 90%; background: var(--color-warning);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Backstage (expandable) -->
+              <div>
+                <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'backstage' }" @click="selectedZone = 'backstage'">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                      <span style="font-size: 14px;">&#128205;</span>
+                      <button class="text-xs w-4 h-4 flex items-center justify-center rounded" style="color: var(--text-soft);" @click.stop="backstageExpanded = !backstageExpanded" x-text="backstageExpanded ? '▼' : '▶'"></button>
+                      <span class="text-sm text-white font-medium">Backstage</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs" style="color: var(--color-success);">45 / 100</span>
+                      <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">45%</span>
+                    </div>
+                  </div>
+                  <div class="mt-1.5" style="margin-left: 42px;">
+                    <div class="capacity-bar w-full">
+                      <div class="capacity-fill" style="width: 45%; background: var(--color-success);"></div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Backstage Children -->
+                <div x-show="backstageExpanded || expandAll" x-transition>
+                  <!-- Green Room -->
+                  <div class="zone-node px-4 py-2 cursor-pointer" style="padding-left: 68px;" :class="{ 'selected': selectedZone === 'green-room' }" @click="selectedZone = 'green-room'">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                        <span style="font-size: 13px;">&#128205;</span>
+                        <span class="text-sm">Green Room</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs" style="color: var(--color-success);">12 / 20</span>
+                        <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">60%</span>
+                      </div>
+                    </div>
+                    <div class="mt-1" style="margin-left: 38px;">
+                      <div class="capacity-bar w-full">
+                        <div class="capacity-fill" style="width: 60%; background: var(--color-success);"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Production Office -->
+                  <div class="zone-node px-4 py-2 cursor-pointer" style="padding-left: 68px;" :class="{ 'selected': selectedZone === 'production-office' }" @click="selectedZone = 'production-office'">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                        <span style="font-size: 13px;">&#128205;</span>
+                        <span class="text-sm">Production Office</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs" style="color: var(--color-success);">8 / 15</span>
+                        <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">53%</span>
+                      </div>
+                    </div>
+                    <div class="mt-1" style="margin-left: 38px;">
+                      <div class="capacity-bar w-full">
+                        <div class="capacity-fill" style="width: 53%; background: var(--color-success);"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Artist Lounge -->
+                  <div class="zone-node px-4 py-2 cursor-pointer" style="padding-left: 68px;" :class="{ 'selected': selectedZone === 'artist-lounge' }" @click="selectedZone = 'artist-lounge'">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span style="font-size: 13px; color: var(--text-soft);">&#9492;&#9472;</span>
+                        <span style="font-size: 13px;">&#128205;</span>
+                        <span class="text-sm">Artist Lounge</span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs" style="color: var(--color-success);">6 / 25</span>
+                        <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">24%</span>
+                      </div>
+                    </div>
+                    <div class="mt-1" style="margin-left: 38px;">
+                      <div class="capacity-bar w-full">
+                        <div class="capacity-fill" style="width: 24%; background: var(--color-success);"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VIP Area -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'vip-area' }" @click="selectedZone = 'vip-area'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm text-white font-medium">VIP Area</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs" style="color: var(--color-success);">120 / 200</span>
+                    <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">60%</span>
+                  </div>
+                </div>
+                <div class="mt-1.5" style="margin-left: 42px;">
+                  <div class="capacity-bar w-full">
+                    <div class="capacity-fill" style="width: 60%; background: var(--color-success);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Media Center -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'media-center' }" @click="selectedZone = 'media-center'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm">Media Center</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs" style="color: var(--color-success);">18 / 30</span>
+                    <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">60%</span>
+                  </div>
+                </div>
+                <div class="mt-1.5" style="margin-left: 42px;">
+                  <div class="capacity-bar w-full">
+                    <div class="capacity-fill" style="width: 60%; background: var(--color-success);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Press Area -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'press-area' }" @click="selectedZone = 'press-area'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm">Press Area</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs" style="color: var(--color-success);">5 / 15</span>
+                    <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">33%</span>
+                  </div>
+                </div>
+                <div class="mt-1.5" style="margin-left: 42px;">
+                  <div class="capacity-bar w-full">
+                    <div class="capacity-fill" style="width: 33%; background: var(--color-success);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Food Court -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'food-court' }" @click="selectedZone = 'food-court'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm">Food Court</span>
+                  </div>
+                  <span class="text-xs" style="color: var(--text-soft);">no capacity limit</span>
+                </div>
+              </div>
+
+              <!-- Equipment Tent -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'equipment-tent' }" @click="selectedZone = 'equipment-tent'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm">Equipment Tent</span>
+                  </div>
+                  <span class="text-xs" style="color: var(--text-soft);">no gate, storage only</span>
+                </div>
+              </div>
+
+              <!-- Camping Area -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'camping-area' }" @click="selectedZone = 'camping-area'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9500;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm">Camping Area</span>
+                  </div>
+                  <span class="text-xs" style="color: var(--text-soft);">no capacity limit</span>
+                </div>
+              </div>
+
+              <!-- Parking Area -->
+              <div class="zone-node px-4 py-2.5 cursor-pointer" style="padding-left: 36px;" :class="{ 'selected': selectedZone === 'parking-area' }" @click="selectedZone = 'parking-area'">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span style="font-size: 13px; color: var(--text-soft);">&#9492;&#9472;</span>
+                    <span style="font-size: 14px;">&#128205;</span>
+                    <span class="text-sm">Parking Area</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs" style="color: var(--color-success);">340 / 500</span>
+                    <span class="badge-active" style="font-size: 10px; padding: 1px 6px;">68%</span>
+                  </div>
+                </div>
+                <div class="mt-1.5" style="margin-left: 42px;">
+                  <div class="capacity-bar w-full">
+                    <div class="capacity-fill" style="width: 68%; background: var(--color-success);"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <!-- Add Zone Button -->
+            <div class="px-4 py-3" style="border-top: 1px solid var(--border-default);">
+              <button class="w-full text-left px-4 py-2 rounded-md text-sm transition-colors" style="color: var(--color-highlight); border: 1px dashed var(--border-default);" @click="showAddZone = true" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">+ Add Zone</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Panel -->
+        <div class="flex-1 min-w-0">
+          <div class="rounded-md" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;" x-show="selectedZone" x-transition>
+            <!-- Zone Detail Header -->
+            <div class="flex items-center justify-between px-5 py-4" style="border-bottom: 1px solid var(--border-default);">
+              <div class="flex items-center gap-3">
+                <span style="font-size: 18px;">&#128205;</span>
+                <div>
+                  <h2 class="text-white font-semibold text-base" x-text="zoneDetails[selectedZone]?.name || 'Select a zone'"></h2>
+                  <div class="text-xs mt-0.5" style="color: var(--text-soft);" x-text="'Parent: ' + (zoneDetails[selectedZone]?.parent || 'None (root)')"></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="btn-ghost btn-sm" @click="showToast('Edit zone: ' + (zoneDetails[selectedZone]?.name || '') + ' (coming soon)')"><span style="font-size: 11px;">&#9998;</span> Edit</button>
+                <button class="btn-ghost btn-sm" style="border-color: hsla(0,88%,66%,0.3); color: hsl(0,88%,66%);" @click="confirmAction = {title: 'Delete Zone', message: 'Are you sure you want to delete ' + (zoneDetails[selectedZone]?.name || 'this zone') + '?', action: () => { delete zoneDetails[selectedZone]; selectedZone = 'root'; showToast('Zone deleted'); }}">
+                  <span style="font-size: 11px;">&#10005;</span> Delete
+                </button>
+              </div>
+            </div>
+
+            <div class="px-5 py-5 space-y-6">
+              <!-- Quick Stats -->
+              <div class="grid grid-cols-3 gap-4">
+                <div class="rounded-md p-3" style="background: var(--bg-active);">
+                  <div class="text-xs" style="color: var(--text-soft);">Capacity</div>
+                  <div class="text-lg font-bold text-white" x-text="zoneDetails[selectedZone]?.capacity || 'Unlimited'"></div>
+                </div>
+                <div class="rounded-md p-3" style="background: var(--bg-active);">
+                  <div class="text-xs" style="color: var(--text-soft);">Current Occupancy</div>
+                  <div class="text-lg font-bold" :style="'color: ' + (zoneDetails[selectedZone]?.occupancyColor || 'var(--text-default)')" x-text="zoneDetails[selectedZone]?.occupancy ?? '---'"></div>
+                </div>
+                <div class="rounded-md p-3" style="background: var(--bg-active);">
+                  <div class="text-xs" style="color: var(--text-soft);">Checkpoints</div>
+                  <div class="text-lg font-bold text-white" x-text="zoneDetails[selectedZone]?.checkpointCount ?? 0"></div>
+                </div>
+              </div>
+
+              <!-- Capacity Bar (large) -->
+              <div x-show="zoneDetails[selectedZone]?.capacity !== 'Unlimited'">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-white">Occupancy</span>
+                  <span class="text-sm" :style="'color: ' + (zoneDetails[selectedZone]?.occupancyColor || 'var(--text-soft)')" x-text="zoneDetails[selectedZone]?.occupancyPct + '% full'"></span>
+                </div>
+                <div class="w-full rounded-full overflow-hidden" style="height: 10px; background: var(--bg-active);">
+                  <div class="h-full rounded-full transition-all duration-500" :style="'width: ' + (zoneDetails[selectedZone]?.occupancyPct || 0) + '%; background: ' + (zoneDetails[selectedZone]?.occupancyColor || 'var(--color-success)')"></div>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div x-show="zoneDetails[selectedZone]?.description">
+                <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Description</h4>
+                <p class="text-sm" x-text="zoneDetails[selectedZone]?.description"></p>
+              </div>
+
+              <!-- Child Zones -->
+              <div x-show="zoneDetails[selectedZone]?.children?.length > 0">
+                <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Child Zones</h4>
+                <div class="space-y-1">
+                  <template x-for="child in (zoneDetails[selectedZone]?.children || [])" :key="child">
+                    <div class="flex items-center justify-between px-3 py-2 rounded text-sm" style="background: var(--bg-active);">
+                      <span class="flex items-center gap-2">
+                        <span style="font-size: 12px;">&#128205;</span>
+                        <span x-text="child"></span>
+                      </span>
+                      <button class="text-xs" style="color: var(--color-highlight);">View</button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Checkpoints -->
+              <div x-show="zoneDetails[selectedZone]?.checkpoints?.length > 0">
+                <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Checkpoints at this Zone</h4>
+                <div class="space-y-1">
+                  <template x-for="cp in (zoneDetails[selectedZone]?.checkpoints || [])" :key="cp">
+                    <div class="flex items-center justify-between px-3 py-2 rounded text-sm" style="background: var(--bg-active);">
+                      <span class="flex items-center gap-2">
+                        <span style="font-size: 12px;">&#9635;</span>
+                        <span x-text="cp"></span>
+                      </span>
+                      <span class="badge-active" style="font-size: 10px;">Online</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Access Items -->
+              <div x-show="zoneDetails[selectedZone]?.accessItems?.length > 0">
+                <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-soft);">Access Items That Grant Entry</h4>
+                <div class="flex flex-wrap gap-2">
+                  <template x-for="item in (zoneDetails[selectedZone]?.accessItems || [])" :key="item">
+                    <span class="badge-info" x-text="item"></span>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Currently Inside -->
+              <div x-show="zoneDetails[selectedZone]?.occupants?.length > 0">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft);">Currently Inside</h4>
+                  <span class="text-xs" style="color: var(--text-soft);" x-text="'Showing first 8 of ' + (zoneDetails[selectedZone]?.occupancy || 0)"></span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead>
+                      <tr style="border-bottom: 1px solid var(--border-default);">
+                        <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft);">Participant</th>
+                        <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft);">Entered At</th>
+                        <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style="color: var(--text-soft);">Credential</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="(occ, oi) in (zoneDetails[selectedZone]?.occupants || [])" :key="oi">
+                        <tr :style="oi % 2 === 0 ? 'background: var(--bg-row)' : 'background: var(--bg-row-alt)'" style="border-bottom: 1px solid var(--border-soft);">
+                          <td class="px-3 py-2 text-sm">
+                            <div class="flex items-center gap-2">
+                              <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold" style="background: var(--bg-active); color: var(--text-default);" x-text="occ.name.split(' ').map(n => n[0]).join('')"></div>
+                              <span class="text-white" x-text="occ.name"></span>
+                            </div>
+                          </td>
+                          <td class="px-3 py-2 text-sm" style="color: var(--text-soft);" x-text="occ.enteredAt"></td>
+                          <td class="px-3 py-2 text-sm">
+                            <span class="badge-info" style="font-size: 11px;" x-text="occ.credential"></span>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="mt-2 text-center">
+                  <button class="text-xs" style="color: var(--color-highlight);" @click="showToast('Full occupant list coming soon')">View all occupants</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="rounded-md flex items-center justify-center" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px; min-height: 300px;" x-show="!selectedZone">
+            <div class="text-center">
+              <span style="font-size: 40px; color: var(--text-soft);">&#128205;</span>
+              <p class="mt-2 text-sm" style="color: var(--text-soft);">Select a zone from the tree to view details</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Zone Modal -->
+  <div x-show="showAddZone" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showAddZone = false" x-transition>
+    <div class="w-full max-w-md rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <h3 class="text-white font-semibold text-base">Add Zone</h3>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showAddZone = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Zone Name</label>
+          <input type="text" class="input-field w-full" placeholder="e.g. VIP Terrace" x-model="newZone.name">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Parent Zone</label>
+          <select class="input-field w-full" x-model="newZone.parent">
+            <option value="root">Festival Site (root)</option>
+            <option value="backstage">Backstage</option>
+            <option value="vip-area">VIP Area</option>
+            <option value="main-stage">Main Stage Area</option>
+            <option value="media-center">Media Center</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Capacity</label>
+          <div class="flex items-center gap-3">
+            <input type="number" class="input-field flex-1" placeholder="e.g. 100" min="0" x-model="newZone.capacity">
+            <label class="flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap">
+              <input type="checkbox" class="accent-blue-500" x-model="newZone.noLimit">
+              <span>No limit</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1.5" style="color: var(--text-soft);">Description</label>
+          <textarea class="input-field w-full" rows="3" placeholder="Optional description of this zone..." x-model="newZone.description"></textarea>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" class="accent-blue-500" x-model="newZone.hasGate">
+            <span>Has gate (enables entry/exit scanning)</span>
+          </label>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-ghost" @click="showAddZone = false">Cancel</button>
+        <button class="btn-success" @click="if(!newZone.name.trim()) { showToast('Zone name is required'); return; }
+  const slug = newZone.name.toLowerCase().replace(/\s+/g, '-');
+  const parentName = newZone.parent === 'root' ? 'Festival Site' : (zoneDetails[newZone.parent]?.name || 'Festival Site');
+  zoneDetails[slug] = {
+    name: newZone.name,
+    parent: parentName,
+    capacity: newZone.noLimit ? 'Unlimited' : (newZone.capacity || 'Unlimited'),
+    occupancy: 0,
+    occupancyPct: 0,
+    occupancyColor: 'var(--color-success)',
+    description: newZone.description,
+    checkpointCount: 0,
+    children: [],
+    checkpoints: [],
+    accessItems: [],
+    occupants: []
+  };
+  if(zoneDetails[newZone.parent] && zoneDetails[newZone.parent].children) {
+    zoneDetails[newZone.parent].children.push(newZone.name);
+  }
+  selectedZone = slug;
+  newZone = {name:'', parent:'root', capacity:'', noLimit:false, description:'', hasGate:true};
+  showAddZone = false;
+  showToast('Zone &quot;' + zoneDetails[slug].name + '&quot; created')">Create Zone</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Overlay -->
+  <button class="fixed bottom-6 right-6 z-[90] w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition-transform hover:scale-110" style="background: var(--color-primary);" @click="showHelp = true">?</button>
+
+  <div x-show="showHelp" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(0,0,0,0.6);" @click.self="showHelp = false" x-transition>
+    <div class="w-full max-w-lg rounded-lg shadow-2xl overflow-hidden" style="background: var(--bg-sidebar); border: 1px solid var(--border-default); border-radius: 6px;" @click.stop>
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid var(--border-default);">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style="background: var(--color-primary); color: #fff;">?</span>
+          <h3 class="text-white font-semibold text-base">About This Screen</h3>
+        </div>
+        <button class="w-7 h-7 rounded flex items-center justify-center transition-colors" style="color: var(--text-soft);" @click="showHelp = false" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">&#10005;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4 text-sm leading-relaxed">
+        <p>The <strong class="text-white">Zones</strong> screen manages the physical areas of your festival site. Zones can be hierarchical &mdash; access to a parent zone (Backstage) implies access to all child zones (Green Room, Production Office).</p>
+        <div class="rounded-md p-3" style="background: var(--bg-active); border-left: 3px solid var(--color-highlight);">
+          <p class="font-medium text-white mb-1">Workflow Coverage</p>
+          <p style="color: var(--text-soft);">This screen covers the <em>Zone Configuration</em> and <em>Real-Time Occupancy Monitoring</em> workflows from the proposal.</p>
+        </div>
+        <div>
+          <p class="font-medium text-white mb-2">Key Concepts:</p>
+          <ul class="space-y-1.5" style="color: var(--text-soft);">
+            <li><strong class="text-white">Hierarchy</strong> &mdash; Zones nest inside parent zones; access propagates downward</li>
+            <li><strong class="text-white">Capacity</strong> &mdash; Optional limit with real-time tracking via directional scanning (in/out)</li>
+            <li><strong class="text-white">Checkpoints</strong> &mdash; Physical scan points that control entry/exit to a zone</li>
+            <li><strong class="text-white">Access Items</strong> &mdash; Entitlement items (passes) that grant entry to this zone</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium text-white mb-2">Key Interactions:</p>
+          <ul class="space-y-1" style="color: var(--text-soft);">
+            <li>&#8226; Click zones in the tree to view details in the right panel</li>
+            <li>&#8226; Expand/collapse parent zones to see children</li>
+            <li>&#8226; Add new zones with the form (specifying parent and capacity)</li>
+            <li>&#8226; Color-coded capacity bars: green (&lt;70%), yellow (70-90%), red (&gt;90%)</li>
+          </ul>
+        </div>
+        <p style="color: var(--text-soft);">The zone hierarchy is inspired by Gallagher Security's access zone model.</p>
+      </div>
+      <div class="flex justify-end px-6 py-4" style="border-top: 1px solid var(--border-default);">
+        <button class="btn-primary" @click="showHelp = false">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div x-show="confirmAction" x-transition.opacity class="fixed inset-0 z-[110] flex items-center justify-center" style="background:rgba(0,0,0,0.6);">
+    <div @click.stop class="w-full max-w-sm rounded-lg p-6" style="background:var(--bg-sidebar); border:1px solid var(--border-default);">
+      <h3 class="font-semibold mb-2 text-white" x-text="confirmAction?.title"></h3>
+      <p class="text-sm mb-4" style="color:var(--text-soft);" x-text="confirmAction?.message"></p>
+      <div class="flex justify-end gap-2">
+        <button class="btn-ghost" @click="confirmAction = null">Cancel</button>
+        <button class="btn-warning" @click="confirmAction?.action(); confirmAction = null">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div x-show="toast" x-transition class="fixed top-16 right-6 z-[110] px-4 py-2 rounded-md text-sm font-medium" style="background:var(--color-primary); color:white;" x-text="toast"></div>
+
+  <script>
+    function zonesApp() {
+      return {
+        showAddZone: false,
+        showHelp: false,
+        selectedZone: 'backstage',
+        backstageExpanded: true,
+        expandAll: false,
+        newZone: {name: '', parent: 'root', capacity: '', noLimit: false, description: '', hasGate: true},
+        toast: null,
+        confirmAction: null,
+        showToast(msg) { this.toast = msg; setTimeout(() => this.toast = null, 3000); },
+        zoneDetails: {
+          'root': {
+            name: 'Festival Site',
+            parent: null,
+            capacity: 'Unlimited',
+            occupancy: 5094,
+            occupancyPct: null,
+            occupancyColor: 'var(--text-default)',
+            description: 'The root zone encompassing the entire Midgard Festival 2026 site. All other zones are children of this zone.',
+            checkpointCount: 2,
+            children: ['Main Stage Area', 'Backstage', 'VIP Area', 'Media Center', 'Press Area', 'Food Court', 'Equipment Tent', 'Camping Area', 'Parking Area'],
+            checkpoints: ['Main Entrance Gate', 'South Entrance Gate'],
+            accessItems: [],
+            occupants: [],
+          },
+          'main-stage': {
+            name: 'Main Stage Area',
+            parent: 'Festival Site',
+            capacity: '5,000',
+            occupancy: 4500,
+            occupancyPct: 90,
+            occupancyColor: 'var(--color-warning)',
+            description: 'The primary performance area including standing area and seated sections. Capacity limit is set by fire safety regulations.',
+            checkpointCount: 3,
+            children: [],
+            checkpoints: ['Main Stage Gate A', 'Main Stage Gate B', 'Main Stage VIP Entry'],
+            accessItems: ['AAA-Access'],
+            occupants: [
+              { name: 'Karl Stromberg', enteredAt: '14:32', credential: 'Crew Wristband' },
+              { name: 'Anna Larsen', enteredAt: '14:28', credential: 'AAA-Access' },
+              { name: 'Erik Johansson', enteredAt: '14:15', credential: 'Crew Wristband' },
+              { name: 'Sofia Nilsson', enteredAt: '14:02', credential: 'AAA-Access' },
+              { name: 'Bjorn Gustafsson', enteredAt: '13:55', credential: 'Crew Wristband' },
+              { name: 'Frida Karlsson', enteredAt: '13:48', credential: 'Crew Wristband' },
+              { name: 'Oskar Lund', enteredAt: '13:41', credential: 'AAA-Access' },
+              { name: 'Maja Persson', enteredAt: '13:35', credential: 'Crew Wristband' },
+            ],
+          },
+          'backstage': {
+            name: 'Backstage',
+            parent: 'Festival Site',
+            capacity: '100',
+            occupancy: 45,
+            occupancyPct: 45,
+            occupancyColor: 'var(--color-success)',
+            description: 'Restricted backstage area accessible to artists, production crew, and authorized personnel. Contains Green Room, Production Office, and Artist Lounge.',
+            checkpointCount: 2,
+            children: ['Green Room', 'Production Office', 'Artist Lounge'],
+            checkpoints: ['Backstage Gate A', 'Backstage Gate B'],
+            accessItems: ['AAA-Access', 'Backstage Pass'],
+            occupants: [
+              { name: 'Rebecca Artist', enteredAt: '15:02', credential: 'AAA-Access' },
+              { name: 'Martin Kontakt', enteredAt: '14:58', credential: 'Backstage Pass' },
+              { name: 'Julia Booking', enteredAt: '14:45', credential: 'AAA-Access' },
+              { name: 'Simon Backstage', enteredAt: '14:32', credential: 'Backstage Pass' },
+              { name: 'Amanda Rider', enteredAt: '14:20', credential: 'AAA-Access' },
+              { name: 'Marcus Ledare', enteredAt: '14:12', credential: 'Backstage Pass' },
+              { name: 'Filippa Chef', enteredAt: '13:58', credential: 'AAA-Access' },
+              { name: 'Anders Boss', enteredAt: '13:42', credential: 'Backstage Pass' },
+            ],
+          },
+          'green-room': {
+            name: 'Green Room',
+            parent: 'Backstage',
+            capacity: '20',
+            occupancy: 12,
+            occupancyPct: 60,
+            occupancyColor: 'var(--color-success)',
+            description: 'Artist green room for performers before and after their sets. Catering available.',
+            checkpointCount: 1,
+            children: [],
+            checkpoints: ['Green Room Door'],
+            accessItems: ['AAA-Access', 'Backstage Pass'],
+            occupants: [
+              { name: 'Artist Alpha', enteredAt: '15:10', credential: 'AAA-Access' },
+              { name: 'Artist Beta', enteredAt: '15:05', credential: 'AAA-Access' },
+              { name: 'Manager Gamma', enteredAt: '14:55', credential: 'Backstage Pass' },
+              { name: 'Tech Delta', enteredAt: '14:40', credential: 'AAA-Access' },
+            ],
+          },
+          'production-office': {
+            name: 'Production Office',
+            parent: 'Backstage',
+            capacity: '15',
+            occupancy: 8,
+            occupancyPct: 53,
+            occupancyColor: 'var(--color-success)',
+            description: 'Main production office for festival management, scheduling, and coordination.',
+            checkpointCount: 1,
+            children: [],
+            checkpoints: ['Production Office Door'],
+            accessItems: ['AAA-Access'],
+            occupants: [
+              { name: 'Peter Bygg', enteredAt: '09:15', credential: 'AAA-Access' },
+              { name: 'Sandra Logistik', enteredAt: '09:30', credential: 'AAA-Access' },
+              { name: 'Mikael Teknik', enteredAt: '10:00', credential: 'AAA-Access' },
+              { name: 'Eva Planering', enteredAt: '10:45', credential: 'AAA-Access' },
+            ],
+          },
+          'artist-lounge': {
+            name: 'Artist Lounge',
+            parent: 'Backstage',
+            capacity: '25',
+            occupancy: 6,
+            occupancyPct: 24,
+            occupancyColor: 'var(--color-success)',
+            description: 'Relaxed lounge area for artists and their guests with refreshments and entertainment.',
+            checkpointCount: 0,
+            children: [],
+            checkpoints: [],
+            accessItems: ['AAA-Access', 'Backstage Pass', 'VIP Lounge Access'],
+            occupants: [
+              { name: 'DJ Sunshine', enteredAt: '14:30', credential: 'AAA-Access' },
+              { name: 'MC Thunder', enteredAt: '14:15', credential: 'AAA-Access' },
+              { name: 'Singer Moon', enteredAt: '13:50', credential: 'AAA-Access' },
+            ],
+          },
+          'vip-area': {
+            name: 'VIP Area',
+            parent: 'Festival Site',
+            capacity: '200',
+            occupancy: 120,
+            occupancyPct: 60,
+            occupancyColor: 'var(--color-success)',
+            description: 'Premium viewing area with elevated platform, private bar, and dedicated restrooms.',
+            checkpointCount: 2,
+            children: [],
+            checkpoints: ['VIP Entrance', 'VIP Side Gate'],
+            accessItems: ['AAA-Access', 'VIP Pass', 'VIP Lounge Access'],
+            occupants: [
+              { name: 'David Andersson', enteredAt: '14:50', credential: 'VIP Pass' },
+              { name: 'Camilla Pettersson', enteredAt: '14:42', credential: 'VIP Pass' },
+              { name: 'Oscar Magnusson', enteredAt: '14:35', credential: 'VIP Pass' },
+              { name: 'Isabella Wallin', enteredAt: '14:28', credential: 'VIP Pass' },
+              { name: 'Felix Sundqvist', enteredAt: '14:20', credential: 'VIP Pass' },
+              { name: 'Helga Lindgren', enteredAt: '14:12', credential: 'AAA-Access' },
+              { name: 'Anton Bergman', enteredAt: '14:05', credential: 'VIP Pass' },
+              { name: 'Vera Sjostrom', enteredAt: '13:58', credential: 'VIP Lounge Access' },
+            ],
+          },
+          'media-center': {
+            name: 'Media Center',
+            parent: 'Festival Site',
+            capacity: '30',
+            occupancy: 18,
+            occupancyPct: 60,
+            occupancyColor: 'var(--color-success)',
+            description: 'Press and media workspace with power, Wi-Fi, and interview area.',
+            checkpointCount: 1,
+            children: [],
+            checkpoints: ['Media Center Entrance'],
+            accessItems: ['AAA-Access', 'Media Pass'],
+            occupants: [
+              { name: 'Johan Press', enteredAt: '10:00', credential: 'Media Pass' },
+              { name: 'Linnea Reporter', enteredAt: '10:30', credential: 'Media Pass' },
+              { name: 'Andreas Foto', enteredAt: '11:00', credential: 'Media Pass' },
+              { name: 'Hanna Nyheter', enteredAt: '11:45', credential: 'Media Pass' },
+              { name: 'Mikael Media', enteredAt: '12:15', credential: 'Media Pass' },
+            ],
+          },
+          'press-area': {
+            name: 'Press Area',
+            parent: 'Festival Site',
+            capacity: '15',
+            occupancy: 5,
+            occupancyPct: 33,
+            occupancyColor: 'var(--color-success)',
+            description: 'Dedicated photo pit and press viewing area adjacent to the main stage.',
+            checkpointCount: 1,
+            children: [],
+            checkpoints: ['Press Area Gate'],
+            accessItems: ['AAA-Access', 'Media Pass'],
+            occupants: [
+              { name: 'Andreas Foto', enteredAt: '14:30', credential: 'Media Pass' },
+              { name: 'Linnea Reporter', enteredAt: '14:25', credential: 'Media Pass' },
+            ],
+          },
+          'food-court': {
+            name: 'Food Court',
+            parent: 'Festival Site',
+            capacity: 'Unlimited',
+            occupancy: null,
+            occupancyPct: null,
+            occupancyColor: 'var(--text-default)',
+            description: 'Open-access food and beverage area with multiple vendor stalls. No gate or capacity tracking.',
+            checkpointCount: 0,
+            children: [],
+            checkpoints: [],
+            accessItems: [],
+            occupants: [],
+          },
+          'equipment-tent': {
+            name: 'Equipment Tent',
+            parent: 'Festival Site',
+            capacity: 'Unlimited',
+            occupancy: null,
+            occupancyPct: null,
+            occupancyColor: 'var(--text-default)',
+            description: 'Storage and distribution point for equipment (radios, vests, toolboxes). No gate scanning, storage only.',
+            checkpointCount: 0,
+            children: [],
+            checkpoints: [],
+            accessItems: [],
+            occupants: [],
+          },
+          'camping-area': {
+            name: 'Camping Area',
+            parent: 'Festival Site',
+            capacity: 'Unlimited',
+            occupancy: null,
+            occupancyPct: null,
+            occupancyColor: 'var(--text-default)',
+            description: 'Crew and volunteer camping area. No capacity limit or gate scanning.',
+            checkpointCount: 0,
+            children: [],
+            checkpoints: [],
+            accessItems: [],
+            occupants: [],
+          },
+          'parking-area': {
+            name: 'Parking Area',
+            parent: 'Festival Site',
+            capacity: '500',
+            occupancy: 340,
+            occupancyPct: 68,
+            occupancyColor: 'var(--color-success)',
+            description: 'Main vehicle parking area with ANPR-enabled entry and exit gates.',
+            checkpointCount: 2,
+            children: [],
+            checkpoints: ['Parking Entry Gate', 'Parking Exit Gate'],
+            accessItems: [],
+            occupants: [
+              { name: 'Vehicle: ABC 123', enteredAt: '08:30', credential: 'Parking Permit' },
+              { name: 'Vehicle: XYZ 789', enteredAt: '09:15', credential: 'Parking Permit' },
+              { name: 'Vehicle: DEF 456', enteredAt: '09:45', credential: 'Crew Parking' },
+              { name: 'Vehicle: GHI 012', enteredAt: '10:20', credential: 'VIP Parking' },
+              { name: 'Vehicle: JKL 345', enteredAt: '10:55', credential: 'Parking Permit' },
+              { name: 'Vehicle: MNO 678', enteredAt: '11:30', credential: 'Crew Parking' },
+              { name: 'Vehicle: PQR 901', enteredAt: '12:00', credential: 'Parking Permit' },
+              { name: 'Vehicle: STU 234', enteredAt: '12:45', credential: 'VIP Parking' },
+            ],
+          },
+        },
+      };
+    }
+  </script>
+</body>
+</html>
