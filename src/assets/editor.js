@@ -32,6 +32,14 @@
 
   // ─── Shadow DOM Setup ─────────────────────────────────────────────────────────
 
+  if (!document.querySelector('link[data-scaffold-fonts]')) {
+    const fontLink = document.createElement("link");
+    fontLink.rel = "stylesheet";
+    fontLink.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+    fontLink.setAttribute("data-scaffold-fonts", "");
+    document.head.appendChild(fontLink);
+  }
+
   const host = document.createElement("scaffold-editor");
   document.body.appendChild(host);
   const shadow = host.attachShadow({ mode: "closed" });
@@ -48,23 +56,23 @@
   selectionStyle.setAttribute("data-scaffold-selection", "");
   selectionStyle.textContent = `
     [data-scaffold-selected] {
-      outline: 2px dashed #38bdf8 !important;
+      outline: 2px dashed #14B8A6 !important;
       outline-offset: 2px !important;
     }
     [data-scaffold-hovered] {
-      outline: 1px solid rgba(148, 163, 184, 0.5) !important;
-      outline-offset: 1px !important;
+      outline: 2px solid rgba(20, 184, 166, 0.30) !important;
+      outline-offset: 2px !important;
     }
     .scaffold-insertion-indicator {
       position: absolute;
       left: 0;
       right: 0;
       height: 3px;
-      background: #38bdf8;
+      background: #14B8A6;
       pointer-events: none;
       z-index: 2147483646;
       border-radius: 2px;
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+      box-shadow: 0 0 8px rgba(20, 184, 166, 0.40);
     }
     [data-scaffold-dragging] {
       opacity: 0.4 !important;
@@ -79,35 +87,25 @@
   toolbar.className = "scaffold-toolbar";
 
   let toolbarHtml = `
-    <button class="scaffold-btn" data-action="edit" data-testid="edit-btn">
-      <span class="icon">&#9998;</span> Edit
-    </button>
-    <button class="scaffold-btn" data-action="save" data-testid="save-btn" style="display:none">
-      <span class="icon">&#128190;</span> Save
-    </button>
-    <button class="scaffold-btn" data-action="undo" data-testid="undo-btn" style="display:none">
-      <span class="icon">&#8634;</span> Undo
-    </button>`;
+    <button class="scaffold-btn" data-action="save" data-testid="save-btn" style="display:none" title="Save changes to disk">Save</button>
+    <button class="scaffold-btn" data-action="undo" data-testid="undo-btn" style="display:none" title="Revert unsaved changes">Undo</button>`;
 
   if (AI_ENABLED) {
     toolbarHtml += `
-    <button class="scaffold-btn" data-action="new-page" data-testid="new-page-btn" style="display:none" title="Create new page">
-      <span class="icon">+</span>
-    </button>
-    <button class="scaffold-btn" data-action="components" data-testid="components-btn" style="display:none" title="Component palette">
-      <span class="icon">&#9645;</span>
-    </button>
-    <button class="scaffold-btn" data-action="extract" data-testid="extract-btn" style="display:none" title="Extract component">
-      <span class="icon">&#8689;</span> Extract
-    </button>`;
+    <button class="scaffold-btn" data-action="new-page" data-testid="new-page-btn" style="display:none" title="Create a new prototype page">New</button>
+    <button class="scaffold-btn" data-action="components" data-testid="components-btn" style="display:none" title="Browse and insert components">Components</button>
+    <button class="scaffold-btn" data-action="extract" data-testid="extract-btn" style="display:none" title="Extract selection as reusable component">Extract</button>`;
   }
 
   toolbarHtml += `
+    <button class="scaffold-btn" data-action="edit" data-testid="edit-btn" title="Toggle edit mode">Edit</button>
     <div class="scaffold-divider"></div>
     <div class="scaffold-viewers">
       <span class="dot"></span>
       <span data-viewers>1</span>
     </div>
+    <div class="scaffold-divider"></div>
+    <span class="scaffold-wordmark">scaffold<span class="scaffold-wordmark-dot">.</span></span>
   `;
   toolbar.innerHTML = toolbarHtml;
   shadow.appendChild(toolbar);
@@ -137,8 +135,8 @@
     aiBar.innerHTML = `
       <div class="scaffold-ai-input-row">
         <input type="text" class="scaffold-ai-input" data-testid="ai-input" placeholder="Ask AI..." />
-        <button class="scaffold-btn scaffold-ai-submit" data-testid="ai-submit" title="Submit">&#9166;</button>
-        <button class="scaffold-btn scaffold-ai-history-btn" title="History">&#9201;</button>
+        <button class="scaffold-btn scaffold-ai-submit" data-testid="ai-submit" title="Send prompt to AI">Send</button>
+        <button class="scaffold-btn scaffold-ai-history-btn" title="Show recent prompts">History</button>
       </div>
       <div class="scaffold-ai-status" data-testid="ai-status"></div>
       <div class="scaffold-ai-history"></div>
@@ -300,7 +298,6 @@
   function enterEditMode() {
     editMode = true;
     editBtn.classList.add("active");
-    editBtn.querySelector(".icon").innerHTML = "&#9998;";
     saveBtn.style.display = "";
     undoBtn.style.display = "";
 
@@ -1343,6 +1340,9 @@
 
       // Remove insertion indicator if present
       clone.querySelectorAll(".scaffold-insertion-indicator").forEach((el) => el.remove());
+
+      // Remove scaffold font link
+      clone.querySelectorAll('link[data-scaffold-fonts]').forEach((l) => l.remove());
 
       const html = "<!DOCTYPE html>\n" + clone.outerHTML;
 

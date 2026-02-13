@@ -261,6 +261,19 @@ body {
   background: var(--success);
 }
 
+.scaffold-wordmark {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: -0.25px;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+.scaffold-wordmark .scaffold-wordmark-dot {
+  color: var(--primary);
+}
+
 /* ─── Keyboard Shortcut Hint ───────────────────────────────────────────────── */
 .scaffold-shortcut {
   font-size: 10px;
@@ -1270,14 +1283,16 @@ select.scaffold-ai-input {
       <div class="comparison-panel">
         <div class="comparison-panel-title new">After (text labels)</div>
         <div class="scaffold-toolbar" style="position: static; cursor: default">
-          <button class="scaffold-btn active" title="Toggle edit mode">Edit</button>
           <button class="scaffold-btn" title="Save changes to disk">Save</button>
           <button class="scaffold-btn" title="Revert unsaved changes">Undo</button>
           <button class="scaffold-btn" title="Create a new prototype page">New</button>
           <button class="scaffold-btn active" title="Browse and insert components">Components</button>
           <button class="scaffold-btn" title="Extract selection as reusable component">Extract</button>
+          <button class="scaffold-btn active" title="Toggle edit mode">Edit</button>
           <div class="scaffold-divider"></div>
           <div class="scaffold-viewers"><span class="dot"></span> <span>2</span></div>
+          <div class="scaffold-divider"></div>
+          <span class="scaffold-wordmark">scaffold<span class="scaffold-wordmark-dot">.</span></span>
         </div>
       </div>
     </div>
@@ -1619,14 +1634,16 @@ select.scaffold-ai-input {
       <!-- Toolbar -->
       <div class="preview-toolbar">
         <div class="scaffold-toolbar" style="position: static; cursor: default; font-size: 12px;">
-          <button class="scaffold-btn active" title="Toggle edit mode" style="font-size: 11px; padding: 4px 8px">Edit</button>
           <button class="scaffold-btn" title="Save changes to disk" style="font-size: 11px; padding: 4px 8px">Save</button>
           <button class="scaffold-btn" title="Revert unsaved changes" style="font-size: 11px; padding: 4px 8px">Undo</button>
           <button class="scaffold-btn" title="Create a new prototype page" style="font-size: 11px; padding: 4px 8px">New</button>
           <button class="scaffold-btn" title="Browse and insert components" style="font-size: 11px; padding: 4px 8px">Components</button>
           <button class="scaffold-btn" title="Extract selection as reusable component" style="font-size: 11px; padding: 4px 8px">Extract</button>
+          <button class="scaffold-btn active" title="Toggle edit mode" style="font-size: 11px; padding: 4px 8px">Edit</button>
           <div class="scaffold-divider"></div>
           <div class="scaffold-viewers"><span class="dot"></span> <span>2</span></div>
+          <div class="scaffold-divider"></div>
+          <span class="scaffold-wordmark">scaffold<span class="scaffold-wordmark-dot">.</span></span>
         </div>
       </div>
     </div>
@@ -1800,14 +1817,16 @@ select.scaffold-ai-input {
       <!-- Toolbar -->
       <div class="ks-toolbar-wrap">
         <div class="scaffold-toolbar" style="position: static; cursor: default; font-size: 12px;">
-          <button class="scaffold-btn" title="Toggle edit mode" id="ks-edit-btn" style="font-size: 11px; padding: 4px 8px">Edit</button>
           <button class="scaffold-btn" title="Save changes to disk" id="ks-save-btn" style="font-size: 11px; padding: 4px 8px">Save</button>
           <button class="scaffold-btn" title="Revert unsaved changes" id="ks-undo-btn" style="font-size: 11px; padding: 4px 8px">Undo</button>
           <button class="scaffold-btn" title="Create a new prototype page" id="ks-new-btn" style="font-size: 11px; padding: 4px 8px">New</button>
           <button class="scaffold-btn" title="Browse and insert components" id="ks-comp-btn" style="font-size: 11px; padding: 4px 8px">Components</button>
           <button class="scaffold-btn" title="Extract selection as reusable component" style="font-size: 11px; padding: 4px 8px">Extract</button>
+          <button class="scaffold-btn" title="Toggle edit mode" id="ks-edit-btn" style="font-size: 11px; padding: 4px 8px">Edit</button>
           <div class="scaffold-divider"></div>
           <div class="scaffold-viewers"><span class="dot"></span> <span>2</span></div>
+          <div class="scaffold-divider"></div>
+          <span class="scaffold-wordmark">scaffold<span class="scaffold-wordmark-dot">.</span></span>
         </div>
       </div>
 
