@@ -131,64 +131,129 @@
   </style>
 </head>
 <body class="min-h-screen" x-data="{
-  helpOpen: false,
+  participants: [],
+  meta: { total: 0, page: 1, per_page: 10, last_page: 1 },
+  loading: true,
+  filterSearch: '',
   filterType: 'All',
   filterStatus: 'All',
-  bulkOpen: false,
-  selectedRows: [],
-  showAddParticipant: false,
-  newParticipant: {name:'', email:'', type:'Crew', affiliation:'', role:''},
-  newParticipants: [],
-  filterSearch: '',
-  filterItem: 'All Items',
-  filterSection: 'All Sections',
-  confirmAction: null,
-  toast: null,
+  sortField: 'name',
   currentPage: 1,
   perPage: 10,
-  addParticipant() {
+  helpOpen: false,
+  selectedRows: [],
+  showAddParticipant: false,
+  newParticipant: {name:'', email:'', type:'crew', affiliation:'', role:''},
+  confirmAction: null,
+  toast: null,
+  searchTimeout: null,
+
+  init() { this.load() },
+
+  async load() {
+    this.loading = true;
+    const p = new URLSearchParams();
+    p.set('page', this.currentPage);
+    p.set('per_page', this.perPage);
+    p.set('sort', this.sortField);
+    if (this.filterSearch) p.set('name_like', '%' + this.filterSearch + '%');
+    if (this.filterType !== 'All') p.set('participant_type', this.filterType.toLowerCase().replace(' ', '_'));
+    if (this.filterStatus !== 'All') p.set('status', this.filterStatus.toLowerCase());
+    const res = await fetch('/api/participants?' + p.toString());
+    const json = await res.json();
+    this.participants = json.data;
+    this.meta = json.meta;
+    this.loading = false;
+  },
+
+  debouncedLoad() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => { this.currentPage = 1; this.load(); }, 300);
+  },
+
+  sort(field) {
+    this.sortField = this.sortField === field ? '-' + field : field;
+    this.currentPage = 1;
+    this.load();
+  },
+
+  async addParticipant() {
     if (!this.newParticipant.name.trim() || !this.newParticipant.email.trim()) return;
-    const parts = this.newParticipant.name.trim().split(/\s+/);
-    const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : parts[0].substring(0,2).toUpperCase();
-    const colors = ['#2E7D9C','#7B5EA7','#D4783A','#3A8D5C','#C7534D'];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    this.newParticipants.push({
-      name: this.newParticipant.name.trim(),
-      email: this.newParticipant.email.trim(),
-      type: this.newParticipant.type,
-      affiliation: this.newParticipant.affiliation.trim(),
-      role: this.newParticipant.role.trim(),
-      initials: initials,
-      color: color,
-      status: 'Active'
+    await fetch('/api/participants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: this.newParticipant.name.trim(),
+        email: this.newParticipant.email.trim(),
+        participant_type: this.newParticipant.type,
+        affiliation: this.newParticipant.affiliation.trim() || null,
+        role: this.newParticipant.role.trim() || null
+      })
     });
-    this.newParticipant = {name:'', email:'', type:'Crew', affiliation:'', role:''};
+    this.newParticipant = {name:'', email:'', type:'crew', affiliation:'', role:''};
     this.showAddParticipant = false;
     this.showToast('Participant added successfully');
+    await this.load();
   },
-  showRowByFilters(name, email, type, status, affiliation) {
-    const search = this.filterSearch.toLowerCase();
-    if (search && !(name.toLowerCase().includes(search) || email.toLowerCase().includes(search) || affiliation.toLowerCase().includes(search))) return false;
-    if (this.filterType !== 'All' && type !== this.filterType) return false;
-    if (this.filterStatus !== 'All' && status !== this.filterStatus) return false;
-    if (this.filterItem !== 'All Items') return true;
-    if (this.filterSection !== 'All Sections') return true;
-    return true;
+
+  async toggleStatus(p) {
+    const newStatus = p.status === 'active' ? 'suspended' : 'active';
+    await fetch('/api/participants/' + p.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    this.showToast(p.name + (newStatus === 'suspended' ? ' suspended' : ' reactivated'));
+    await this.load();
   },
-  showRowByPage(rowIndex) {
-    return rowIndex > (this.currentPage - 1) * this.perPage && rowIndex <= this.currentPage * this.perPage;
+
+  setFilter(field, value) {
+    this[field] = value;
+    this.currentPage = 1;
+    this.load();
   },
+
+  clearFilters() {
+    this.filterSearch = '';
+    this.filterType = 'All';
+    this.filterStatus = 'All';
+    this.currentPage = 1;
+    this.load();
+  },
+
+  initials(name) {
+    const parts = name.trim().split(/\s+/);
+    return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : parts[0].substring(0,2).toUpperCase();
+  },
+
+  avatarColor(id) {
+    const colors = ['#2E7D9C','#7B5EA7','#D4783A','#3A8D5C','#C7534D'];
+    return colors[id % colors.length];
+  },
+
   badgeClass(type) {
-    const map = {'Crew':'badge-crew','Responder':'badge-responder','Travel Party':'badge-travel','Guest':'badge-guest'};
+    const map = {crew:'badge-crew', responder:'badge-responder', travel_party:'badge-travel', guest:'badge-guest'};
     return map[type] || 'badge-crew';
   },
+
+  typeLabel(type) {
+    const map = {crew:'Crew', responder:'Responder', travel_party:'Travel Party', guest:'Guest'};
+    return map[type] || type;
+  },
+
+  statusBadge(status) {
+    const map = {active:'badge-success', suspended:'badge-pending', revoked:'badge-warning'};
+    return map[status] || 'badge-info';
+  },
+
   showToast(msg) {
     this.toast = msg;
     setTimeout(() => this.toast = null, 3000);
   },
-  get totalPages() {
-    return Math.ceil((20 + this.newParticipants.length) / this.perPage) || 1;
-  }
+
+  get totalPages() { return this.meta.last_page || 1; },
+  get showingFrom() { return ((this.currentPage - 1) * this.perPage) + 1; },
+  get showingTo() { return Math.min(this.currentPage * this.perPage, this.meta.total); }
 }">
 
   <!-- TOP NAVBAR -->
@@ -320,7 +385,7 @@
           <!-- Search -->
           <div class="relative flex-1 min-w-[240px]">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-soft)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Search participants by name, email, or affiliation..." class="filter-input w-full pl-9" x-model="filterSearch">
+            <input type="text" placeholder="Search participants by name..." class="filter-input w-full pl-9" x-model="filterSearch" @input="debouncedLoad()">
           </div>
 
           <!-- Type Filter -->
@@ -331,7 +396,7 @@
             </button>
             <div x-show="open" @click.away="open = false" x-transition class="absolute top-full left-0 mt-1 w-full rounded-md shadow-lg z-20" style="background:var(--bg-sidebar); border:1px solid var(--border-default);">
               <template x-for="type in ['All', 'Crew', 'Responder', 'Travel Party', 'Guest']">
-                <button @click="filterType = type; open = false" class="block w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-hover)]" style="color:var(--text-default);" x-text="type"></button>
+                <button @click="setFilter('filterType', type); open = false" class="block w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-hover)]" style="color:var(--text-default);" x-text="type"></button>
               </template>
             </div>
           </div>
@@ -344,36 +409,12 @@
             </button>
             <div x-show="open" @click.away="open = false" x-transition class="absolute top-full left-0 mt-1 w-full rounded-md shadow-lg z-20" style="background:var(--bg-sidebar); border:1px solid var(--border-default);">
               <template x-for="status in ['All', 'Active', 'Suspended', 'Revoked']">
-                <button @click="filterStatus = status; open = false" class="block w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-hover)]" style="color:var(--text-default);" x-text="status"></button>
+                <button @click="setFilter('filterStatus', status); open = false" class="block w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-hover)]" style="color:var(--text-default);" x-text="status"></button>
               </template>
             </div>
           </div>
 
-          <!-- Entitlement Item Filter -->
-          <select class="filter-input" style="width:170px;" x-model="filterItem">
-            <option>All Items</option>
-            <option>AAA-Access Pass</option>
-            <option>VIP Pass</option>
-            <option>Crew Pass</option>
-            <option>Lunch Voucher</option>
-            <option>Dinner Voucher</option>
-            <option>Two-Way Radio</option>
-            <option>Volunteer T-Shirt</option>
-          </select>
-
-          <!-- Section Filter -->
-          <select class="filter-input" style="width:160px;" x-model="filterSection">
-            <option>All Sections</option>
-            <option>Sound</option>
-            <option>Lighting</option>
-            <option>Stage</option>
-            <option>Security</option>
-            <option>Catering</option>
-            <option>Artist Relations</option>
-            <option>Production</option>
-          </select>
-
-          <button class="btn-ghost text-xs" style="color:var(--color-highlight);" @click="filterSearch = ''; filterType = 'All'; filterStatus = 'All'; filterItem = 'All Items'; filterSection = 'All Sections'">
+          <button class="btn-ghost text-xs" style="color:var(--color-highlight);" @click="clearFilters()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             Clear
           </button>
@@ -383,9 +424,9 @@
       <!-- BULK ACTIONS BAR -->
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
-          <span class="text-sm" style="color:var(--text-soft);">847 participants</span>
+          <span class="text-sm" style="color:var(--text-soft);" x-text="meta.total + ' participants'"></span>
           <span style="color:var(--border-default);">&#183;</span>
-          <span class="text-sm" style="color:var(--text-soft);">Showing 1-20</span>
+          <span class="text-sm" style="color:var(--text-soft);" x-text="'Showing ' + showingFrom + '-' + showingTo"></span>
         </div>
         <div class="flex items-center gap-2">
           <button class="btn-ghost text-xs">
@@ -411,600 +452,47 @@
               <tr>
                 <th style="width:36px;">
                   <input type="checkbox" class="rounded" style="accent-color:var(--color-primary);"
-                    @click="selectedRows = $event.target.checked ? [...Array(20 + newParticipants.length).keys()].map(i => i) : []"
-                    :checked="selectedRows.length === 20 + newParticipants.length && selectedRows.length > 0">
+                    @click="selectedRows = $event.target.checked ? participants.map(p => p.id) : []"
+                    :checked="selectedRows.length === participants.length && selectedRows.length > 0">
                 </th>
-                <th>Participant</th>
-                <th>Type</th>
-                <th>Affiliation</th>
+                <th @click="sort('name')" class="cursor-pointer">Participant <span x-show="sortField === 'name'">&#8593;</span><span x-show="sortField === '-name'">&#8595;</span></th>
+                <th @click="sort('participant_type')" class="cursor-pointer">Type <span x-show="sortField === 'participant_type'">&#8593;</span><span x-show="sortField === '-participant_type'">&#8595;</span></th>
+                <th @click="sort('affiliation')" class="cursor-pointer">Affiliation <span x-show="sortField === 'affiliation'">&#8593;</span><span x-show="sortField === '-affiliation'">&#8595;</span></th>
                 <th>Role</th>
                 <th>Entitlements</th>
                 <th>Credentials</th>
-                <th>Status</th>
+                <th @click="sort('status')" class="cursor-pointer">Status <span x-show="sortField === 'status'">&#8593;</span><span x-show="sortField === '-status'">&#8595;</span></th>
                 <th style="width:100px;">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Dynamic rows from newParticipants -->
-              <template x-for="(p, idx) in newParticipants" :key="'new-'+idx">
-                <tr @click="window.location='03-participant-detail.html'" x-show="showRowByFilters(p.name, p.email, p.type, p.status, p.affiliation) && showRowByPage(idx + 1)">
-                  <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(20 + idx)" @change="selectedRows.includes(20 + idx) ? selectedRows = selectedRows.filter(i => i !== 20 + idx) : selectedRows.push(20 + idx)"></td>
+              <template x-for="p in participants" :key="p.id">
+                <tr @click="window.location='03-participant-detail.html'">
+                  <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(p.id)" @change="selectedRows.includes(p.id) ? selectedRows = selectedRows.filter(i => i !== p.id) : selectedRows.push(p.id)"></td>
                   <td>
                     <div class="flex items-center gap-3">
-                      <div class="avatar" :style="'background:' + p.color" x-text="p.initials"></div>
+                      <div class="avatar" :style="'background:' + avatarColor(p.id)" x-text="initials(p.name)"></div>
                       <div>
                         <p class="font-medium" style="color:var(--text-default);" x-text="p.name"></p>
                         <p class="text-xs" style="color:var(--text-soft);" x-text="p.email"></p>
                       </div>
                     </div>
                   </td>
-                  <td><span class="badge" :class="badgeClass(p.type)" x-text="p.type"></span></td>
-                  <td style="color:var(--text-default);" x-text="p.affiliation"></td>
-                  <td style="color:var(--text-soft);" x-text="p.role"></td>
-                  <td><span class="badge badge-info">0</span></td>
-                  <td><span class="badge badge-info">0</span></td>
-                  <td><span class="badge badge-success">Active</span></td>
+                  <td><span class="badge" :class="badgeClass(p.participant_type)" x-text="typeLabel(p.participant_type)"></span></td>
+                  <td style="color:var(--text-default);" x-text="p.affiliation || '\u2014'"></td>
+                  <td style="color:var(--text-soft);" x-text="p.role || '\u2014'"></td>
+                  <td><span class="badge badge-info">\u2014</span></td>
+                  <td><span class="badge badge-info">\u2014</span></td>
+                  <td><span class="badge" :class="statusBadge(p.status)" x-text="p.status" style="text-transform:capitalize;"></span></td>
                   <td>
                     <div class="flex items-center gap-1">
-                      <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      </a>
-                      <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                      <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke ' + p.name + '?', action: () => showToast(p.name + ' revoked')}">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                      </button>
+                      <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                      <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      <button class="action-btn" :title="p.status === 'active' ? 'Suspend' : 'Reactivate'" :style="p.status === 'active' ? 'color:var(--color-warning);' : 'color:var(--color-success);'" @click.stop="confirmAction = {title: p.status === 'active' ? 'Suspend Participant' : 'Reactivate Participant', message: 'Are you sure you want to ' + (p.status === 'active' ? 'suspend' : 'reactivate') + ' ' + p.name + '?', action: () => toggleStatus(p)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
                     </div>
                   </td>
                 </tr>
               </template>
-
-              <!-- Row 1 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Kari Nordmann', 'kari.nordmann@crew.no', 'Crew', 'Active', 'Sound Department') && showRowByPage(1)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(0)" @change="selectedRows.includes(0) ? selectedRows = selectedRows.filter(i => i !== 0) : selectedRows.push(0)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#2E7D9C;">KN</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Kari Nordmann</p>
-                      <p class="text-xs" style="color:var(--text-soft);">kari.nordmann@crew.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Sound Department</td>
-                <td style="color:var(--text-soft);">Stage Manager</td>
-                <td><span class="badge badge-info">5</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Kari Nordmann?', action: () => showToast('Kari Nordmann revoked')}">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 2 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Erik Hansen', 'erik.h@tourmanagement.com', 'Travel Party', 'Active', 'Band: Kygo') && showRowByPage(2)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(1)" @change="selectedRows.includes(1) ? selectedRows = selectedRows.filter(i => i !== 1) : selectedRows.push(1)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#7B5EA7;">EH</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Erik Hansen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">erik.h@tourmanagement.com</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-travel">Travel Party</span></td>
-                <td style="color:var(--text-default);">Band: Kygo</td>
-                <td style="color:var(--text-soft);">Tour Manager</td>
-                <td><span class="badge badge-info">3</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Erik Hansen?', action: () => showToast('Erik Hansen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 3 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Sofia Andersen', 'sofia.a@redbull.com', 'Guest', 'Active', 'Sponsor: Red Bull') && showRowByPage(3)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(2)" @change="selectedRows.includes(2) ? selectedRows = selectedRows.filter(i => i !== 2) : selectedRows.push(2)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#D4783A;">SA</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Sofia Andersen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">sofia.a@redbull.com</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-guest">Guest</span></td>
-                <td style="color:var(--text-default);">Sponsor: Red Bull</td>
-                <td style="color:var(--text-soft);">VIP Guest</td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Sofia Andersen?', action: () => showToast('Sofia Andersen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 4 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Lars Johansen', 'lars.j@volunteers.no', 'Responder', 'Active', 'Volunteer Form 2026') && showRowByPage(4)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(3)" @change="selectedRows.includes(3) ? selectedRows = selectedRows.filter(i => i !== 3) : selectedRows.push(3)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#3A8D5C;">LJ</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Lars Johansen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">lars.j@volunteers.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-responder">Responder</span></td>
-                <td style="color:var(--text-default);">Volunteer Form 2026</td>
-                <td style="color:var(--text-soft);">Volunteer</td>
-                <td><span class="badge badge-info">4</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Lars Johansen?', action: () => showToast('Lars Johansen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 5 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Ingrid Bakken', 'ingrid.b@midgard.no', 'Crew', 'Active', 'Lighting Department') && showRowByPage(5)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(4)" @change="selectedRows.includes(4) ? selectedRows = selectedRows.filter(i => i !== 4) : selectedRows.push(4)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#2E7D9C;">IB</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Ingrid Bakken</p>
-                      <p class="text-xs" style="color:var(--text-soft);">ingrid.b@midgard.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Lighting Department</td>
-                <td style="color:var(--text-soft);">Lighting Designer</td>
-                <td><span class="badge badge-info">6</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Ingrid Bakken?', action: () => showToast('Ingrid Bakken revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 6 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Thomas Berge', 'thomas.b@security.no', 'Crew', 'Active', 'Security') && showRowByPage(6)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(5)" @change="selectedRows.includes(5) ? selectedRows = selectedRows.filter(i => i !== 5) : selectedRows.push(5)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#7B5EA7;">TB</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Thomas Berge</p>
-                      <p class="text-xs" style="color:var(--text-soft);">thomas.b@security.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Security</td>
-                <td style="color:var(--text-soft);">Security Lead</td>
-                <td><span class="badge badge-info">7</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Thomas Berge?', action: () => showToast('Thomas Berge revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 7 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Nina Haugen', 'nina.h@midgard.no', 'Crew', 'Active', 'Production') && showRowByPage(7)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(6)" @change="selectedRows.includes(6) ? selectedRows = selectedRows.filter(i => i !== 6) : selectedRows.push(6)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#D4783A;">NH</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Nina Haugen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">nina.h@midgard.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Production</td>
-                <td style="color:var(--text-soft);">Production Manager</td>
-                <td><span class="badge badge-info">8</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Nina Haugen?', action: () => showToast('Nina Haugen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 8 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Mats Olsen', 'mats.o@volunteers.no', 'Responder', 'Active', 'Volunteer Form 2026') && showRowByPage(8)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(7)" @change="selectedRows.includes(7) ? selectedRows = selectedRows.filter(i => i !== 7) : selectedRows.push(7)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#3A8D5C;">MO</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Mats Olsen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">mats.o@volunteers.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-responder">Responder</span></td>
-                <td style="color:var(--text-default);">Volunteer Form 2026</td>
-                <td style="color:var(--text-soft);">Gate Volunteer</td>
-                <td><span class="badge badge-info">3</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Mats Olsen?', action: () => showToast('Mats Olsen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 9 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Hilde Svendsen', 'hilde.s@artistmgmt.com', 'Travel Party', 'Active', 'Band: Aurora') && showRowByPage(9)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(8)" @change="selectedRows.includes(8) ? selectedRows = selectedRows.filter(i => i !== 8) : selectedRows.push(8)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#C7534D;">HS</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Hilde Svendsen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">hilde.s@artistmgmt.com</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-travel">Travel Party</span></td>
-                <td style="color:var(--text-default);">Band: Aurora</td>
-                <td style="color:var(--text-soft);">Artist Manager</td>
-                <td><span class="badge badge-info">4</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Hilde Svendsen?', action: () => showToast('Hilde Svendsen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 10 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Olav Nilsen', 'olav.n@midgard.no', 'Crew', 'Active', 'Stage Department') && showRowByPage(10)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(9)" @change="selectedRows.includes(9) ? selectedRows = selectedRows.filter(i => i !== 9) : selectedRows.push(9)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#2E7D9C;">ON</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Olav Nilsen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">olav.n@midgard.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Stage Department</td>
-                <td style="color:var(--text-soft);">Rigger</td>
-                <td><span class="badge badge-info">4</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Olav Nilsen?', action: () => showToast('Olav Nilsen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 11 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Astrid Kristiansen', 'astrid.k@catering.no', 'Crew', 'Active', 'Catering') && showRowByPage(11)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(10)" @change="selectedRows.includes(10) ? selectedRows = selectedRows.filter(i => i !== 10) : selectedRows.push(10)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#D4783A;">AK</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Astrid Kristiansen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">astrid.k@catering.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Catering</td>
-                <td style="color:var(--text-soft);">Head Chef</td>
-                <td><span class="badge badge-info">5</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Astrid Kristiansen?', action: () => showToast('Astrid Kristiansen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 12 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Jonas Pettersen', 'jonas.p@media.no', 'Guest', 'Active', 'NRK Media') && showRowByPage(12)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(11)" @change="selectedRows.includes(11) ? selectedRows = selectedRows.filter(i => i !== 11) : selectedRows.push(11)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#7B5EA7;">JP</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Jonas Pettersen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">jonas.p@media.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-guest">Guest</span></td>
-                <td style="color:var(--text-default);">NRK Media</td>
-                <td style="color:var(--text-soft);">Press / Photographer</td>
-                <td><span class="badge badge-info">3</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Jonas Pettersen?', action: () => showToast('Jonas Pettersen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 13 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Marie Larsen', 'marie.l@midgard.no', 'Crew', 'Active', 'Artist Relations') && showRowByPage(13)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(12)" @change="selectedRows.includes(12) ? selectedRows = selectedRows.filter(i => i !== 12) : selectedRows.push(12)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#C7534D;">ML</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Marie Larsen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">marie.l@midgard.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Artist Relations</td>
-                <td style="color:var(--text-soft);">Artist Liaison</td>
-                <td><span class="badge badge-info">5</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Marie Larsen?', action: () => showToast('Marie Larsen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 14 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Per Bjornstad', 'per.b@transport.no', 'Crew', 'Suspended', 'Transport') && showRowByPage(14)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(13)" @change="selectedRows.includes(13) ? selectedRows = selectedRows.filter(i => i !== 13) : selectedRows.push(13)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#2E7D9C;">PB</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Per Bjornstad</p>
-                      <p class="text-xs" style="color:var(--text-soft);">per.b@transport.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Transport</td>
-                <td style="color:var(--text-soft);">Driver Coordinator</td>
-                <td><span class="badge badge-info">4</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-pending">Suspended</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Per Bjornstad?', action: () => showToast('Per Bjornstad revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 15 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Silje Strand', 'silje.s@liveevents.no', 'Travel Party', 'Active', 'Band: Sigrid') && showRowByPage(15)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(14)" @change="selectedRows.includes(14) ? selectedRows = selectedRows.filter(i => i !== 14) : selectedRows.push(14)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#D4783A;">SS</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Silje Strand</p>
-                      <p class="text-xs" style="color:var(--text-soft);">silje.s@liveevents.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-travel">Travel Party</span></td>
-                <td style="color:var(--text-default);">Band: Sigrid</td>
-                <td style="color:var(--text-soft);">Sound Engineer</td>
-                <td><span class="badge badge-info">3</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Silje Strand?', action: () => showToast('Silje Strand revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 16 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Emilie Vik', 'emilie.v@volunteers.no', 'Responder', 'Active', 'Volunteer Form 2026') && showRowByPage(16)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(15)" @change="selectedRows.includes(15) ? selectedRows = selectedRows.filter(i => i !== 15) : selectedRows.push(15)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#3A8D5C;">EV</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Emilie Vik</p>
-                      <p class="text-xs" style="color:var(--text-soft);">emilie.v@volunteers.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-responder">Responder</span></td>
-                <td style="color:var(--text-default);">Volunteer Form 2026</td>
-                <td style="color:var(--text-soft);">Info Booth</td>
-                <td><span class="badge badge-info">3</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Emilie Vik?', action: () => showToast('Emilie Vik revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 17 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Fredrik Dahl', 'fredrik.d@midgard.no', 'Crew', 'Active', 'IT / Technical') && showRowByPage(17)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(16)" @change="selectedRows.includes(16) ? selectedRows = selectedRows.filter(i => i !== 16) : selectedRows.push(16)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#7B5EA7;">FD</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Fredrik Dahl</p>
-                      <p class="text-xs" style="color:var(--text-soft);">fredrik.d@midgard.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">IT / Technical</td>
-                <td style="color:var(--text-soft);">Systems Admin</td>
-                <td><span class="badge badge-info">6</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Fredrik Dahl?', action: () => showToast('Fredrik Dahl revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 18 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Greta Eriksen', 'greta.e@sponsor.com', 'Guest', 'Revoked', 'Sponsor: Tuborg') && showRowByPage(18)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(17)" @change="selectedRows.includes(17) ? selectedRows = selectedRows.filter(i => i !== 17) : selectedRows.push(17)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#C7534D;">GE</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Greta Eriksen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">greta.e@sponsor.com</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-guest">Guest</span></td>
-                <td style="color:var(--text-default);">Sponsor: Tuborg</td>
-                <td style="color:var(--text-soft);">Brand Ambassador</td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-warning">Revoked</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Greta Eriksen?', action: () => showToast('Greta Eriksen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 19 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Henrik Martinsen', 'henrik.m@emt.no', 'Responder', 'Active', 'Medical Team') && showRowByPage(19)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(18)" @change="selectedRows.includes(18) ? selectedRows = selectedRows.filter(i => i !== 18) : selectedRows.push(18)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#2E7D9C;">HM</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Henrik Martinsen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">henrik.m@emt.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-responder">Responder</span></td>
-                <td style="color:var(--text-default);">Medical Team</td>
-                <td style="color:var(--text-soft);">Paramedic</td>
-                <td><span class="badge badge-info">5</span></td>
-                <td><span class="badge badge-info">2</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Henrik Martinsen?', action: () => showToast('Henrik Martinsen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Row 20 -->
-              <tr onclick="window.location='03-participant-detail.html'" x-show="showRowByFilters('Lena Halvorsen', 'lena.h@midgard.no', 'Crew', 'Active', 'Marketing') && showRowByPage(20)">
-                <td><input type="checkbox" style="accent-color:var(--color-primary);" @click.stop :checked="selectedRows.includes(19)" @change="selectedRows.includes(19) ? selectedRows = selectedRows.filter(i => i !== 19) : selectedRows.push(19)"></td>
-                <td>
-                  <div class="flex items-center gap-3">
-                    <div class="avatar" style="background:#3A8D5C;">LH</div>
-                    <div>
-                      <p class="font-medium" style="color:var(--text-default);">Lena Halvorsen</p>
-                      <p class="text-xs" style="color:var(--text-soft);">lena.h@midgard.no</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="badge badge-crew">Crew</span></td>
-                <td style="color:var(--text-default);">Marketing</td>
-                <td style="color:var(--text-soft);">Social Media Manager</td>
-                <td><span class="badge badge-info">4</span></td>
-                <td><span class="badge badge-info">1</span></td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <a href="03-participant-detail.html" class="action-btn" title="View" @click.stop><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
-                    <button class="action-btn" title="Edit" @click.stop="showToast('Edit feature coming soon')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="action-btn" title="Revoke" style="color:var(--color-warning);" @click.stop="confirmAction = {title: 'Revoke Participant', message: 'Are you sure you want to revoke Lena Halvorsen?', action: () => showToast('Lena Halvorsen revoked')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
-                  </div>
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -1012,18 +500,14 @@
 
       <!-- PAGINATION -->
       <div class="flex items-center justify-between mt-4">
-        <p class="text-sm" style="color:var(--text-soft);">Showing 1 to 20 of 847 participants</p>
+        <p class="text-sm" style="color:var(--text-soft);" x-text="'Showing ' + showingFrom + ' to ' + showingTo + ' of ' + meta.total + ' participants'"></p>
         <div class="flex items-center gap-1">
-          <button class="btn-ghost text-xs" @click="if(currentPage > 1) currentPage--" :disabled="currentPage <= 1" :style="currentPage <= 1 ? 'opacity:0.4' : ''">&#8592; Previous</button>
-          <button class="flex items-center justify-center text-xs font-semibold" @click="currentPage = 1"
-            :style="currentPage === 1 ? 'width:30px; height:30px; border-radius:6px; background:var(--color-primary); color:white;' : 'width:30px; height:30px; border-radius:6px; background:var(--bg-input); color:var(--text-soft); border:1px solid var(--border-default);'">1</button>
-          <button class="flex items-center justify-center text-xs font-medium" @click="currentPage = 2"
-            :style="currentPage === 2 ? 'width:30px; height:30px; border-radius:6px; background:var(--color-primary); color:white;' : 'width:30px; height:30px; border-radius:6px; background:var(--bg-input); color:var(--text-soft); border:1px solid var(--border-default);'">2</button>
-          <button class="flex items-center justify-center text-xs font-medium" @click="currentPage = 3"
-            :style="currentPage === 3 ? 'width:30px; height:30px; border-radius:6px; background:var(--color-primary); color:white;' : 'width:30px; height:30px; border-radius:6px; background:var(--bg-input); color:var(--text-soft); border:1px solid var(--border-default);'">3</button>
-          <span class="text-xs px-2" style="color:var(--text-soft);">...</span>
-          <button class="flex items-center justify-center text-xs font-medium" style="width:30px; height:30px; border-radius:6px; background:var(--bg-input); color:var(--text-soft); border:1px solid var(--border-default);">43</button>
-          <button class="btn-ghost text-xs" @click="if(currentPage < 3) currentPage++">Next &#8594;</button>
+          <button class="btn-ghost text-xs" @click="if(currentPage > 1) { currentPage--; load(); }" :disabled="currentPage <= 1" :style="currentPage <= 1 ? 'opacity:0.4' : ''">&#8592; Previous</button>
+          <template x-for="pg in totalPages" :key="pg">
+            <button class="flex items-center justify-center text-xs font-medium" @click="currentPage = pg; load()"
+              :style="currentPage === pg ? 'width:30px; height:30px; border-radius:6px; background:var(--color-primary); color:white;' : 'width:30px; height:30px; border-radius:6px; background:var(--bg-input); color:var(--text-soft); border:1px solid var(--border-default);'" x-text="pg"></button>
+          </template>
+          <button class="btn-ghost text-xs" @click="if(currentPage < totalPages) { currentPage++; load(); }" :disabled="currentPage >= totalPages" :style="currentPage >= totalPages ? 'opacity:0.4' : ''">Next &#8594;</button>
         </div>
       </div>
     </div>
@@ -1084,10 +568,10 @@
         <div>
           <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-soft);">Type</label>
           <select x-model="newParticipant.type" class="filter-input w-full" style="height:38px;">
-            <option>Crew</option>
-            <option>Responder</option>
-            <option>Travel Party</option>
-            <option>Guest</option>
+            <option value="crew">Crew</option>
+            <option value="responder">Responder</option>
+            <option value="travel_party">Travel Party</option>
+            <option value="guest">Guest</option>
           </select>
         </div>
         <div>

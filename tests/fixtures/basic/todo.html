@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8" x-data="{
+  tasks: [],
+  meta: {},
+  newName: '',
+  sortField: 'id',
+  filterDone: '',
+
+  init() { this.load() },
+
+  async load() {
+    const params = new URLSearchParams();
+    params.set('sort', this.sortField);
+    if (this.filterDone !== '') params.set('done', this.filterDone);
+    const res = await fetch('/api/tasks?' + params);
+    const json = await res.json();
+    this.tasks = json.data;
+    this.meta = json.meta;
+  },
+
+  async addTask() {
+    if (!this.newName.trim()) return;
+    await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: this.newName.trim() })
+    });
+    this.newName = '';
+    await this.load();
+  },
+
+  toggleSort() {
+    this.sortField = this.sortField === 'name' ? '-name' : 'name';
+    this.load();
+  }
+}">
+  <div class="max-w-lg mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Todo List</h1>
+
+    <div class="flex gap-2 mb-4">
+      <input type="text" data-testid="task-input" x-model="newName" @keydown.enter="addTask()"
+        placeholder="New task..." class="flex-1 border rounded px-3 py-2">
+      <button data-testid="add-task" @click="addTask()"
+        class="bg-blue-500 text-white px-4 py-2 rounded">Add</button>
+    </div>
+
+    <div class="flex gap-2 mb-4">
+      <button data-testid="filter-all" @click="filterDone = ''; load()"
+        class="px-3 py-1 rounded" :class="filterDone === '' ? 'bg-blue-500 text-white' : 'bg-gray-200'">All</button>
+      <button data-testid="filter-done" @click="filterDone = '1'; load()"
+        class="px-3 py-1 rounded" :class="filterDone === '1' ? 'bg-blue-500 text-white' : 'bg-gray-200'">Done</button>
+      <button data-testid="filter-todo" @click="filterDone = '0'; load()"
+        class="px-3 py-1 rounded" :class="filterDone === '0' ? 'bg-blue-500 text-white' : 'bg-gray-200'">Todo</button>
+      <button data-testid="sort-name" @click="toggleSort()"
+        class="ml-auto px-3 py-1 rounded bg-gray-200">Sort by name</button>
+    </div>
+
+    <p data-testid="task-count" class="text-sm text-gray-500 mb-2" x-text="meta.total + ' tasks'"></p>
+
+    <ul data-testid="task-list" class="space-y-2">
+      <template x-for="task in tasks" :key="task.id">
+        <li data-testid="task-item" class="bg-white p-3 rounded shadow flex items-center gap-2">
+          <span :class="task.done ? 'line-through text-gray-400' : ''" x-text="task.name"></span>
+        </li>
+      </template>
+    </ul>
+  </div>
+</body>
+</html>

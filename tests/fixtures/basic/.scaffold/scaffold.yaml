@@ -3,3 +3,11 @@ entities:
   Item:
     properties:
       - name
+  Task:
+    properties:
+      - name
+      - { name: done, type: boolean, default: false }
+    seed:
+      - { name: "Buy groceries" }
+      - { name: "Write tests", done: true }
+      - { name: "Deploy app" }
