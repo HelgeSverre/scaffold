@@ -232,6 +232,22 @@ select.scaffold-ai-input {
   display: block;
 }
 
+.scaffold-ai-status .spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(20, 184, 166, 0.25);
+  border-top-color: #14b8a6;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* AI History dropdown */
 .scaffold-ai-history {
   display: none;

@@ -696,12 +696,20 @@
 
   // ─── AI Edit Submission ─────────────────────────────────────────────────────
 
+  function setAIStatus(msg, spinning) {
+    if (spinning) {
+      aiStatus.innerHTML = '<span class="spinner"></span>' + msg;
+    } else {
+      aiStatus.textContent = msg;
+    }
+    aiStatus.style.display = "block";
+  }
+
   async function submitAIEdit(prompt) {
     if (aiWorking) return;
     aiWorking = true;
     aiInput.disabled = true;
-    aiStatus.textContent = "Thinking...";
-    aiStatus.style.display = "block";
+    setAIStatus("Thinking...", true);
 
     // Save to history
     savePromptHistory(prompt);
@@ -725,19 +733,19 @@
       let clientSwapHtml = null;
       await readSSEStream(res, (event, data) => {
         if (event === "status" && data.message) {
-          aiStatus.textContent = data.message;
+          setAIStatus(data.message, true);
         }
         if (event === "done") {
           if (data.html) {
             clientSwapHtml = data.html;
-            aiStatus.textContent = "Applying...";
+            setAIStatus("Applying...", true);
           } else {
-            aiStatus.textContent = "Done! Reloading...";
+            setAIStatus("Done! Reloading...", false);
             // Full-page edit: page will reload via WS broadcast
           }
         }
         if (event === "error") {
-          aiStatus.textContent = "Error: " + (data.message || "Unknown error");
+          setAIStatus("Error: " + (data.message || "Unknown error"), false);
         }
       });
 
@@ -750,12 +758,12 @@
           selectedElement.replaceWith(newEl);
           deselectElement();
         }
-        aiStatus.textContent = "Saving...";
+        setAIStatus("Saving...", true);
         await save();
-        aiStatus.textContent = "Done!";
+        setAIStatus("Done!", false);
       }
     } catch (err) {
-      aiStatus.textContent = "Error: " + err.message;
+      setAIStatus("Error: " + err.message, false);
     } finally {
       aiWorking = false;
       aiInput.disabled = false;
