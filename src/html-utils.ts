@@ -32,10 +32,11 @@ interface XPathSegment {
   tag: string;
   nthChild?: number;
   classes?: string[];
+  id?: string;
 }
 
 function parseXPath(xpath: string): XPathSegment[] {
-  // Parse "body > main > div:nth-child(2) > div.grid.grid-cols-3"
+  // Parse "body > main > div:nth-child(2) > div.grid.grid-cols-3" or "p#target"
   const parts = xpath.split(">").map((s) => s.trim()).filter(Boolean);
   return parts.map((part) => {
     const seg: XPathSegment = { tag: "" };
@@ -45,6 +46,22 @@ function parseXPath(xpath: string): XPathSegment[] {
     if (nthMatch) {
       seg.nthChild = parseInt(nthMatch[1]);
       part = part.replace(/:nth-child\(\d+\)/, "");
+    }
+
+    // Extract id (tag#some-id)
+    const hashIdx = part.indexOf("#");
+    if (hashIdx !== -1) {
+      seg.tag = part.slice(0, hashIdx).toLowerCase();
+      // id is everything after # up to first dot (if classes follow)
+      const afterHash = part.slice(hashIdx + 1);
+      const dotIdx = afterHash.indexOf(".");
+      if (dotIdx !== -1) {
+        seg.id = afterHash.slice(0, dotIdx);
+        seg.classes = afterHash.slice(dotIdx + 1).split(".");
+      } else {
+        seg.id = afterHash;
+      }
+      return seg;
     }
 
     // Extract classes
@@ -58,8 +75,11 @@ function parseXPath(xpath: string): XPathSegment[] {
   });
 }
 
-function matchesSegment(tag: string, classes: string[], segment: XPathSegment): boolean {
+function matchesSegment(tag: string, classes: string[], segment: XPathSegment, id?: string): boolean {
   if (tag.toLowerCase() !== segment.tag) return false;
+  if (segment.id) {
+    return id === segment.id;
+  }
   if (segment.classes) {
     for (const cls of segment.classes) {
       if (!classes.includes(cls)) return false;
@@ -123,7 +143,11 @@ function findElement(html: string, from: number, segment: XPathSegment): FoundEl
     const classMatch = attrs.match(/class\s*=\s*["']([^"']+)["']/);
     const classes = classMatch ? classMatch[1].split(/\s+/) : [];
 
-    if (matchesSegment(segment.tag, classes, segment)) {
+    // Extract id from id attribute
+    const idMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/);
+    const id = idMatch ? idMatch[1] : undefined;
+
+    if (matchesSegment(segment.tag, classes, segment, id)) {
       childCount++;
 
       if (!segment.nthChild || childCount === segment.nthChild) {
