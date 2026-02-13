@@ -18,6 +18,8 @@ export const log = {
     console.log(`  ${teal("→")} ${url}`),
   done:  (msg: string) =>
     console.log(`\n  ${msg}\n`),
+  shortcut: (key: string, desc: string) =>
+    console.log(`  ${teal(key.padEnd(6))} ${slate(desc)}`),
   warn:  (msg: string) =>
     console.warn(`  ${amber("⚠")} ${msg}`),
   error: (msg: string) =>
