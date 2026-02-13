@@ -85,6 +85,20 @@ When you learn something new about this codebase during a session:
 - If a test is missing for an edge case you discovered, add the test
 - Keep this file under 100 lines of actual content — consolidate, don't accumulate
 
+## Releasing
+
+```bash
+# 1. Bump version in package.json
+# 2. Commit, tag, push
+git add package.json && git commit -m "chore: bump version to vX.Y.Z"
+git tag vX.Y.Z
+git push && git push --tags
+# 3. Create GitHub release with changelog from commits since last tag
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "$(changelog)"
+```
+
+To generate changelog: `git log --oneline vPREV..HEAD` and group by feat/fix/test/chore.
+
 ## Verification Checklist
 
 Before claiming work is complete:
