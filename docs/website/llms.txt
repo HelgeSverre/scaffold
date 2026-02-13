@@ -142,8 +142,8 @@ GET /api/products?page=2&per_page=10&sort=-created_at&status=active&name_like=%r
 The `with` parameter loads related records inline. Use the FK column name without the `_id` suffix:
 
 ```
-GET /api/product?with=category
-GET /api/contact?with=company,assigned_user
+GET /api/products?with=category
+GET /api/orders?with=customer
 ```
 
 The related object is attached to each row under the short name (e.g. `category` for `category_id`).
@@ -248,7 +248,7 @@ import type { ScaffoldContext } from "scaffold";
 export default function (ctx: ScaffoldContext) {
   ctx.route("POST", "/api/custom/seed", async (req) => {
     ctx.db.run(
-      "INSERT INTO task (name, created_at, updated_at) VALUES (?, datetime('now'), datetime('now'))",
+      "INSERT INTO tasks (name, created_at, updated_at) VALUES (?, datetime('now'), datetime('now'))",
       ["New task"]
     );
     return Response.json({ ok: true });
@@ -298,7 +298,7 @@ props:
 ### List with filters
 
 ```javascript
-const res = await fetch("/api/task?status=todo&sort=-created_at&per_page=10");
+const res = await fetch("/api/tasks?status=todo&sort=-created_at&per_page=10");
 const { data, meta } = await res.json();
 // data = [{ id: 1, name: "...", status: "todo", ... }]
 // meta = { total: 42, page: 1, per_page: 10, last_page: 5 }
@@ -307,7 +307,7 @@ const { data, meta } = await res.json();
 ### Create a record
 
 ```javascript
-const res = await fetch("/api/task", {
+const res = await fetch("/api/tasks", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ name: "New task", status: "todo", priority: 1 }),
@@ -318,7 +318,7 @@ const { data } = await res.json(); // data = { id: 3, name: "New task", ... }
 ### Partial update
 
 ```javascript
-const res = await fetch("/api/task/3", {
+const res = await fetch("/api/tasks/3", {
   method: "PATCH",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ status: "done" }),
@@ -329,14 +329,14 @@ const { data } = await res.json();
 ### Delete
 
 ```javascript
-await fetch("/api/task/3", { method: "DELETE" });
+await fetch("/api/tasks/3", { method: "DELETE" });
 ```
 
 ### Alpine.js data loading pattern
 
 ```html
 <div x-data="{ tasks: [], loading: true }" x-init="
-  fetch('/api/task?sort=-created_at')
+  fetch('/api/tasks?sort=-created_at')
     .then(r => r.json())
     .then(json => { tasks = json.data; loading = false; })
 ">
@@ -350,13 +350,12 @@ await fetch("/api/task/3", { method: "DELETE" });
 
 ### Entity route not found (404)
 
-Route paths are kebab-case with no pluralization.
+Route paths are kebab-case.
 
 | Entity Name    | Correct Route          | Wrong Route                |
 |----------------|------------------------|----------------------------|
-| `BlogPost`     | `/api/blog-post`       | `/api/blogpost`            |
-| `ContactNote`  | `/api/contact-note`    | `/api/contactnote`         |
-| `Task`         | `/api/task`            | `/api/tasks`               |
+| `BlogPosts`    | `/api/blog-posts`      | `/api/blogposts`           |
+| `ContactNotes` | `/api/contact-notes`   | `/api/contactnotes`        |
 
 ### Component not loading (404)
 
