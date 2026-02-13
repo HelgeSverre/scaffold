@@ -448,7 +448,9 @@ describe("generateComponentPrompt", () => {
     expect(prompt).toContain("progress-bar");
     expect(prompt).toContain("data-display");
     expect(prompt).toContain("A horizontal progress bar");
-    expect(prompt).toContain("YAML frontmatter");
+    expect(prompt).toContain("frontmatter");
+    expect(prompt).toContain("DISPLAY-ONLY");
+    expect(prompt).toContain("NO JavaScript interactivity");
   });
 });
 

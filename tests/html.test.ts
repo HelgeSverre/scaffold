@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync, rmSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { scanHtmlFiles, serveHtml, generateIndexPage } from "../src/html";
+import { stripCodeFences } from "../src/html-utils";
 
 let tempDir: string;
 
@@ -68,6 +69,33 @@ describe("serveHtml", () => {
     const filePath = join(tempDir, "01-home.html");
     const response = await serveHtml(filePath, "01-home", 1234);
     expect(response.headers.get("Content-Type")).toContain("text/html");
+  });
+});
+
+describe("stripCodeFences", () => {
+  test("strips ```html fences", () => {
+    const input = "```html\n<div>hello</div>\n```";
+    expect(stripCodeFences(input)).toBe("<div>hello</div>");
+  });
+
+  test("strips ```yaml fences", () => {
+    const input = "```yaml\n---\nname: test\n---\n<div>content</div>\n```";
+    expect(stripCodeFences(input)).toBe("---\nname: test\n---\n<div>content</div>");
+  });
+
+  test("strips bare ``` fences", () => {
+    const input = "```\n<div>hello</div>\n```";
+    expect(stripCodeFences(input)).toBe("<div>hello</div>");
+  });
+
+  test("strips ```css fences", () => {
+    const input = "```css\n.foo { color: red; }\n```";
+    expect(stripCodeFences(input)).toBe(".foo { color: red; }");
+  });
+
+  test("returns unfenced text as-is", () => {
+    const input = "<div>hello</div>";
+    expect(stripCodeFences(input)).toBe("<div>hello</div>");
   });
 });
 

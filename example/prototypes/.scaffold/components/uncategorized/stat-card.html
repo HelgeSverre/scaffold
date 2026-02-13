@@ -1,0 +1,14 @@
+---
+name: stat-card
+description: Statistics card showcasing a value, label and optional helper text
+category: uncategorized
+props:
+  - { name: value, description: "Main statistic value to display", default: "247" }
+  - { name: label, description: "Primary label for the statistic", default: "Active Participants" }
+  - { name: helper, description: "Optional helper text below the label", default: "↑ 12% from yesterday" }
+---
+<div class="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+  <div class="text-2xl font-bold text-white mb-1">247</div>
+  <div class="text-gray-300 text-sm font-medium mb-1">Active Participants</div>
+  <div class="text-xs text-gray-400">↑ 12% from yesterday</div>
+</div>

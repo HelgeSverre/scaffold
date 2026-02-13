@@ -17,11 +17,11 @@ export function validateHtmlStructure(html: string): boolean {
 }
 
 export function stripCodeFences(text: string): string {
-  // Strip ```html ... ``` or ``` ... ```
-  const fenced = text.match(/^```(?:html)?\s*\n([\s\S]*?)\n```\s*$/);
+  // Strip ```<lang> ... ``` or ``` ... ``` (any language tag: html, yaml, css, etc.)
+  const fenced = text.match(/^```(?:\w+)?\s*\n([\s\S]*?)\n```\s*$/);
   if (fenced) return fenced[1];
   // Also handle case where there's text before/after the fences
-  const inner = text.match(/```(?:html)?\s*\n([\s\S]*?)\n```/);
+  const inner = text.match(/```(?:\w+)?\s*\n([\s\S]*?)\n```/);
   if (inner) return inner[1];
   return text;
 }

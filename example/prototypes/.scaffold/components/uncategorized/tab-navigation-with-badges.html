@@ -1,0 +1,21 @@
+---
+name: tab-navigation-with-badges
+description: Tab navigation bar with badge counters for different sections
+category: uncategorized
+props:
+  - { name: tabs, description: "Tab labels and badge counts", default: "Entitlements(6), Credentials(2), Scan History(24), Activity Log" }
+---
+<div class="mb-0" style="border-bottom:1px solid var(--border-default);">
+  <button class="tab-btn active">
+    Entitlements <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);">6</span>
+  </button>
+  <button class="tab-btn">
+    Credentials <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);">2</span>
+  </button>
+  <button class="tab-btn">
+    Scan History <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full" style="background:rgba(69,164,228,0.15); color:var(--color-highlight);">24</span>
+  </button>
+  <button class="tab-btn">
+    Activity Log
+  </button>
+</div>

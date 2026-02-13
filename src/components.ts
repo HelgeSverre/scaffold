@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, mkdirSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import type { ComponentMeta, ComponentProp } from "./types";
 import { scaffoldPath } from "./paths";
+import { stripCodeFences } from "./html-utils";
 
 // ─── Component Discovery ─────────────────────────────────────────────────────
 
@@ -50,6 +51,9 @@ export function parseComponentContent(
   content: string,
   filePath: string = ""
 ): { meta: ComponentMeta; html: string } {
+  // Strip code fences that may wrap the entire file (e.g. ```yaml ... ```)
+  content = stripCodeFences(content);
+
   // Split on frontmatter delimiters
   const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
 
@@ -90,6 +94,12 @@ export function parseComponentContent(
   return { meta, html };
 }
 
+// ─── Name Sanitization ───────────────────────────────────────────────────────
+
+export function sanitizeComponentName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
+}
+
 // ─── Component Writing ────────────────────────────────────────────────────────
 
 export async function writeComponent(
@@ -103,7 +113,7 @@ export async function writeComponent(
     mkdirSync(categoryDir, { recursive: true });
   }
 
-  const filePath = join(categoryDir, `${name}.html`);
+  const filePath = join(categoryDir, `${sanitizeComponentName(name)}.html`);
   await Bun.write(filePath, content);
   return filePath;
 }

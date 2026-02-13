@@ -83,10 +83,12 @@ Requirements:
 - Output a single HTML snippet (NOT a full page — no <html>, <head>, <body>)
 - Use the project's CSS custom properties (var(--bg-sidebar), var(--text-default), etc.)
 - Use Tailwind utility classes for spacing, layout, flex/grid
-- If interactivity is needed, use Alpine.js attributes (x-show, @click, x-text, etc.)
-- Use placeholder values that make the purpose clear: realistic labels, realistic numbers
-- Keep it self-contained: no external dependencies beyond Tailwind + Alpine + the CSS vars
-- Include YAML frontmatter with: name, description, category, and props (parameterizable values)
+- Components are DISPLAY-ONLY static HTML snippets — NO JavaScript interactivity
+- DO NOT use Alpine.js: no x-data, x-text, x-show, x-bind, @click, :class, or any Alpine directives
+- Hardcode all placeholder content directly in elements (e.g. <div class="text-2xl font-bold">247</div>, NOT <div x-text="value"></div>)
+- Use realistic placeholder values: real labels, real numbers, real text
+- Props in frontmatter document which values are parameterizable — the HTML itself uses the defaults inline
+- Keep it self-contained: no external dependencies beyond Tailwind + the CSS vars
 
 Format:
 ---
@@ -97,7 +99,7 @@ props:
   - { name: propName, description: "what it is", default: "default value" }
 ---
 <div ...>
-  ... component HTML ...
+  ... component HTML with hardcoded placeholder content ...
 </div>`;
 }
 
