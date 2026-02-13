@@ -66,6 +66,51 @@ test.describe("AI Edit", () => {
     writeFileSync(indexPath, originalIndex);
   });
 
+  test("AI edit only modifies the selected element, not siblings", async ({ page }) => {
+    await page.goto("/index");
+    await enterEditMode(page);
+
+    // Snapshot sibling text before editing
+    expect(await page.locator("#first-child").textContent()).toBe("First child");
+    expect(await page.locator("#last-child").textContent()).toBe("Last child");
+    expect(await page.locator("#other").textContent()).toBe("Other content");
+    expect(await page.locator("h1").textContent()).toBe("Test Fixture");
+
+    await selectElement(page, "#target");
+
+    const aiInput = shadow(page, '[data-testid="ai-input"]');
+    await aiInput.fill(
+      "Change the text to 'MODIFIED BY AI' and make it bold using a <strong> tag"
+    );
+
+    const aiSubmit = shadow(page, '[data-testid="ai-submit"]');
+    await aiSubmit.click();
+
+    const aiStatus = shadow(page, '[data-testid="ai-status"]');
+    await expect(aiStatus).toContainText("Done! Reloading...", {
+      timeout: 45_000,
+    });
+
+    // Reload to see saved changes
+    await page.goto("/index");
+
+    // Target was modified
+    const targetText = await page.locator("#target").textContent();
+    expect(targetText).toContain("MODIFIED BY AI");
+
+    // Siblings unchanged
+    expect(await page.locator("#first-child").textContent()).toBe("First child");
+    expect(await page.locator("#last-child").textContent()).toBe("Last child");
+    expect(await page.locator("#other").textContent()).toBe("Other content");
+    expect(await page.locator("h1").textContent()).toBe("Test Fixture");
+
+    // Verify on disk
+    const diskHtml = readFileSync(indexPath, "utf-8");
+    expect(diskHtml).toContain("First child");
+    expect(diskHtml).toContain("Last child");
+    expect(diskHtml).toContain("Other content");
+  });
+
   test("make element green via AI edit", async ({ page }) => {
     await page.goto("/index");
     await enterEditMode(page);
@@ -89,6 +134,67 @@ test.describe("AI Edit", () => {
     // Assert target has green style
     const style = await page.locator("#target").getAttribute("style");
     expect(style).toMatch(/green|#0+8000|rgb\(0,\s*128,\s*0\)/i);
+  });
+});
+
+test.describe("AI Edit - Complex Page", () => {
+  test.skip(!hasRealKey, "Skipped: ANTHROPIC_API_KEY not set");
+
+  const zonesPath = resolve(fixtureDir, "06-zones.html");
+  let originalZones: string;
+
+  test.beforeAll(() => {
+    originalZones = readFileSync(zonesPath, "utf-8");
+  });
+
+  test.afterEach(() => {
+    writeFileSync(zonesPath, originalZones);
+  });
+
+  test("AI edit colors the Total Zones card yellow on a complex page", async ({ page }) => {
+    await page.goto("/06-zones");
+    await enterEditMode(page);
+
+    // Select the "Total Zones" card — first div.rounded-md.p-4 that contains "Total Zones"
+    const card = page.locator('div.rounded-md.p-4', { hasText: 'Total Zones' }).first();
+    await card.click();
+    await expect(card).toHaveAttribute("data-scaffold-selected", "");
+
+    // Snapshot: other summary cards should remain unchanged
+    const capacityCard = page.locator('div.rounded-md.p-4', { hasText: 'Total Capacity' }).first();
+    const occupancyCard = page.locator('div.rounded-md.p-4', { hasText: 'Current Occupancy' }).first();
+
+    const aiInput = shadow(page, '[data-testid="ai-input"]');
+    await aiInput.fill("Make the background color yellow");
+
+    const aiSubmit = shadow(page, '[data-testid="ai-submit"]');
+    await aiSubmit.click();
+
+    const aiStatus = shadow(page, '[data-testid="ai-status"]');
+    await expect(aiStatus).toContainText("Done! Reloading...", { timeout: 45_000 });
+
+    // Reload to see saved changes
+    await page.goto("/06-zones");
+
+    // Assert: Total Zones card has yellow background
+    const targetCard = page.locator('div.rounded-md.p-4', { hasText: 'Total Zones' }).first();
+    const style = await targetCard.getAttribute("style");
+    expect(style).toMatch(/yellow|#ff0|rgb\(255,\s*255,\s*0\)/i);
+
+    // Assert: sibling cards NOT affected
+    const capStyle = await capacityCard.getAttribute("style");
+    expect(capStyle).not.toMatch(/yellow/i);
+    const occStyle = await occupancyCard.getAttribute("style");
+    expect(occStyle).not.toMatch(/yellow/i);
+
+    // Assert: page title still present (page not blown away)
+    await expect(page.locator('h1')).toContainText("Zones");
+
+    // Verify on disk: other cards preserved
+    const diskHtml = readFileSync(zonesPath, "utf-8");
+    expect(diskHtml).toContain("Total Capacity");
+    expect(diskHtml).toContain("Current Occupancy");
+    expect(diskHtml).toContain("Alerts");
   });
 });
 
