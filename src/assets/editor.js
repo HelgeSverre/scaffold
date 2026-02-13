@@ -21,6 +21,14 @@
   let insertionHtml = null;
   let componentPaletteOpen = false;
   let hoveredElement = null;
+  let elementDragging = false;
+  let dragMouseDown = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragIndicator = null;
+  let dragTarget = null;
+  let dragBefore = true;
+  let suppressNextClick = false;
 
   // ─── Shadow DOM Setup ─────────────────────────────────────────────────────────
 
@@ -57,6 +65,10 @@
       z-index: 2147483646;
       border-radius: 2px;
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+    }
+    [data-scaffold-dragging] {
+      opacity: 0.4 !important;
+      transition: opacity 0.15s ease !important;
     }
   `;
   document.head.appendChild(selectionStyle);
@@ -309,9 +321,12 @@
     // Walk DOM to find editable text elements
     makeEditable(document.body);
 
-    // Enable selection and hover
+    // Enable selection, hover, and drag reorder
     document.addEventListener("click", onElementClick, true);
     document.addEventListener("mouseover", onElementHover, true);
+    document.addEventListener("mousedown", onDragMouseDown, true);
+    document.addEventListener("mousemove", onDragMouseMove, true);
+    document.addEventListener("mouseup", onDragMouseUp, true);
 
     showToast("Edit mode ON");
   }
@@ -347,6 +362,10 @@
 
     document.removeEventListener("click", onElementClick, true);
     document.removeEventListener("mouseover", onElementHover, true);
+    document.removeEventListener("mousedown", onDragMouseDown, true);
+    document.removeEventListener("mousemove", onDragMouseMove, true);
+    document.removeEventListener("mouseup", onDragMouseUp, true);
+    cleanupDrag();
     clearHover();
 
     // Reload page to re-init Alpine
@@ -381,6 +400,7 @@
 
   function onElementClick(e) {
     if (!editMode) return;
+    if (suppressNextClick) { suppressNextClick = false; return; }
     if (insertionMode) return; // handled by insertion click handler
 
     // Don't interfere with toolbar clicks
@@ -449,6 +469,7 @@
 
   function onElementHover(e) {
     if (!editMode) return;
+    if (elementDragging) return;
     if (insertionMode) return;
 
     const path = e.composedPath();
@@ -462,6 +483,125 @@
     clearHover();
     hoveredElement = el;
     el.setAttribute("data-scaffold-hovered", "");
+  }
+
+  // ─── Drag Reorder ──────────────────────────────────────────────────────────
+
+  function onDragMouseDown(e) {
+    if (!editMode || insertionMode || elementDragging) return;
+    if (!selectedElement) return;
+    // Don't drag when user is editing text inside the element
+    if (document.activeElement === selectedElement && selectedElement.isContentEditable) return;
+    // Only start drag if mousedown is on or inside the selected element
+    if (!selectedElement.contains(e.target)) return;
+    // Must have siblings to reorder among
+    const parent = selectedElement.parentElement;
+    if (!parent || parent.children.length < 2) return;
+
+    dragMouseDown = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+  }
+
+  function onDragMouseMove(e) {
+    if (!dragMouseDown) return;
+
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+
+    if (!elementDragging) {
+      // 5px threshold to distinguish click from drag
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      elementDragging = true;
+      selectedElement.setAttribute("data-scaffold-dragging", "");
+      hideTooltip();
+
+      dragIndicator = document.createElement("div");
+      dragIndicator.className = "scaffold-insertion-indicator";
+      dragIndicator.style.display = "none";
+      document.body.appendChild(dragIndicator);
+    }
+
+    updateDragIndicator(e.clientX, e.clientY);
+  }
+
+  function updateDragIndicator(clientX, clientY) {
+    if (!selectedElement || !dragIndicator) return;
+    const parent = selectedElement.parentElement;
+    if (!parent) return;
+
+    let closestDist = Infinity;
+    dragTarget = null;
+    dragBefore = true;
+
+    for (const child of parent.children) {
+      if (child === selectedElement) continue;
+      const rect = child.getBoundingClientRect();
+      // Distance to top edge
+      const distTop = Math.abs(clientY - rect.top);
+      if (distTop < closestDist) {
+        closestDist = distTop;
+        dragTarget = child;
+        dragBefore = true;
+      }
+      // Distance to bottom edge
+      const distBot = Math.abs(clientY - rect.bottom);
+      if (distBot < closestDist) {
+        closestDist = distBot;
+        dragTarget = child;
+        dragBefore = false;
+      }
+    }
+
+    if (dragTarget) {
+      const rect = dragTarget.getBoundingClientRect();
+      const parentRect = parent.getBoundingClientRect();
+      dragIndicator.style.display = "block";
+      dragIndicator.style.position = "absolute";
+      dragIndicator.style.left = parentRect.left + "px";
+      dragIndicator.style.width = parentRect.width + "px";
+      dragIndicator.style.top = (dragBefore ? rect.top : rect.bottom) + window.scrollY + "px";
+    } else {
+      dragIndicator.style.display = "none";
+    }
+  }
+
+  function onDragMouseUp(e) {
+    if (!dragMouseDown) return;
+
+    if (elementDragging && selectedElement && dragTarget) {
+      const parent = selectedElement.parentElement;
+      if (parent) {
+        if (dragBefore) {
+          parent.insertBefore(selectedElement, dragTarget);
+        } else {
+          parent.insertBefore(selectedElement, dragTarget.nextSibling);
+        }
+        showToast("Reordered");
+      }
+      suppressNextClick = true;
+    }
+
+    cleanupDrag();
+  }
+
+  function cleanupDrag() {
+    if (selectedElement) {
+      selectedElement.removeAttribute("data-scaffold-dragging");
+    }
+    if (dragIndicator) {
+      dragIndicator.remove();
+      dragIndicator = null;
+    }
+    elementDragging = false;
+    dragMouseDown = false;
+    dragStartX = 0;
+    dragStartY = 0;
+    dragTarget = null;
+    dragBefore = true;
+    if (selectedElement) {
+      showTooltip(selectedElement);
+    }
   }
 
   // ─── Selection Traversal ────────────────────────────────────────────────────
@@ -1173,6 +1313,9 @@
       clone.querySelectorAll("[data-scaffold-hovered]").forEach((el) => {
         el.removeAttribute("data-scaffold-hovered");
       });
+      clone.querySelectorAll("[data-scaffold-dragging]").forEach((el) => {
+        el.removeAttribute("data-scaffold-dragging");
+      });
       clone.querySelectorAll("[data-scaffold-paused]").forEach((el) => {
         el.removeAttribute("x-ignore");
         el.removeAttribute("data-scaffold-paused");
@@ -1231,6 +1374,11 @@
 
     // Escape — cancel insertion, deselect, close modals, or exit edit mode
     if (e.key === "Escape") {
+      if (elementDragging) {
+        cleanupDrag();
+        showToast("Drag cancelled");
+        return;
+      }
       if (insertionMode) {
         exitInsertionMode();
         showToast("Insertion cancelled");
