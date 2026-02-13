@@ -222,8 +222,9 @@
     if (!dragging) return;
     const x = window.innerWidth - e.clientX - (toolbar.offsetWidth - dragOffset.x);
     const y = window.innerHeight - e.clientY - (toolbar.offsetHeight - dragOffset.y);
-    toolbar.style.right = Math.max(0, x) + "px";
-    toolbar.style.bottom = Math.max(0, y) + "px";
+    const inset = 2;
+    toolbar.style.right = Math.min(window.innerWidth - toolbar.offsetWidth - inset, Math.max(inset, x)) + "px";
+    toolbar.style.bottom = Math.min(window.innerHeight - toolbar.offsetHeight - inset, Math.max(inset, y)) + "px";
   });
 
   document.addEventListener("mouseup", () => {
@@ -396,6 +397,9 @@
   }
 
   function selectElement(el) {
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
     clearHover();
     deselectElement();
     selectedElement = el;
@@ -487,6 +491,18 @@
     }
   }
 
+  function selectFirstChild() {
+    if (!selectedElement) return;
+    let child = selectedElement.firstElementChild;
+    while (child) {
+      if (isValidTarget(child)) {
+        selectElement(child);
+        return;
+      }
+      child = child.nextElementSibling;
+    }
+  }
+
   // ─── XPath Computation ──────────────────────────────────────────────────────
 
   function computeXPath(el) {
@@ -494,6 +510,15 @@
     let current = el;
     while (current && current !== document.body && current.tagName) {
       const tag = current.tagName.toLowerCase();
+
+      // If element has an id, use it as a shortcut — IDs are unique,
+      // so no need to walk further up the tree
+      const id = current.getAttribute("id");
+      if (id && !id.startsWith("scaffold-")) {
+        parts.unshift(tag + "#" + id);
+        break;
+      }
+
       const classes = [...current.classList]
         .filter((c) => !c.startsWith("data-scaffold"))
         .slice(0, 3);
@@ -524,7 +549,9 @@
       parts.unshift(selector);
       current = current.parentElement;
     }
-    parts.unshift("body");
+    if (parts.length === 0 || (parts[0] !== "body" && !parts[0].includes("#"))) {
+      parts.unshift("body");
+    }
     return parts.join(" > ");
   }
 
@@ -1221,13 +1248,12 @@
 
     if (!editMode || !selectedElement) return;
 
-    // Shift+Arrow — selection traversal (skip when in text inputs)
-    const isShiftOnly = e.shiftKey && !e.metaKey && !e.ctrlKey;
-    if (isShiftOnly && (e.key === "ArrowUp" || e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-      const tag = e.target?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+    // Alt+Arrow — selection traversal
+    const isAltOnly = e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey;
+    if (isAltOnly && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       e.preventDefault();
       if (e.key === "ArrowUp") selectParent();
+      else if (e.key === "ArrowDown") selectFirstChild();
       else if (e.key === "ArrowLeft") selectSibling("prev");
       else if (e.key === "ArrowRight") selectSibling("next");
       return;
