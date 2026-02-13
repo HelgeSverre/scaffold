@@ -1,0 +1,373 @@
+# Scaffold
+
+> Local dev server: YAML schema → SQLite CRUD API + HTML prototype serving.
+> Define your data model, get a REST API instantly, build prototypes with real data.
+
+## Schema Definition
+
+Create `.scaffold/scaffold.yaml` in your project root:
+
+```yaml
+name: My App
+
+entities:
+  Tasks:
+    properties:
+      - name                                              # shorthand for { name: name, type: string }
+      - { name: description, type: text, nullable: true }
+      - { name: status, type: enum, values: [todo, in_progress, done], default: todo }
+      - { name: priority, type: integer, default: 0 }
+    seed:
+      - { name: "Example task", status: todo }
+```
+
+### Property Types
+
+| Type        | SQLite  | Notes                                        |
+|-------------|---------|----------------------------------------------|
+| `string`    | TEXT    | Default type. Bare string `- name` is shorthand |
+| `text`      | TEXT    | Semantic distinction for long content        |
+| `number`    | REAL    | Floating-point                               |
+| `integer`   | INTEGER |                                              |
+| `boolean`   | INTEGER | Stored as 0/1, returned as true/false        |
+| `date`      | TEXT    | ISO date (YYYY-MM-DD)                        |
+| `timestamp` | TEXT    | ISO datetime                                 |
+| `email`     | TEXT    | Validated on write                           |
+| `uuid`      | TEXT    | Auto-generated if not provided               |
+| `enum`      | TEXT    | Validated against `values` list              |
+| `json`      | TEXT    | Stored as string, returned parsed            |
+| `relation`  | INTEGER | Foreign key. Specify `entity`                |
+
+### Property Options
+
+```yaml
+- { name: field, type: string }                        # required, not null
+- { name: field, type: string, nullable: true }        # can be null
+- { name: field, type: string, default: "hello" }      # has default value
+- { name: status, type: enum, values: [a, b, c] }     # enum with allowed values
+- { name: user_id, type: relation, entity: User }      # foreign key to User
+```
+
+### Auto-Generated Columns
+
+Every non-pivot entity gets:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `created_at` TEXT (ISO timestamp, set on creation)
+- `updated_at` TEXT (ISO timestamp, set on creation and every update)
+
+### Relations
+
+```yaml
+Products:
+  properties:
+    - { name: category_id, type: relation, entity: Categories }
+```
+
+### Pivot Tables (Many-to-Many)
+
+```yaml
+ProductTags:
+  pivot: true
+  properties:
+    - { name: product_id, type: relation, entity: Products }
+    - { name: tag_id, type: relation, entity: Tags }
+```
+
+Pivot tables get `id` + a unique index on the relation columns, but no timestamps.
+
+### Seed Data
+
+```yaml
+Categories:
+  properties:
+    - name
+  seed:
+    - { name: "Electronics" }
+    - { name: "Books" }
+```
+
+Seed data is inserted only when the table is empty (on server startup).
+
+## Naming Conventions
+
+| YAML Entity Name  | Route Path             | Table Name           |
+|--------------------|------------------------|----------------------|
+| `Tasks`            | `/api/tasks`           | `tasks`              |
+| `Categories`       | `/api/categories`      | `categories`         |
+| `BlogPosts`        | `/api/blog-posts`      | `blog_posts`         |
+| `ContactNotes`     | `/api/contact-notes`   | `contact_notes`      |
+
+- **Route path**: PascalCase converted to kebab-case
+- **Table name**: PascalCase converted to snake_case
+
+## CRUD Endpoints
+
+Every entity gets these REST endpoints at `/api/{route-path}`:
+
+| Method  | Path                    | Description                      |
+|---------|-------------------------|----------------------------------|
+| GET     | `/api/task`            | List (paginated, filterable, sortable) |
+| GET     | `/api/task/:id`        | Get single record                |
+| POST    | `/api/task`            | Create (JSON body)               |
+| PUT     | `/api/task/:id`        | Full update (JSON body)          |
+| PATCH   | `/api/task/:id`        | Partial update (JSON body)       |
+| DELETE  | `/api/task/:id`        | Delete                           |
+| OPTIONS | `/api/task`            | CORS preflight                   |
+| OPTIONS | `/api/task/:id`        | CORS preflight                   |
+
+## Query Parameters
+
+All query parameters are on the GET list endpoint.
+
+```
+GET /api/product?page=2&per_page=10&sort=-created_at&status=active&name_like=%radio%&with=category
+```
+
+| Param              | Description                                         |
+|--------------------|-----------------------------------------------------|
+| `page`             | Page number (default: 1)                            |
+| `per_page`         | Items per page (default: 25, max: 100)              |
+| `sort`             | Sort by column. Prefix `-` for DESC (e.g. `-created_at`) |
+| `{field}`          | Exact match filter (e.g. `status=active`)           |
+| `{field}_like`     | SQL LIKE filter (e.g. `name_like=%radio%`)          |
+| `{field}_gt`       | Greater than                                        |
+| `{field}_lt`       | Less than                                           |
+| `{field}_gte`      | Greater than or equal                               |
+| `{field}_lte`      | Less than or equal                                  |
+| `{field}_null`     | Filter by null (`true`) or not null (`false`)       |
+| `with`             | Eager-load relations, comma-separated               |
+
+### Eager Loading
+
+The `with` parameter loads related records inline. Use the FK column name without the `_id` suffix:
+
+```
+GET /api/product?with=category
+GET /api/contact?with=company,assigned_user
+```
+
+The related object is attached to each row under the short name (e.g. `category` for `category_id`).
+
+## Response Formats
+
+### List Response
+
+```json
+{
+  "data": [
+    { "id": 1, "name": "Task One", "status": "todo", "created_at": "2025-01-01T00:00:00.000Z", "updated_at": "2025-01-01T00:00:00.000Z" }
+  ],
+  "meta": {
+    "total": 42,
+    "page": 1,
+    "per_page": 25,
+    "last_page": 2
+  }
+}
+```
+
+### Single Response
+
+```json
+{
+  "data": { "id": 1, "name": "Task One", "status": "todo" }
+}
+```
+
+### Create Response
+
+Status: `201 Created`
+
+```json
+{
+  "data": { "id": 3, "name": "New Task", "status": "todo", "created_at": "...", "updated_at": "..." }
+}
+```
+
+### Delete Response
+
+```json
+{
+  "data": { "id": 1 }
+}
+```
+
+### Error Response
+
+```json
+{
+  "error": { "message": "name is required", "status": 422 }
+}
+```
+
+| Status | Meaning                                          |
+|--------|--------------------------------------------------|
+| 400    | Invalid JSON body, or no valid fields to update  |
+| 404    | Record not found                                 |
+| 422    | Validation error (required field, bad enum, bad email, invalid relation, invalid JSON) |
+
+## Validation Rules
+
+On POST (create) and PUT (full update):
+- Fields that are not `nullable` and have no `default` are required
+- `uuid` fields are auto-generated if not provided
+
+On all writes (POST, PUT, PATCH):
+- `enum` values must be in the `values` list
+- `email` fields are validated against a basic email regex
+- `json` fields (when passed as string) must be valid JSON
+- `relation` fields must reference an existing record in the target table
+
+## CORS
+
+All `/api/*` responses include:
+- `Access-Control-Allow-Origin: *`
+- `Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS`
+- `Access-Control-Allow-Headers: Content-Type`
+
+## HTML Serving
+
+Every `.html` file in the project root is served as a page:
+
+| File                       | URL                               |
+|----------------------------|-----------------------------------|
+| `index.html`               | `http://localhost:5555/index`     |
+| `dashboard.html`           | `http://localhost:5555/dashboard`       |
+
+- `/` shows an auto-generated index listing all pages
+- The server default port is `5555` (auto-detects available port if taken)
+- Files are served with the editor overlay injected at serve-time — the files on disk are never modified by the server
+
+## Custom Functions
+
+Add route handlers in `.scaffold/functions/*.ts`:
+
+```typescript
+import type { ScaffoldContext } from "scaffold";
+
+export default function (ctx: ScaffoldContext) {
+  ctx.route("POST", "/api/custom/seed", async (req) => {
+    ctx.db.run(
+      "INSERT INTO task (name, created_at, updated_at) VALUES (?, datetime('now'), datetime('now'))",
+      ["New task"]
+    );
+    return Response.json({ ok: true });
+  });
+}
+```
+
+### ScaffoldContext
+
+```typescript
+interface ScaffoldContext {
+  db: Database;           // bun:sqlite Database instance — use db.query() and db.run()
+  route: (method: string, path: string, handler: (req: Request, params: Record<string, string>) => Response | Promise<Response>) => void;
+  broadcast: (page: string, message: object) => void;  // Send WebSocket message to all viewers of a page
+  config: ScaffoldConfig; // Parsed scaffold.yaml
+}
+```
+
+## Components
+
+Reusable HTML components are stored in `.scaffold/components/<category>/<name>.html` with YAML frontmatter:
+
+```html
+---
+name: stat-card
+description: A card showing a single statistic with label
+category: uncategorized
+props:
+  - { name: label, description: "The stat label", default: "Users" }
+  - { name: value, description: "The stat value", default: "0" }
+---
+<div class="bg-white rounded-lg shadow p-6">
+  <p class="text-sm text-gray-500">{{ label }}</p>
+  <p class="text-3xl font-bold">{{ value }}</p>
+</div>
+```
+
+### Component API
+
+| Method | Path                                    | Description                  |
+|--------|-----------------------------------------|------------------------------|
+| GET    | `/_/ai/components`                      | List all components          |
+| GET    | `/_/ai/components/:category/:name`      | Get a single component       |
+
+## Fetch Examples
+
+### List with filters
+
+```javascript
+const res = await fetch("/api/task?status=todo&sort=-created_at&per_page=10");
+const { data, meta } = await res.json();
+// data = [{ id: 1, name: "...", status: "todo", ... }]
+// meta = { total: 42, page: 1, per_page: 10, last_page: 5 }
+```
+
+### Create a record
+
+```javascript
+const res = await fetch("/api/task", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ name: "New task", status: "todo", priority: 1 }),
+});
+const { data } = await res.json(); // data = { id: 3, name: "New task", ... }
+```
+
+### Partial update
+
+```javascript
+const res = await fetch("/api/task/3", {
+  method: "PATCH",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ status: "done" }),
+});
+const { data } = await res.json();
+```
+
+### Delete
+
+```javascript
+await fetch("/api/task/3", { method: "DELETE" });
+```
+
+### Alpine.js data loading pattern
+
+```html
+<div x-data="{ tasks: [], loading: true }" x-init="
+  fetch('/api/task?sort=-created_at')
+    .then(r => r.json())
+    .then(json => { tasks = json.data; loading = false; })
+">
+  <template x-for="task in tasks" :key="task.id">
+    <div x-text="task.name"></div>
+  </template>
+</div>
+```
+
+## Troubleshooting
+
+### Entity route not found (404)
+
+Route paths are kebab-case with no pluralization.
+
+| Entity Name    | Correct Route          | Wrong Route                |
+|----------------|------------------------|----------------------------|
+| `BlogPost`     | `/api/blog-post`       | `/api/blogpost`            |
+| `ContactNote`  | `/api/contact-note`    | `/api/contactnote`         |
+| `Task`         | `/api/task`            | `/api/tasks`               |
+
+### Component not loading (404)
+
+The component API route `/_/ai/components/:category/:name` builds the file path from URL params. The frontmatter `category` must match the directory name, and the frontmatter `name` must match the filename (without `.html`).
+
+Example: if the file is at `.scaffold/components/uncategorized/stat-card.html`, the frontmatter must have `category: uncategorized` and `name: stat-card`.
+
+### Boolean fields return 0/1 in raw SQL but true/false via API
+
+The API automatically deserializes boolean fields. If you query the database directly via custom functions, booleans will be 0/1.
+
+### JSON fields
+
+Pass JSON fields as objects in your request body — they will be stringified for storage and parsed back on read. If you pass a JSON string, it must be valid JSON or you'll get a 422 error.
