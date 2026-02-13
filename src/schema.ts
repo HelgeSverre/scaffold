@@ -45,8 +45,8 @@ export function deriveEntityMeta(config: ScaffoldConfig): EntityMeta[] {
   const metas: EntityMeta[] = [];
 
   for (const [entityName, entityDef] of Object.entries(config.entities)) {
-    const tableName = toSnakeCase(entityName) + "s";
-    const routePath = entityName.toLowerCase() + "s";
+    const tableName = toSnakeCase(entityName);
+    const routePath = toSnakeCase(entityName).replace(/_/g, "-");
     const properties = entityDef.properties as PropertyDef[];
 
     const relations: EntityMeta["relations"] = [];
@@ -55,7 +55,7 @@ export function deriveEntityMeta(config: ScaffoldConfig): EntityMeta[] {
         relations.push({
           property: prop.name,
           targetEntity: prop.entity,
-          targetTable: toSnakeCase(prop.entity) + "s",
+          targetTable: toSnakeCase(prop.entity),
         });
       }
     }

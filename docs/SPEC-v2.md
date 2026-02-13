@@ -381,16 +381,15 @@ PATCH  /api/{entities}/:id       → Partial update
 DELETE /api/{entities}/:id       → Delete
 ```
 
-**URL naming:** Entity names are lowercased and naively pluralized (just appends `s`):
-- `Participant` → `/api/participants`
-- `EntitlementItem` → `/api/entitlementitems`
-- `Zone` → `/api/zones`
-- `CheckpointScan` → `/api/checkpointscans`
+**URL naming:** Entity names are converted to kebab-case:
+- `Tasks` → `/api/tasks`
+- `BlogPosts` → `/api/blog-posts`
+- `ContactNotes` → `/api/contact-notes`
 
 ### Query Parameters (List Endpoint)
 
 ```
-GET /api/entitlementitems?page=1&per_page=25&sort=-created_at&item_type=access&with=category
+GET /api/products?page=1&per_page=25&sort=-created_at&status=active&with=category
 ```
 
 | Param | Description | Example |
@@ -558,11 +557,11 @@ import type { ScaffoldContext } from "../.scaffold/types";
 export default function (ctx: ScaffoldContext) {
   ctx.route("POST", "/api/custom/seed-demo", async (req) => {
     for (let i = 0; i < 50; i++) {
-      ctx.db.run(`INSERT INTO participants (name, email, participant_type, status, uuid, created_at, updated_at)
-        VALUES (?, ?, 'user', 'active', ?, datetime('now'), datetime('now'))`,
-        [`Person ${i}`, `p${i}@example.com`, crypto.randomUUID()]);
+      ctx.db.run(`INSERT INTO tasks (name, status, created_at, updated_at)
+        VALUES (?, 'todo', datetime('now'), datetime('now'))`,
+        [`Task ${i}`]);
     }
-    return Response.json({ message: "Seeded 50 participants" });
+    return Response.json({ message: "Seeded 50 tasks" });
   });
 }
 ```

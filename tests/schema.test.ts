@@ -72,18 +72,41 @@ describe("parseSchema", () => {
 });
 
 describe("deriveEntityMeta", () => {
-  test("derives table names in snake_case with s suffix", () => {
+  test("derives table names in snake_case", () => {
     const config = parseSchema(SAMPLE_YAML);
     const metas = deriveEntityMeta(config);
     const names = metas.map((m) => m.tableName);
-    expect(names).toEqual(["users", "posts", "post_tags"]);
+    expect(names).toEqual(["user", "post", "post_tag"]);
   });
 
-  test("derives route paths lowercased with s suffix", () => {
+  test("derives route paths as kebab-case", () => {
     const config = parseSchema(SAMPLE_YAML);
     const metas = deriveEntityMeta(config);
     const paths = metas.map((m) => m.routePath);
-    expect(paths).toEqual(["users", "posts", "posttags"]);
+    expect(paths).toEqual(["user", "post", "post-tag"]);
+  });
+
+  test("does not naively pluralize names", () => {
+    const yaml = `
+name: Test
+entities:
+  Category:
+    properties:
+      - name
+  BlogPost:
+    properties:
+      - title
+  Person:
+    properties:
+      - name
+`;
+    const config = parseSchema(yaml);
+    const metas = deriveEntityMeta(config);
+    const routes = metas.map((m) => m.routePath);
+    const tables = metas.map((m) => m.tableName);
+    // No naive "s" suffix — avoids "categorys", "persons", etc.
+    expect(routes).toEqual(["category", "blog-post", "person"]);
+    expect(tables).toEqual(["category", "blog_post", "person"]);
   });
 
   test("extracts relations", () => {
@@ -91,7 +114,7 @@ describe("deriveEntityMeta", () => {
     const metas = deriveEntityMeta(config);
     const postMeta = metas.find((m) => m.entityName === "Post")!;
     expect(postMeta.relations).toEqual([
-      { property: "user_id", targetEntity: "User", targetTable: "users" },
+      { property: "user_id", targetEntity: "User", targetTable: "user" },
     ]);
   });
 

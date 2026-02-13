@@ -65,8 +65,8 @@ beforeEach(() => {
 });
 
 describe("CRUD - List", () => {
-  test("GET /api/categorys returns seeded data", async () => {
-    const res = await req("GET", "/api/categorys");
+  test("GET /api/category returns seeded data", async () => {
+    const res = await req("GET", "/api/category");
     expect(res.status).toBe(200);
     expect(res.json.data).toHaveLength(3);
     expect(res.json.meta.total).toBe(3);
@@ -74,76 +74,76 @@ describe("CRUD - List", () => {
   });
 
   test("pagination works", async () => {
-    const res = await req("GET", "/api/categorys?per_page=2&page=1");
+    const res = await req("GET", "/api/category?per_page=2&page=1");
     expect(res.json.data).toHaveLength(2);
     expect(res.json.meta.last_page).toBe(2);
 
-    const res2 = await req("GET", "/api/categorys?per_page=2&page=2");
+    const res2 = await req("GET", "/api/category?per_page=2&page=2");
     expect(res2.json.data).toHaveLength(1);
   });
 
   test("sorting works", async () => {
-    const res = await req("GET", "/api/categorys?sort=-sort_order");
+    const res = await req("GET", "/api/category?sort=-sort_order");
     expect(res.json.data[0].name).toBe("Gamma");
     expect(res.json.data[2].name).toBe("Alpha");
   });
 
   test("exact filter works", async () => {
-    const res = await req("GET", "/api/categorys?name=Beta");
+    const res = await req("GET", "/api/category?name=Beta");
     expect(res.json.data).toHaveLength(1);
     expect(res.json.data[0].name).toBe("Beta");
   });
 
   test("like filter works", async () => {
-    const res = await req("GET", "/api/categorys?name_like=%lpha");
+    const res = await req("GET", "/api/category?name_like=%lpha");
     expect(res.json.data).toHaveLength(1);
     expect(res.json.data[0].name).toBe("Alpha");
   });
 
   test("comparison filters work", async () => {
-    const res = await req("GET", "/api/categorys?sort_order_gt=0");
+    const res = await req("GET", "/api/category?sort_order_gt=0");
     expect(res.json.data).toHaveLength(2);
 
-    const res2 = await req("GET", "/api/categorys?sort_order_gte=1");
+    const res2 = await req("GET", "/api/category?sort_order_gte=1");
     expect(res2.json.data).toHaveLength(2);
 
-    const res3 = await req("GET", "/api/categorys?sort_order_lt=2");
+    const res3 = await req("GET", "/api/category?sort_order_lt=2");
     expect(res3.json.data).toHaveLength(2);
 
-    const res4 = await req("GET", "/api/categorys?sort_order_lte=0");
+    const res4 = await req("GET", "/api/category?sort_order_lte=0");
     expect(res4.json.data).toHaveLength(1);
   });
 
   test("null filter works", async () => {
     // Create an item with null quantity
-    await req("POST", "/api/items", { name: "Test", category_id: 1, item_type: "access" });
+    await req("POST", "/api/item", { name: "Test", category_id: 1, item_type: "access" });
 
-    const res = await req("GET", "/api/items?quantity_null=true");
+    const res = await req("GET", "/api/item?quantity_null=true");
     expect(res.json.data.length).toBeGreaterThanOrEqual(1);
   });
 
   test("ignores invalid sort columns", async () => {
-    const res = await req("GET", "/api/categorys?sort=nonexistent");
+    const res = await req("GET", "/api/category?sort=nonexistent");
     expect(res.status).toBe(200); // Falls back to default sort
   });
 });
 
 describe("CRUD - Get One", () => {
-  test("GET /api/categorys/1 returns single record", async () => {
-    const res = await req("GET", "/api/categorys/1");
+  test("GET /api/category/1 returns single record", async () => {
+    const res = await req("GET", "/api/category/1");
     expect(res.status).toBe(200);
     expect(res.json.data.name).toBe("Alpha");
   });
 
   test("returns 404 for non-existent ID", async () => {
-    const res = await req("GET", "/api/categorys/999");
+    const res = await req("GET", "/api/category/999");
     expect(res.status).toBe(404);
   });
 });
 
 describe("CRUD - Create", () => {
   test("POST creates record and returns 201", async () => {
-    const res = await req("POST", "/api/items", {
+    const res = await req("POST", "/api/item", {
       name: "New Item",
       category_id: 1,
       item_type: "access",
@@ -157,13 +157,13 @@ describe("CRUD - Create", () => {
   });
 
   test("validates required fields", async () => {
-    const res = await req("POST", "/api/items", { item_type: "access" });
+    const res = await req("POST", "/api/item", { item_type: "access" });
     expect(res.status).toBe(422);
     expect(res.json.error.message).toContain("is required");
   });
 
   test("validates enum values", async () => {
-    const res = await req("POST", "/api/items", {
+    const res = await req("POST", "/api/item", {
       name: "Bad",
       category_id: 1,
       item_type: "invalid_type",
@@ -173,7 +173,7 @@ describe("CRUD - Create", () => {
   });
 
   test("validates email format", async () => {
-    const res = await req("POST", "/api/items", {
+    const res = await req("POST", "/api/item", {
       name: "Bad",
       category_id: 1,
       item_type: "access",
@@ -184,7 +184,7 @@ describe("CRUD - Create", () => {
   });
 
   test("validates relation existence", async () => {
-    const res = await req("POST", "/api/items", {
+    const res = await req("POST", "/api/item", {
       name: "Bad",
       category_id: 999,
       item_type: "access",
@@ -194,7 +194,7 @@ describe("CRUD - Create", () => {
   });
 
   test("handles JSON fields", async () => {
-    const res = await req("POST", "/api/items", {
+    const res = await req("POST", "/api/item", {
       name: "Configured",
       category_id: 1,
       item_type: "access",
@@ -205,7 +205,7 @@ describe("CRUD - Create", () => {
   });
 
   test("coerces boolean fields", async () => {
-    const res = await req("POST", "/api/items", {
+    const res = await req("POST", "/api/item", {
       name: "Active",
       category_id: 1,
       item_type: "access",
@@ -216,12 +216,12 @@ describe("CRUD - Create", () => {
   });
 
   test("rejects invalid JSON body", async () => {
-    const request = new Request("http://localhost/api/items", {
+    const request = new Request("http://localhost/api/item", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "not json",
     });
-    const match = router.match("POST", "/api/items")!;
+    const match = router.match("POST", "/api/item")!;
     const response = await match.handler(request, match.params);
     expect(response.status).toBe(400);
   });
@@ -230,14 +230,14 @@ describe("CRUD - Create", () => {
 describe("CRUD - Update", () => {
   test("PUT updates all fields", async () => {
     // Create first
-    const created = await req("POST", "/api/items", {
+    const created = await req("POST", "/api/item", {
       name: "Original",
       category_id: 1,
       item_type: "access",
     });
     const id = created.json.data.id;
 
-    const res = await req("PUT", `/api/items/${id}`, {
+    const res = await req("PUT", `/api/item/${id}`, {
       name: "Updated",
       category_id: 1,
       item_type: "consumable",
@@ -248,61 +248,61 @@ describe("CRUD - Update", () => {
   });
 
   test("PATCH updates only provided fields", async () => {
-    const created = await req("POST", "/api/items", {
+    const created = await req("POST", "/api/item", {
       name: "Original",
       category_id: 1,
       item_type: "access",
     });
     const id = created.json.data.id;
 
-    const res = await req("PATCH", `/api/items/${id}`, { name: "Patched" });
+    const res = await req("PATCH", `/api/item/${id}`, { name: "Patched" });
     expect(res.status).toBe(200);
     expect(res.json.data.name).toBe("Patched");
     expect(res.json.data.item_type).toBe("access"); // unchanged
   });
 
   test("PUT returns 404 for non-existent", async () => {
-    const res = await req("PUT", "/api/items/999", { name: "Nope" });
+    const res = await req("PUT", "/api/item/999", { name: "Nope" });
     expect(res.status).toBe(404);
   });
 
   test("PATCH returns 404 for non-existent", async () => {
-    const res = await req("PATCH", "/api/items/999", { name: "Nope" });
+    const res = await req("PATCH", "/api/item/999", { name: "Nope" });
     expect(res.status).toBe(404);
   });
 
   test("PATCH validates enum on partial update", async () => {
-    const created = await req("POST", "/api/items", {
+    const created = await req("POST", "/api/item", {
       name: "Test",
       category_id: 1,
       item_type: "access",
     });
     const id = created.json.data.id;
 
-    const res = await req("PATCH", `/api/items/${id}`, { item_type: "invalid" });
+    const res = await req("PATCH", `/api/item/${id}`, { item_type: "invalid" });
     expect(res.status).toBe(422);
   });
 });
 
 describe("CRUD - Delete", () => {
   test("DELETE removes record", async () => {
-    const created = await req("POST", "/api/items", {
+    const created = await req("POST", "/api/item", {
       name: "ToDelete",
       category_id: 1,
       item_type: "access",
     });
     const id = created.json.data.id;
 
-    const res = await req("DELETE", `/api/items/${id}`);
+    const res = await req("DELETE", `/api/item/${id}`);
     expect(res.status).toBe(200);
     expect(res.json.data.id).toBe(id);
 
-    const check = await req("GET", `/api/items/${id}`);
+    const check = await req("GET", `/api/item/${id}`);
     expect(check.status).toBe(404);
   });
 
   test("DELETE returns 404 for non-existent", async () => {
-    const res = await req("DELETE", "/api/items/999");
+    const res = await req("DELETE", "/api/item/999");
     expect(res.status).toBe(404);
   });
 });
@@ -310,13 +310,13 @@ describe("CRUD - Delete", () => {
 describe("CRUD - Eager Loading", () => {
   test("with parameter loads relations", async () => {
     // Create an item linked to category 1
-    await req("POST", "/api/items", {
+    await req("POST", "/api/item", {
       name: "Linked",
       category_id: 1,
       item_type: "access",
     });
 
-    const res = await req("GET", "/api/items?with=category");
+    const res = await req("GET", "/api/item?with=category");
     expect(res.status).toBe(200);
     const item = res.json.data.find((i: any) => i.name === "Linked");
     expect(item.category).toBeDefined();
@@ -324,29 +324,29 @@ describe("CRUD - Eager Loading", () => {
   });
 
   test("with parameter on single record", async () => {
-    const created = await req("POST", "/api/items", {
+    const created = await req("POST", "/api/item", {
       name: "Single",
       category_id: 2,
       item_type: "consumable",
     });
     const id = created.json.data.id;
 
-    const res = await req("GET", `/api/items/${id}?with=category`);
+    const res = await req("GET", `/api/item/${id}?with=category`);
     expect(res.json.data.category.name).toBe("Beta");
   });
 });
 
 describe("CRUD - CORS", () => {
   test("responses include CORS headers", async () => {
-    const request = new Request("http://localhost/api/categorys");
-    const match = router.match("GET", "/api/categorys")!;
+    const request = new Request("http://localhost/api/category");
+    const match = router.match("GET", "/api/category")!;
     const response = await match.handler(request, match.params);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 
   test("OPTIONS returns 204 with CORS headers", async () => {
-    const request = new Request("http://localhost/api/categorys", { method: "OPTIONS" });
-    const match = router.match("OPTIONS", "/api/categorys")!;
+    const request = new Request("http://localhost/api/category", { method: "OPTIONS" });
+    const match = router.match("OPTIONS", "/api/category")!;
     const response = await match.handler(request, match.params);
     expect(response.status).toBe(204);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");

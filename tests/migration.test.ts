@@ -47,9 +47,9 @@ describe("migrate", () => {
       .query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
       .all() as { name: string }[];
     const names = tables.map((t) => t.name);
-    expect(names).toContain("categorys");
-    expect(names).toContain("items");
-    expect(names).toContain("item_tags");
+    expect(names).toContain("category");
+    expect(names).toContain("item");
+    expect(names).toContain("item_tag");
   });
 
   test("creates correct columns for regular entity", () => {
@@ -57,7 +57,7 @@ describe("migrate", () => {
     const metas = deriveEntityMeta(config);
     migrate(db, metas);
 
-    const cols = db.query("PRAGMA table_info('items')").all() as { name: string; type: string }[];
+    const cols = db.query("PRAGMA table_info('item')").all() as { name: string; type: string }[];
     const colNames = cols.map((c) => c.name);
     expect(colNames).toContain("id");
     expect(colNames).toContain("category_id");
@@ -76,7 +76,7 @@ describe("migrate", () => {
     const metas = deriveEntityMeta(config);
     migrate(db, metas);
 
-    const cols = db.query("PRAGMA table_info('items')").all() as { name: string; type: string }[];
+    const cols = db.query("PRAGMA table_info('item')").all() as { name: string; type: string }[];
     const colMap = Object.fromEntries(cols.map((c) => [c.name, c.type]));
     expect(colMap.category_id).toBe("INTEGER");
     expect(colMap.name).toBe("TEXT");
@@ -92,7 +92,7 @@ describe("migrate", () => {
     const metas = deriveEntityMeta(config);
     migrate(db, metas);
 
-    const cols = db.query("PRAGMA table_info('item_tags')").all() as { name: string }[];
+    const cols = db.query("PRAGMA table_info('item_tag')").all() as { name: string }[];
     const colNames = cols.map((c) => c.name);
     expect(colNames).not.toContain("created_at");
     expect(colNames).not.toContain("updated_at");
@@ -107,10 +107,10 @@ describe("migrate", () => {
     migrate(db, metas);
 
     const indexes = db
-      .query("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='item_tags'")
+      .query("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='item_tag'")
       .all() as { name: string }[];
     const idxNames = indexes.map((i) => i.name);
-    expect(idxNames).toContain("idx_item_tags_unique");
+    expect(idxNames).toContain("idx_item_tag_unique");
   });
 
   test("adds missing columns on re-run", () => {
@@ -123,7 +123,7 @@ describe("migrate", () => {
     itemMeta.properties.push({ name: "new_col", type: "string" });
     migrate(db, metas);
 
-    const cols = db.query("PRAGMA table_info('items')").all() as { name: string }[];
+    const cols = db.query("PRAGMA table_info('item')").all() as { name: string }[];
     const colNames = cols.map((c) => c.name);
     expect(colNames).toContain("new_col");
   });
@@ -149,7 +149,7 @@ describe("seed", () => {
     migrate(db, metas);
     seed(db, metas);
 
-    const rows = db.query("SELECT * FROM categorys").all() as any[];
+    const rows = db.query("SELECT * FROM category").all() as any[];
     expect(rows).toHaveLength(2);
     expect(rows[0].name).toBe("First");
     expect(rows[0].sort_order).toBe(0);
@@ -163,7 +163,7 @@ describe("seed", () => {
     migrate(db, metas);
     seed(db, metas);
 
-    const row = db.query("SELECT * FROM categorys LIMIT 1").get() as any;
+    const row = db.query("SELECT * FROM category LIMIT 1").get() as any;
     expect(row.created_at).toBeTruthy();
     expect(row.updated_at).toBeTruthy();
   });
@@ -175,7 +175,7 @@ describe("seed", () => {
     seed(db, metas);
     seed(db, metas);
 
-    const rows = db.query("SELECT * FROM categorys").all() as any[];
+    const rows = db.query("SELECT * FROM category").all() as any[];
     expect(rows).toHaveLength(2);
   });
 
@@ -189,7 +189,7 @@ describe("seed", () => {
     itemMeta.seed = [{ name: "Test", category_id: 1, is_active: true }];
     seed(db, metas);
 
-    const row = db.query("SELECT * FROM items LIMIT 1").get() as any;
+    const row = db.query("SELECT * FROM item LIMIT 1").get() as any;
     expect(row.uuid).toMatch(/^[0-9a-f]{8}-/);
   });
 
@@ -202,7 +202,7 @@ describe("seed", () => {
     itemMeta.seed = [{ name: "Test", category_id: 1, is_active: true }];
     seed(db, metas);
 
-    const row = db.query("SELECT * FROM items LIMIT 1").get() as any;
+    const row = db.query("SELECT * FROM item LIMIT 1").get() as any;
     expect(row.is_active).toBe(1);
   });
 });

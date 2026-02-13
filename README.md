@@ -10,9 +10,20 @@
   <img src="https://img.shields.io/badge/version-0.1.2-14B8A6?style=flat&labelColor=0F172A" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-14B8A6?style=flat&labelColor=0F172A" alt="License">
   <img src="https://img.shields.io/badge/runtime-Bun-14B8A6?style=flat&labelColor=0F172A" alt="Runtime">
-  <img src="https://img.shields.io/badge/TypeScript-14B8A6?style=flat&labelColor=0F172A" alt="TypeScript">
+  <a href="https://scaffold.to/llms.txt"><img src="https://img.shields.io/badge/agents-llms.txt-14B8A6?style=flat&labelColor=0F172A" alt="llms.txt"></a>
   <a href="https://scaffold.to"><img src="https://img.shields.io/badge/web-scaffold.to-14B8A6?style=flat&labelColor=0F172A" alt="Website"></a>
 </p>
+
+**Scaffold** is a local dev server that gives your HTML prototypes a working backend in seconds.
+Define a YAML schema, get a SQLite-backed REST API — then iterate on self-contained HTML files
+using Claude Code, Ampcode, Codex, or any AI coding tool.
+
+Think [json-server](https://github.com/typicode/json-server) but purpose-built for AI prototyping:
+your agent generates HTML, Scaffold serves it with live data, you refine in natural language — repeat.
+Not a production backend or a PocketBase replacement. Just fast, throwaway prototyping with real APIs.
+
+> [!TIP]
+> Point your agent at [llms.txt](https://scaffold.to/llms.txt) for a complete reference of the schema format, API endpoints, and query parameters.
 
 ## Install
 
@@ -95,7 +106,7 @@ Define your data entities in YAML. Each entity becomes a SQLite table and a REST
 name: My App
 
 entities:
-  Task:
+  Tasks:
     properties:
       - name                                           # shorthand for { name: name, type: string }
       - { name: description, type: text, nullable: true }
@@ -142,19 +153,19 @@ Every non-pivot entity gets:
 ### Relations
 
 ```yaml
-Item:
+Products:
   properties:
-    - { name: category_id, type: relation, entity: Category }
+    - { name: category_id, type: relation, entity: Categories }
 ```
 
 ### Pivot Tables (Many-to-Many)
 
 ```yaml
-ItemTag:
+ProductTags:
   pivot: true
   properties:
-    - { name: item_id, type: relation, entity: Item }
-    - { name: tag_id, type: relation, entity: Tag }
+    - { name: product_id, type: relation, entity: Products }
+    - { name: tag_id, type: relation, entity: Tags }
 ```
 
 Pivot tables get `id` + a unique index on the relation columns, but no timestamps.
@@ -162,7 +173,7 @@ Pivot tables get `id` + a unique index on the relation columns, but no timestamp
 ### Seed Data
 
 ```yaml
-Category:
+Categories:
   properties:
     - name
   seed:
@@ -174,7 +185,7 @@ Seed data is inserted only if the table is empty.
 
 ## CRUD API
 
-Every entity gets REST endpoints at `/api/{entitynames}`:
+Every entity gets REST endpoints at `/api/{entity-name}`:
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -185,12 +196,12 @@ Every entity gets REST endpoints at `/api/{entitynames}`:
 | PATCH | `/api/tasks/:id` | Partial update |
 | DELETE | `/api/tasks/:id` | Delete |
 
-Route names are the entity name lowercased + `s` (e.g., `EntitlementItem` -> `/api/entitlementitems`).
+Route paths are kebab-case (e.g., `Tasks` → `/api/tasks`, `BlogPosts` → `/api/blog-posts`).
 
 ### Query Parameters
 
 ```
-GET /api/items?page=2&per_page=10&sort=-created_at&status=active&name_like=%radio%&with=category
+GET /api/products?page=2&per_page=10&sort=-created_at&status=active&name_like=%radio%&with=category
 ```
 
 | Param | Description |
@@ -209,8 +220,8 @@ GET /api/items?page=2&per_page=10&sort=-created_at&status=active&name_like=%radi
 Use the `with` parameter to include related records. The relation name is the FK column without `_id`:
 
 ```
-GET /api/items?with=category
-GET /api/entitlements?with=participant,entitlement_item
+GET /api/products?with=category
+GET /api/orders?with=customer
 ```
 
 ### Response Format
@@ -243,7 +254,7 @@ All `/api/*` responses include `Access-Control-Allow-Origin: *`.
 
 Every `.html` file in the root directory is served at `/{filename}`:
 
-- `02-participants.html` -> `http://localhost:5555/02-participants`
+- `dashboard.html` → `http://localhost:5555/dashboard`
 - `/` shows an index page listing all pages
 
 The editor overlay is injected at serve-time (files on disk are never modified by the server).
@@ -465,20 +476,20 @@ open http://localhost:5555
 curl http://localhost:5555/api/tasks
 
 # Filter + sort + eager load
-curl "http://localhost:5555/api/entitlementitems?with=category&sort=-name"
+curl "http://localhost:5555/api/products?with=category&sort=-name"
 
 # Create
-curl -X POST http://localhost:5555/api/zones \
+curl -X POST http://localhost:5555/api/categories \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Test Zone"}'
+  -d '{"name":"Electronics"}'
 
 # Update
-curl -X PATCH http://localhost:5555/api/zones/1 \
+curl -X PATCH http://localhost:5555/api/categories/1 \
   -H 'Content-Type: application/json' \
-  -d '{"capacity": 500}'
+  -d '{"name": "Books & Media"}'
 
 # Delete
-curl -X DELETE http://localhost:5555/api/zones/7
+curl -X DELETE http://localhost:5555/api/categories/7
 ```
 
 ## Dependencies
